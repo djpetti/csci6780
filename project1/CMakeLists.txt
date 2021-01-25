@@ -4,5 +4,6 @@ project(project1 CXX)
 set(CMAKE_CXX_STANDARD 20)
 
 add_subdirectory(server)
+add_subdirectory(wire_protocol)
 
 add_executable(project1 main.cpp)

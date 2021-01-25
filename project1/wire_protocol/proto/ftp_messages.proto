@@ -1,0 +1,93 @@
+syntax = "proto3";
+
+package ftp_messages;
+
+/// Request to the server to get a file.
+message GetRequest {
+  /// The name of the file to get.
+  string filename = 1;
+}
+
+/// Response from the server to getting a file.
+message GetResponse {
+  /// The binary contents of the file.
+  bytes file_contents = 1;
+}
+
+/// Request to the server to write a file.
+message PutRequest {
+  /// The name of the file to write.
+  string filename = 1;
+  /// The contents of the file to write.
+  bytes file_contents = 2;
+}
+
+/// Request to the server to delete a file.
+message DeleteRequest {
+  /// The name of the file to delete.
+  string filename = 1;
+}
+
+/// Request to the server to list files.
+message ListRequest {}
+
+/// Response from the server to a list files request.
+message ListResponse {
+  /// The names of the files in the remote directory.
+  repeated string filenames = 1;
+}
+
+/// Request to change remote directories.
+message ChangeDirRequest {
+  /// If true, it will go up a directory instead of down.
+  bool go_up = 1;
+  /// Directory to enter if go_up is false.
+  string dir_name = 2;
+}
+
+/// Request to make a new remote directory.
+message MakeDirRequest {
+  /// The name of the new directory.
+  string dir_name = 1;
+}
+
+/// Request to show the current working directory.
+message PwdRequest {}
+
+/// Response to the PWD command.
+message PwdResponse {
+  /// The name of the current directory.
+  string dir_name = 1;
+}
+
+/// Request to end the session.
+message QuitRequest {}
+
+/**
+ * @brief Captures all possible request types. This is so we can simply parse this
+ * message type from the network and worry later about the exact request type.
+ */
+message Request {
+  oneof requests {
+    GetRequest get = 1;
+    PutRequest put = 2;
+    DeleteRequest delete = 3;
+    ListRequest list = 4;
+    ChangeDirRequest change_dir = 5;
+    MakeDirRequest make_dir = 6;
+    PwdRequest pwd = 7;
+    QuitRequest quit = 8;
+  }
+}
+
+/**
+ * @brief Captures all possible response types. This is so we can simply parse this
+ * message type from the network and worry later about the exact request type.
+ */
+message Response {
+  oneof responses {
+    GetResponse get = 1;
+    ListResponse list = 2;
+    PwdResponse pwd = 3;
+  }
+}
