@@ -1,6 +1,6 @@
-//
-// Created by jake on 1/25/21.
-//
+/**
+ * @file Implementation of common file handling operations
+ */
 
 #ifndef PROJECT1_MY_FILE_HANDLER_H
 #define PROJECT1_MY_FILE_HANDLER_H
@@ -22,12 +22,9 @@
 namespace server::file_handler{
 class MyFileHandler: public IFileHandler {
 
- private:
-  std::ofstream os;
-
  public:
 
-  std::vector<uint8_t> Get(const std::string& filename) const;
+  final std::vector<uint8_t> Get(const std::string& filename) const;
 
   bool Put(const std::string& filename,
            const std::vector<uint8_t>& contents);
@@ -43,8 +40,12 @@ class MyFileHandler: public IFileHandler {
   bool MakeDir(const std::string& name);
 
   std::string GetCurrentDir() const;
+ 
+ private:
+  
+ std::ofstream os;
 
 
 };
-} //namespace server
+} //namespace server::file_handler
 #endif  // PROJECT1_MY_FILE_HANDLER_H
