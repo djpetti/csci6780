@@ -2,7 +2,7 @@
 #include <bits/stdc++.h>
 
 namespace server::file_handler{
-  bool file_handler::MyFileHandler::Delete(const std::string &filename) {
+  bool MyFileHandler::Delete(const std::string &filename) {
 
     //convert filename to char*
     int n = filename.length();
@@ -12,7 +12,7 @@ namespace server::file_handler{
     //delete file
     return remove(fileName);
   }//Delete
-  bool file_handler::MyFileHandler::Put(const std::string &filename, const std::vector<uint8_t> &contents) {
+  bool MyFileHandler::Put(const std::string &filename, const std::vector<uint8_t> &contents) {
 
     //convert contents to string format
     std::string str_contents(contents.begin(), contents.end());
@@ -35,7 +35,7 @@ namespace server::file_handler{
     this->os.close();
     return true;
   }//Put
-  bool file_handler::MyFileHandler::MakeDir(const std::string &name) {
+  bool MyFileHandler::MakeDir(const std::string &name) {
     //convert directory name to char*
     int n = name.length();
     char dir[n+1];
@@ -44,7 +44,7 @@ namespace server::file_handler{
     if (mkdir(dir,0777)==-1) return false;
     else return true;
   }//MakeDir
-  bool file_handler::MyFileHandler::ChangeDir(const std::string &sub_folder) {
+  bool MyFileHandler::ChangeDir(const std::string &sub_folder) {
 
     //convert subdirectory name to char*
     int n = sub_folder.length();
@@ -54,7 +54,7 @@ namespace server::file_handler{
     if(chdir(dir)==-1) return false;
     else return true;
   }//ChangeDir
-  std::vector<uint8_t> file_handler::MyFileHandler::Get(const std::string &filename) const {
+  std::vector<uint8_t> MyFileHandler::Get(const std::string &filename) const {
     std::ifstream stream;
 
     stream.open(filename);
@@ -70,12 +70,12 @@ namespace server::file_handler{
 
   }//Get
 
-  bool file_handler::MyFileHandler::UpDir() {
+  bool MyFileHandler::UpDir() {
     if(chdir("..")==1) return false;
     else return true;
   }//UpDir
 
-  std::vector<std::string> file_handler::MyFileHandler::List() const {
+  std::vector<std::string> MyFileHandler::List() const {
     std::vector<std::string> list;
     for (const auto & file : std::filesystem::directory_iterator(GetCurrentDir())) {
       std::string str(file.path());
@@ -87,7 +87,7 @@ namespace server::file_handler{
 
   }//List
 
-  std::string file_handler::MyFileHandler::GetCurrentDir() const {
+  std::string MyFileHandler::GetCurrentDir() const {
     return std::filesystem::current_path();
   }//GetCurrentDir
 
