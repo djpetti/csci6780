@@ -9,23 +9,24 @@ namespace server::file_handler{
   }//Delete
   bool MyFileHandler::Put(const std::string &filename, const std::vector<uint8_t> &contents) {
 
+    std::ofstream stream;
     //convert contents to string format
     std::string str_contents(contents.begin(), contents.end());
 
     //open file
-    this->os.open(filename);
+    stream.open(filename);
 
     //write contents to file
-    this->os << str_contents;
+    stream << str_contents;
 
     //close file
-    this->os.close();
+    stream.close();
     
     return true;
   }//Put
   bool MyFileHandler::MakeDir(const std::string &name) {
     
-    return mkdir(name.c_str(),0777)==-1;
+    return mkdir(name.c_str(),0777)==0;
     
   }//MakeDir
   
