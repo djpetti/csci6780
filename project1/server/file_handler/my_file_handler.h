@@ -12,9 +12,6 @@
 #include <sys/stat.h>
 
 
-
-
-
 /**
  * @brief This class represents common file handling operations.
  *
@@ -26,26 +23,21 @@ class MyFileHandler: public IFileHandler {
 
   final std::vector<uint8_t> Get(const std::string& filename) const;
 
-  bool Put(const std::string& filename,
+  final bool Put(const std::string& filename,
            const std::vector<uint8_t>& contents);
 
-  bool Delete(const std::string& filename);
+  final bool Delete(const std::string& filename);
 
-  std::vector<std::string> List() const;
+  final std::vector<std::string> List() const;
 
-  bool ChangeDir(const std::string& sub_folder);
+  final bool ChangeDir(const std::string& sub_folder);
 
-  bool UpDir();
+  final bool UpDir();
 
-  bool MakeDir(const std::string& name);
+  final bool MakeDir(const std::string& name);
 
-  std::string GetCurrentDir() const;
+  final std::string GetCurrentDir() const;
  
- private:
-  
- std::ofstream os;
-
-
 };
 } //namespace server::file_handler
 #endif  // PROJECT1_MY_FILE_HANDLER_H
