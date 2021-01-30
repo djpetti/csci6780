@@ -1,7 +1,3 @@
-//
-// Created by jake on 1/25/21.
-//
-
 #include "my_file_handler.h"
 #include <bits/stdc++.h>
 
