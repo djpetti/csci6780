@@ -3,17 +3,17 @@
 #include <filesystem>
 namespace server::file_handler {
 bool MyFileHandler::Delete(const std::string &filename) {
-  return remove(filename.c_str());
+  return remove(filename.c_str())==0;
 
 }  // Delete
 bool MyFileHandler::Put(const std::string &filename,
                         const std::vector<uint8_t> &contents) {
-  std::ofstream stream;
+  
   // convert contents to string format
   std::string str_contents(contents.begin(), contents.end());
 
   // open file
-  stream.open(filename);
+  std::ofstream stream(filename);
 
   // write contents to file
   stream << str_contents;
@@ -36,9 +36,7 @@ bool MyFileHandler::ChangeDir(const std::string &sub_folder) {
 
 }  // ChangeDir
 std::vector<uint8_t> MyFileHandler::Get(const std::string &filename) const {
-  std::ifstream stream;
-
-  stream.open(filename);
+  std::ifstream stream(filename);
 
   // get contents of file, convert to byte vector
   std::string str_contents((std::istreambuf_iterator<char>(stream)),
