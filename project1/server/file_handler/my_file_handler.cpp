@@ -1,74 +1,73 @@
 #include "my_file_handler.h"
-#include <bits/stdc++.h>
 
-namespace server::file_handler{
-  bool MyFileHandler::Delete(const std::string &filename) {
+#include <filesystem>
+namespace server::file_handler {
+bool MyFileHandler::Delete(const std::string &filename) {
+  return remove(filename.c_str());
 
-    return remove(filename.c_str());
-    
-  }//Delete
-  bool MyFileHandler::Put(const std::string &filename, const std::vector<uint8_t> &contents) {
+}  // Delete
+bool MyFileHandler::Put(const std::string &filename,
+                        const std::vector<uint8_t> &contents) {
+  std::ofstream stream;
+  // convert contents to string format
+  std::string str_contents(contents.begin(), contents.end());
 
-    std::ofstream stream;
-    //convert contents to string format
-    std::string str_contents(contents.begin(), contents.end());
+  // open file
+  stream.open(filename);
 
-    //open file
-    stream.open(filename);
+  // write contents to file
+  stream << str_contents;
 
-    //write contents to file
-    stream << str_contents;
+  // close file
+  stream.close();
 
-    //close file
-    stream.close();
-    
-    return true;
-  }//Put
-  bool MyFileHandler::MakeDir(const std::string &name) {
-    
-    return mkdir(name.c_str(),0777)==0;
-    
-  }//MakeDir
-  
-  bool MyFileHandler::ChangeDir(const std::string &sub_folder) {
-    
-    return chdir(sub_folder.c_str());
-    
-  }//ChangeDir
-  std::vector<uint8_t> MyFileHandler::Get(const std::string &filename) const {
-    std::ifstream stream;
+  return true;
+}  // Put
+bool MyFileHandler::MakeDir(const std::string &name) {
+  const std::filesystem::path path = name;
+  return std::filesystem::create_directory(path);
 
-    stream.open(filename);
+}  // MakeDir
 
-    //get contents of file, convert to byte vector
-    std::string str_contents( (std::istreambuf_iterator<char>(stream) ),
-                         (std::istreambuf_iterator<char>()));
+bool MyFileHandler::ChangeDir(const std::string &sub_folder) {
+  const std::filesystem::path path = sub_folder;
+  std::filesystem::current_path(path);
+  return true;
 
-    std::vector<uint8_t> vec_contents(str_contents.begin(),str_contents.end());
+}  // ChangeDir
+std::vector<uint8_t> MyFileHandler::Get(const std::string &filename) const {
+  std::ifstream stream;
 
-    stream.close();
-    return vec_contents;
+  stream.open(filename);
 
-  }//Get
+  // get contents of file, convert to byte vector
+  std::string str_contents((std::istreambuf_iterator<char>(stream)),
+                           (std::istreambuf_iterator<char>()));
 
-  bool MyFileHandler::UpDir() {
-    return chdir("..")!=-1;
-  }//UpDir
+  std::vector<uint8_t> vec_contents(str_contents.begin(), str_contents.end());
 
-  std::vector<std::string> MyFileHandler::List() const {
-    std::vector<std::string> list;
-    for (const auto & file : std::filesystem::directory_iterator(GetCurrentDir())) {
-      std::string str(file.path());
-      str.erase(0,GetCurrentDir().length()+1);
-      list.push_back(str);
-    }
+  stream.close();
+  return vec_contents;
 
-    return list;
+}  // Get
 
-  }//List
+bool MyFileHandler::UpDir() { return chdir("..") != -1; }  // UpDir
 
-  std::string MyFileHandler::GetCurrentDir() const {
-    return std::filesystem::current_path();
-  }//GetCurrentDir
+std::vector<std::string> MyFileHandler::List() const {
+  std::vector<std::string> list;
+  for (const auto &file :
+       std::filesystem::directory_iterator(GetCurrentDir())) {
+    std::string str(file.path());
+    str.erase(0, GetCurrentDir().length() + 1);
+    list.push_back(str);
+  }
 
-}//namespace server
+  return list;
+
+}  // List
+
+std::string MyFileHandler::GetCurrentDir() const {
+  return std::filesystem::current_path();
+}  // GetCurrentDir
+
+}  // namespace server::file_handler
