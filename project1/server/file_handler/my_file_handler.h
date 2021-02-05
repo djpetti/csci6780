@@ -5,39 +5,39 @@
 #ifndef PROJECT1_MY_FILE_HANDLER_H
 #define PROJECT1_MY_FILE_HANDLER_H
 
-#include "file_handler.h"
-#include <iostream>
-#include <unistd.h>
-#include <fstream>
 #include <sys/stat.h>
+#include <unistd.h>
 
+#include <fstream>
+#include <iostream>
+#include <vector>
+
+#include "file_handler.h"
 
 /**
  * @brief This class represents common file handling operations.
  *
  */
-namespace server::file_handler{
-class MyFileHandler: public IFileHandler {
-
+namespace server::file_handler {
+class MyFileHandler : public IFileHandler {
  public:
+  [[nodiscard]] std::vector<uint8_t> Get(
+      const std::string& filename) const final;
 
-  final std::vector<uint8_t> Get(const std::string& filename) const;
+  bool Put(const std::string& filename,
+           const std::vector<uint8_t>& contents) final;
 
-  final bool Put(const std::string& filename,
-           const std::vector<uint8_t>& contents);
+  bool Delete(const std::string& filename) final;
 
-  final bool Delete(const std::string& filename);
+  [[nodiscard]] std::vector<std::string> List() const final;
 
-  final std::vector<std::string> List() const;
+  bool ChangeDir(const std::string& sub_folder) final;
 
-  final bool ChangeDir(const std::string& sub_folder);
+  bool UpDir() final;
 
-  final bool UpDir();
+  bool MakeDir(const std::string& name) final;
 
-  final bool MakeDir(const std::string& name);
-
-  final std::string GetCurrentDir() const;
- 
+  [[nodiscard]] std::string GetCurrentDir() const final;
 };
-} //namespace server::file_handler
+}  // namespace server::file_handler
 #endif  // PROJECT1_MY_FILE_HANDLER_H
