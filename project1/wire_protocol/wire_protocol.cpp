@@ -1,6 +1,5 @@
 #include "wire_protocol.h"
 
-
 namespace wire_protocol {
 
 bool Serialize(const google::protobuf::Message& message,
@@ -9,7 +8,9 @@ bool Serialize(const google::protobuf::Message& message,
   const uint32_t kMessageSize = message.ByteSizeLong();
   const uint32_t kMessageSizeNetwork = htonl(kMessageSize);
   serialized->resize(sizeof(kMessageSize) + kMessageSize);
-  std::copy(&kMessageSizeNetwork, &kMessageSizeNetwork + 1, serialized->data());
+  std::copy(reinterpret_cast<const uint8_t*>(&kMessageSizeNetwork),
+            reinterpret_cast<const uint8_t*>(&kMessageSizeNetwork + 1),
+            serialized->data());
 
   // Serialize the actual message.
   return message.SerializeToArray(
