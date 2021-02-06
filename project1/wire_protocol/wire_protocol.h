@@ -23,7 +23,8 @@ namespace wire_protocol {
  * @brief Serializes a message to the wire format. Once this is done, it can
  *  be safely sent over a socket.
  * @param message The message to serialize.
- * @param[out] serialized Will be set to the serialized output data.
+ * @param[out] serialized Will be set to the serialized output data. The size
+ *  will be updated accordingly.
  * @return True if it succeeded in serializing, false otherwise.
  */
 bool Serialize(const google::protobuf::Message& message,
@@ -38,21 +39,6 @@ class MessageParser {
   // Make sure we're actually parsing protobuf messages.
   static_assert(std::is_base_of<google::protobuf::Message, MessageType>::value,
                 "Can only make parsers for protobuf messages.");
-
-  /// Type we use to store the length in serialized messages.
-  using MessageLengthType = uint32_t;
-  /// Size of the length prefix to each message.
-  static constexpr uint8_t kNumLengthBytes = sizeof(MessageLengthType);
-
-  /// Keeps track of which state the parser is in.
-  enum class ParserState {
-    /// Parsing the length.
-    PARSING_LENGTH,
-    /// Parsing the message.
-    PARSING_MESSAGE,
-    /// Parsed a complete message.
-    PARSING_DONE,
-  };
 
  public:
   /**
@@ -100,7 +86,33 @@ class MessageParser {
     return kParseResult;
   };
 
+  /**
+   * @brief Resets the parser state.
+   */
+  void ResetParser() {
+    state_ = ParserState::PARSING_LENGTH;
+    got_length_bytes_ = 0;
+    partial_message_.clear();
+    expected_length_ = std::numeric_limits<uint32_t>::max();
+    overflow_message_data_.clear();
+  }
+
  private:
+  /// Type we use to store the length in serialized messages.
+  using MessageLengthType = uint32_t;
+  /// Size of the length prefix to each message.
+  static constexpr uint8_t kNumLengthBytes = sizeof(MessageLengthType);
+
+  /// Keeps track of which state the parser is in.
+  enum class ParserState {
+    /// Parsing the length.
+    PARSING_LENGTH,
+    /// Parsing the message.
+    PARSING_MESSAGE,
+    /// Parsed a complete message.
+    PARSING_DONE,
+  };
+
   /**
    * @brief Handles parsing the length from the input data.
    * @param data The input data.
@@ -188,17 +200,6 @@ class MessageParser {
     overflow_message_data_.resize(kCurrentOverflowSize + kRemainingData);
     std::copy(data.begin() + start_offset, data.end(),
               overflow_message_data_.begin() + kCurrentOverflowSize);
-  }
-
-  /**
-   * @brief Resets the parser state.
-   */
-  void ResetParser() {
-    state_ = ParserState::PARSING_LENGTH;
-    got_length_bytes_ = 0;
-    partial_message_.clear();
-    expected_length_ = std::numeric_limits<uint32_t>::max();
-    overflow_message_data_.clear();
   }
 
   /// Tracks the current parser state.

@@ -1,12 +1,12 @@
-#include "my_file_handler.h"
+#include "file_handler.h"
 
 #include <filesystem>
 namespace server::file_handler {
-bool MyFileHandler::Delete(const std::string &filename) {
+bool FileHandler::Delete(const std::string &filename) {
   return remove(filename.c_str())==0;
 
 }  // Delete
-bool MyFileHandler::Put(const std::string &filename,
+bool FileHandler::Put(const std::string &filename,
                         const std::vector<uint8_t> &contents) {
   
   // convert contents to string format
@@ -23,19 +23,19 @@ bool MyFileHandler::Put(const std::string &filename,
 
   return true;
 }  // Put
-bool MyFileHandler::MakeDir(const std::string &name) {
+bool FileHandler::MakeDir(const std::string &name) {
   const std::filesystem::path path = name;
   return std::filesystem::create_directory(path);
 
 }  // MakeDir
 
-bool MyFileHandler::ChangeDir(const std::string &sub_folder) {
+bool FileHandler::ChangeDir(const std::string &sub_folder) {
   const std::filesystem::path path = sub_folder;
   std::filesystem::current_path(path);
   return true;
 
 }  // ChangeDir
-std::vector<uint8_t> MyFileHandler::Get(const std::string &filename) const {
+std::vector<uint8_t> FileHandler::Get(const std::string &filename) const {
   std::ifstream stream(filename);
 
   // get contents of file, convert to byte vector
@@ -49,9 +49,9 @@ std::vector<uint8_t> MyFileHandler::Get(const std::string &filename) const {
 
 }  // Get
 
-bool MyFileHandler::UpDir() { return chdir("..") != -1; }  // UpDir
+bool FileHandler::UpDir() { return chdir("..") != -1; }  // UpDir
 
-std::vector<std::string> MyFileHandler::List() const {
+std::vector<std::string> FileHandler::List() const {
   std::vector<std::string> list;
   for (const auto &file :
        std::filesystem::directory_iterator(GetCurrentDir())) {
@@ -64,7 +64,7 @@ std::vector<std::string> MyFileHandler::List() const {
 
 }  // List
 
-std::string MyFileHandler::GetCurrentDir() const {
+std::string FileHandler::GetCurrentDir() const {
   return std::filesystem::current_path();
 }  // GetCurrentDir
 

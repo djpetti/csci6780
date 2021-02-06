@@ -1,77 +1,43 @@
 /**
- * @file Common interface for filesystem operations.
+ * @file Implementation of common file handling operations
  */
 
 #ifndef PROJECT1_FILE_HANDLER_H
 #define PROJECT1_FILE_HANDLER_H
 
-#include <cstdint>
-#include <string>
+#include <sys/stat.h>
+#include <unistd.h>
+
+#include <fstream>
+#include <iostream>
 #include <vector>
 
-namespace server::file_handler {
+#include "file_handler_interface.h"
 
 /**
- * @brief Common interface for filesystem operations.
+ * @brief This class represents common file handling operations.
+ *
  */
-class IFileHandler {
+namespace server::file_handler {
+class FileHandler : public IFileHandler {
  public:
-  /**
-   * @brief Gets the contents of a file in the current remote directory on the
-   *    server.
-   * @param filename The name of the file to get.
-   * @return The binary contents of the file.
-   */
-  virtual std::vector<uint8_t> Get(const std::string& filename) const = 0;
+  [[nodiscard]] std::vector<uint8_t> Get(
+      const std::string& filename) const final;
 
-  /**
-   * @brief Creates a new file in the current remote directory on the server.
-   * @param filename The name of the file to create.
-   * @param contents The binary contents of the new file.
-   * @return True on success, false on failure.
-   */
-  virtual bool Put(const std::string& filename,
-                   const std::vector<uint8_t>& contents) = 0;
+  bool Put(const std::string& filename,
+           const std::vector<uint8_t>& contents) final;
 
-  /**
-   * @brief Deletes a file in the current remote directory on the server.
-   * @param filename The name of the file to delete.
-   * @return True on success, false on failure.
-   */
-  virtual bool Delete(const std::string& filename) = 0;
+  bool Delete(const std::string& filename) final;
 
-  /**
-   * @brief Lists the files in the current remote directory.
-   * @return The list of files on the remote.
-   */
-  virtual std::vector<std::string> List() const = 0;
+  [[nodiscard]] std::vector<std::string> List() const final;
 
-  /**
-   * @brief Changes to a new directory that is a sub-folder of the current one.
-   * @param sub_folder The sub-folder to enter.
-   * @return True on success, false on failure.
-   */
-  virtual bool ChangeDir(const std::string& sub_folder) = 0;
+  bool ChangeDir(const std::string& sub_folder) final;
 
-  /**
-   * @brief Moves to the parent of the current directory.
-   * @return True on success, false on failure.
-   */
-  virtual bool UpDir() = 0;
+  bool UpDir() final;
 
-  /**
-   * @brief Creates a new sub-directory within the current remote directory.
-   * @param name The name of the sub-directory.
-   * @return True on success, false on failure.
-   */
-  virtual bool MakeDir(const std::string& name) = 0;
+  bool MakeDir(const std::string& name) final;
 
-  /**
-   * @return The full path to the current remote directory.
-   */
-  virtual std::string GetCurrentDir() const = 0;
+  [[nodiscard]] std::string GetCurrentDir() const final;
 };
-
-}  // namespace server
-
+}  // namespace server::file_handler
 #endif  // PROJECT1_FILE_HANDLER_H
