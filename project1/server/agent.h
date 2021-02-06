@@ -29,6 +29,8 @@ class Agent {
   Agent(int client_fd,
         std::unique_ptr<file_handler::IFileHandler> file_handler);
 
+  ~Agent();
+
   /**
    * @brief Handles this particular client, until the client disconnects.
    * @note This will block and is meant to be run in its own thread..

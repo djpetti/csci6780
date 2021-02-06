@@ -1,6 +1,7 @@
 #include "agent.h"
 
 #include <sys/socket.h>
+#include <unistd.h>
 
 #include <cstdio>
 #include <iostream>
@@ -13,6 +14,11 @@ using ftp_messages::Response;
 
 Agent::Agent(int client_fd, std::unique_ptr<IFileHandler> file_handler)
     : client_fd_(client_fd), file_handler_(std::move(file_handler)) {}
+
+Agent::~Agent() {
+  // Close the socket.
+  close(client_fd_);
+}
 
 bool Agent::Handle() {
   ClientState client_state = ClientState::ACTIVE;
