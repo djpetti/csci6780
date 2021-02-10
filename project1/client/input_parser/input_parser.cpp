@@ -70,7 +70,6 @@ Request InputParser::CreateGetReq() {
 }
 
 Request InputParser::CreateReq() {
-    Request request;
     switch (req_) {
         case GETF:
             return CreateGetReq();
@@ -96,7 +95,8 @@ Request InputParser::CreateReq() {
         case QUIT:
             return CreateQuitReq();
     }
-    return (request);
+
+    return {};
 }
 Request InputParser::CreatePutReq() {
   Request request;

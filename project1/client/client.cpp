@@ -139,35 +139,35 @@ void Client::HandleResponse() {
 }
 
 void Client::Output() {
-    std::istringstream iss(output_);
-    int i = 0;
+  std::istringstream iss(output_);
+  int i = 0;
 
-    //might be unnecessary
-    std::cout<<"\n";
+  // might be unnecessary
+  std::cout << "\n";
 
-    do {
-        std::string word;
-        iss >> word;
-        std::cout<<word+"   ";
-        if (i==3){
-            std::cout<<"\n";
-            i = 0;
-        }
-        i++;
-    } while(iss);
+  do {
+    std::string word;
+    iss >> word;
+    std::cout << word + "   ";
+    if (i == 3) {
+      std::cout << "\n";
+      i = 0;
+    }
+    i++;
+  } while (iss);
 }
 bool Client::FtpShell() {
   ftp_messages::Request r;
 
   while (connected_) {
     // reset input string
-    std::string input = "";
+    std::string input;
 
     // will have to pay attention to formatting here when implementing Output()
     std::cout << "\nmyftp> ";
 
     // get input
-    std::cin >> input;
+    std::getline(std::cin, input);
 
     // determine command
     ip_ = new InputParser(input);
@@ -176,15 +176,15 @@ bool Client::FtpShell() {
     r = ip_->CreateReq();
     wire_protocol::Serialize(r, &outgoing_msg_buf_);
 
-    if (r.has_quit()){
-        // close socket connection
-        close(client_fd_);
+    if (r.has_quit()) {
+      // close socket connection
+      close(client_fd_);
 
-        delete ip_;
+      delete ip_;
 
-        // exit loop, no need to send request
-        connected_ = false;
-        continue;
+      // exit loop, no need to send request
+      connected_ = false;
+      continue;
     }
     SendReq();
     WaitForResponse();

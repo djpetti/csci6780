@@ -12,6 +12,13 @@ using file_handler::IFileHandler;
 using ftp_messages::Request;
 using ftp_messages::Response;
 
+namespace {
+
+/// Generic empty response.
+const Response kEmptyResponse{};
+
+}  // namespace
+
 Agent::Agent(int client_fd, std::unique_ptr<IFileHandler> file_handler)
     : client_fd_(client_fd), file_handler_(std::move(file_handler)) {}
 
@@ -133,7 +140,9 @@ Agent::ClientState Agent::HandleRequest(
     std::cerr << "Failed to write the file." << std::endl;
     return ClientState::ERROR;
   }
-  return ClientState::ACTIVE;
+
+  return SendResponse(kEmptyResponse) ? ClientState::ACTIVE
+                                      : ClientState::ERROR;
 }
 
 Agent::ClientState Agent::HandleRequest(
@@ -145,7 +154,9 @@ Agent::ClientState Agent::HandleRequest(
     std::cerr << "Failed to delete the file." << std::endl;
     return ClientState::ERROR;
   }
-  return ClientState::ACTIVE;
+
+  return SendResponse(kEmptyResponse) ? ClientState::ACTIVE
+                                      : ClientState::ERROR;
 }
 
 Agent::ClientState Agent::HandleRequest(
@@ -182,7 +193,8 @@ Agent::ClientState Agent::HandleRequest(
     }
   }
 
-  return ClientState::ACTIVE;
+  return SendResponse(kEmptyResponse) ? ClientState::ACTIVE
+                                      : ClientState::ERROR;
 }
 
 Agent::ClientState Agent::HandleRequest(
@@ -194,7 +206,9 @@ Agent::ClientState Agent::HandleRequest(
     std::cerr << "Failed to create a directory." << std::endl;
     return ClientState::ERROR;
   }
-  return ClientState::ACTIVE;
+
+  return SendResponse(kEmptyResponse) ? ClientState::ACTIVE
+                                      : ClientState::ERROR;
 }
 
 Agent::ClientState Agent::HandleRequest(
