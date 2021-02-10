@@ -4,13 +4,12 @@
 #include <iostream>
 
 
-namespace client {
-    using client::input_parser::InputParser;
+namespace {
 
     /**
      * @brief helper function for making a socket address structure
      *
-     * @note could contain some fundamental errors...
+     * @param port FTP server Port #
      */
     struct sockaddr_in MakeAddress(uint16_t port) {
         struct sockaddr_in address{};
@@ -24,12 +23,11 @@ namespace client {
     /**
      * @brief connects to socket
      * @param address socket address structure
-     * @param name FTP Server IP Address
+     * @param hostname FTP server IP address
      * @return socket fd on success, -1 on failure
      *
-     * @note could contain some fundamental errors...
      */
-    int SetUpSocket(const struct sockaddr_in &address, std::string &name) {
+    int SetUpSocket(const struct sockaddr_in &address, const std::string &hostname) {
         int sock = 0;
 
         if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
@@ -37,7 +35,7 @@ namespace client {
             return -1;
         }
 
-        if (inet_pton(AF_INET, name.c_str(), (struct sockaddr *) &address.sin_addr) <= 0) {
+        if (inet_pton(AF_INET, hostname.c_str(), (struct sockaddr *) &address.sin_addr) <= 0) {
             perror("Invalid Address or Address not supported");
             return -1;
         }
@@ -50,72 +48,111 @@ namespace client {
 
         return sock;
     }
+}//anon namespace
 
-    bool Client::Connect(std::string name, uint16_t port) {
-        client_fd = SetUpSocket(MakeAddress(port), name);
-        connected = true;
-        return connected;
+namespace client {
+
+    using client::input_parser::InputParser;
+
+    bool Client::Connect(const std::string &hostname, uint16_t port) {
+        client_fd_ = SetUpSocket(MakeAddress(port), hostname);
+        connected_ = true;
+        return connected_;
     }
 
     bool Client::SendReq() {
-        if (!connected) {
+        if (!connected_) {
             perror("Cannot Send Request... no longer connected to server");
-        }
-        if (send(client_fd, outgoing_msg_buf_.data(), outgoing_msg_buf_.size(), 0) < 0) {
-            perror("Failed to send request.");
             return false;
         }
+        if (send(client_fd_, outgoing_msg_buf_.data(), outgoing_msg_buf_.size(), 0) < 0) {
+            perror("Failed to send request");
+            return false;
+        }
+        //empty buffer
+        outgoing_msg_buf_.clear();
+
         return true;
     }
 
-    void Client::HandleResponse() {
-        output = "";
+    bool Client::WaitForResponse() {
+        while (!parser_.HasCompleteMessage()) {
+            incoming_msg_buf_.resize(kBufferSize);
 
-        //not sure if this is bad or not.. CLion yelled at me for not initializing.
+            const auto bytes_read =
+                    recv(client_fd_, incoming_msg_buf_.data(), kBufferSize, 0);
+            if (bytes_read < 0) {
+                connected_ = false;
+            } else if (bytes_read == 0) {
+                connected_ = false;
+            }
+
+            incoming_msg_buf_.resize(bytes_read);
+
+            parser_.AddNewData(incoming_msg_buf_);
+        }
+
+        //empty buffer
+        incoming_msg_buf_.clear();
+
+        return connected_;
+    }
+
+    void Client::HandleResponse() {
+        output_ = "";
+
         ftp_messages::Response *msg = nullptr;
 
         parser_.GetMessage(msg);
 
-        //determine the type of response
+        //determine type of response and respond accordingly
         if (msg->has_get()) {
 
-            //I'm not 100% about this casting but I think it's correct.
-            ftp_messages::GetResponse *gResponse = (ftp_messages::GetResponse *) msg;
 
-            //no, I don't use the FileHandler class I made. will change eventually
+            auto g_response = msg->get();
+
             std::ofstream new_file;
-            new_file.open(ip->GetFilename());
-            new_file << gResponse->file_contents();
+            new_file.open(ip_->GetFilename());
+            new_file << g_response.file_contents();
         } else if (msg->has_list()) {
 
-            //I'm not 100% about this casting but I think it's correct.
-            ftp_messages::ListResponse *lResponse = (ftp_messages::ListResponse *) msg;
+            auto l_response = msg->list();
 
             //append filenames to output string separated by whitespace
-            for (int i = 0; i < lResponse->filenames_size(); i++) {
-                output.append(lResponse->filenames(i));
-                if (!(i == lResponse->filenames_size() - 1)) {
-                    output.append(" ");
+            for (int i = 0; i < l_response.filenames_size(); i++) {
+                output_.append(l_response.filenames(i));
+                if (i != l_response.filenames_size() - 1) {
+                    output_.append(" ");
                 }
             }
         } else if (msg->has_pwd()) {
 
-            //I'm not 100% about this casting but I think it's correct.
-            ftp_messages::PwdResponse *pwdResponse = (ftp_messages::PwdResponse *) msg;
-            output = pwdResponse->dir_name();
+            auto pwd_response = msg->pwd();
+            output_ = pwd_response.dir_name();
         }
 
         //make sure outputting is necessary
-        if (output.compare("")) {
-            //does nothing currently
+        if (output_.compare("")) {
             Output();
         }
 
     }
 
-    void Client::FtpShell() {
+    void Client::Output() {
 
-        do {
+    }
+    bool Client::FtpShell() {
+        ftp_messages::GetRequest g;
+        ftp_messages::PutRequest p;
+        ftp_messages::ChangeDirRequest cd;
+        ftp_messages::ListRequest ls;
+        ftp_messages::PwdRequest pwd;
+        ftp_messages::DeleteRequest del;
+        ftp_messages::QuitRequest q;
+        ftp_messages::MakeDirRequest mkdir;
+        ftp_messages::Request r;
+
+        while (connected_) {
             //reset input string
             std::string input = "";
 
@@ -126,58 +163,54 @@ namespace client {
             std::cin >> input;
 
             //determine command
-            ip = new InputParser(input);
-            InputParser::ReqType req = ip->GetReqType();
+            ip_ = new InputParser(input);
+            InputParser::ReqType req = ip_->GetReqType();
 
             //create & serialize request message for determined command
             switch (req) {
                 case InputParser::GETF:
-                    g = ip->CreateGetReq();
-                    SerializeMessage(g);
+                    g = ip_->CreateGetReq();
+                    wire_protocol::Serialize(g, &outgoing_msg_buf_);
                     break;
                 case InputParser::PUTF:
-                    p = ip->CreatePutReq();
-                    SerializeMessage(p);
+                    p = ip_->CreatePutReq();
+                    wire_protocol::Serialize(p, &outgoing_msg_buf_);
                     break;
                 case InputParser::DEL:
-                    del = ip->CreateDelReq();
-                    SerializeMessage(del);
+                    del = ip_->CreateDelReq();
+                    wire_protocol::Serialize(del, &outgoing_msg_buf_);
                     break;
                 case InputParser::LS:
-                    ls = ip->CreateListReq();
-                    SerializeMessage(ls);
+                    ls = ip_->CreateListReq();
+                    wire_protocol::Serialize(ls, &outgoing_msg_buf_);
                     break;
                 case InputParser::CD:
-                    cd = ip->CreateCDReq();
-                    SerializeMessage(cd);
+                    cd = ip_->CreateCDReq();
+                    wire_protocol::Serialize(cd, &outgoing_msg_buf_);
                     break;
                 case InputParser::MKDIR:
-                    mkdir = ip->CreateMkdirReq();
-                    SerializeMessage(mkdir);
+                    mkdir = ip_->CreateMkdirReq();
+                    wire_protocol::Serialize(mkdir, &outgoing_msg_buf_);
                     break;
                 case InputParser::PWD:
-                    pwd = ip->CreatePwdReq();
-                    SerializeMessage(pwd);
+                    pwd = ip_->CreatePwdReq();
+                    wire_protocol::Serialize(pwd, &outgoing_msg_buf_);
                     break;
                 case InputParser::QUIT:
-                    q = ip->CreateQuitReq();
-                    SerializeMessage(q);
+                    q = ip_->CreateQuitReq();
 
                     //close socket connection
-                    close(client_fd);
-                    connected = false;
+                    close(client_fd_);
+                    connected_ = false;
 
-                    //should skip this iteration of the loop,
-                    //avoiding the functions called below.
-                    //basically this should exit the do-while
+                    //exit loop, no need to send request
                     continue;
             }
             SendReq();
             WaitForResponse();
             HandleResponse();
-
-        } while (connected);
-
+        }
+        return true;
 
     }
-}
+}//namespace client

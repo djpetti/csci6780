@@ -22,7 +22,7 @@ namespace client::input_parser {
             std::string word;
             server::file_handler::MyFileHandler fh;
             iss >> word;
-            for (int i = 0; i < commands->length(); i++) {
+            for (int i = 0; i < (int) commands->length(); i++) {
 
                 //determine which command, extract further information if necessary
                 if (!word.compare(commands[i])) {
