@@ -8,5 +8,4 @@ include(googletest.cmake)
 
 add_subdirectory(server)
 add_subdirectory(wire_protocol)
-
-add_executable(project1 main.cpp)
+add_subdirectory(client)

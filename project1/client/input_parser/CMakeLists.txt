@@ -1,0 +1,3 @@
+add_library(input_parser input_parser.h input_parser.cpp)
+set_target_properties(input_parser PROPERTIES LINKER_LANGUAGE CXX)
+target_link_libraries(input_parser wire_protocol file_handler)
