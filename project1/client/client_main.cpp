@@ -18,10 +18,10 @@ int main(int argc, const char **argv) {
     client::Client ftp_client;
 
     //second program argument should be the server port #
-    const auto kPort = strtol(argv[1], nullptr, 10);
+    const auto kPort = strtol(argv[2], nullptr, 10);
 
     //first program argument should be the server IP address
-    ftp_client.Connect(argv[0], kPort);
+    ftp_client.Connect(argv[1], kPort);
 
     //spawn the shell
     ftp_client.FtpShell();

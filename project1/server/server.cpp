@@ -14,6 +14,8 @@
 namespace server {
 namespace {
 
+using file_handler::FileHandler;
+
 /// Maximum queue size to use for listening on the server socket.
 constexpr uint8_t kMaxQueueSize = 5;
 
@@ -67,9 +69,19 @@ int SetUpSocket(const struct sockaddr_in &address) {
   return server_fd;
 }
 
-}  // namespace
+/**
+ * @brief Handles a single connection. Meant to be run in a thread.
+ * @param client_fd The file descriptor of the client.
+ * @return True if the client was successfully serviced.
+ */
+bool HandleClient(int client_fd) {
+  auto file_handler = std::make_unique<FileHandler>();
+  Agent agent(client_fd, std::move(file_handler));
 
-using file_handler::FileHandler;
+  return agent.Handle();
+}
+
+}  // namespace
 
 void Server::Listen(uint16_t port) {
   // Create the socket.
@@ -92,9 +104,7 @@ void Server::Listen(uint16_t port) {
     std::cout << "Handling new connection." << std::endl;
 
     // Create a new agent and handle the client in a new thread.
-    auto file_handler = std::make_unique<FileHandler>();
-    Agent agent(client_fd, std::move(file_handler));
-    std::thread agent_thread(&Agent::Handle, &agent);
+    std::thread agent_thread(HandleClient, client_fd);
     // For now, we can get away with just flinging this thread off into the
     // ether.
     agent_thread.detach();

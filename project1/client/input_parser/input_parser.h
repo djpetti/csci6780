@@ -1,13 +1,17 @@
 #ifndef PROJECT1_INPUT_PARSER_H
 #define PROJECT1_INPUT_PARSER_H
 
-#include "../../wire_protocol/wire_protocol.h"
-#include "../../server/file_handler/file_handler.h"
-#include "ftp_messages.pb.h"
-#include <sstream>
+#include <ftp_messages.pb.h>
+
+#include <array>
 #include <cstdint>
+#include <sstream>
 #include <string>
 #include <vector>
+
+#include "../../server/file_handler/file_handler.h"
+#include "../../wire_protocol/wire_protocol.h"
+#include "ftp_messages.pb.h"
 
 namespace client::input_parser {
 
@@ -46,13 +50,13 @@ namespace client::input_parser {
          * creates a get request
          * @return the request
          */
-        ftp_messages::GetRequest CreateGetReq();
+        ftp_messages::Request CreateGetReq();
 
         /**
          * creates a put request
          * @return the request
          */
-        ftp_messages::PutRequest CreatePutReq();
+        ftp_messages::Request CreatePutReq();
 
         /**
          * creates a delete request
@@ -64,7 +68,7 @@ namespace client::input_parser {
          * creates a list request
          * @return the request
          */
-        ftp_messages::ListRequest CreateListReq();
+        ftp_messages::Request CreateListReq();
 
         /**
          * creates a cd request
@@ -93,7 +97,7 @@ namespace client::input_parser {
     private:
 
 
-        const std::string commands[8] = {"get", "put", "delete", "ls", "cd", "mkdir", "pwd", "quit"};\
+        const std::array<std::string, 8> commands_ = {"get", "put", "delete", "ls", "cd", "mkdir", "pwd", "quit"};\
 
         //information to be extracted from input
         ReqType req;
