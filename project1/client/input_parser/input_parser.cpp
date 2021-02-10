@@ -12,8 +12,8 @@ using ftp_messages::QuitRequest;
 using ftp_messages::Request;
 
 InputParser::InputParser(std::string &cmd) {
-  this->fn = "";
-  this->dn = "";
+  fn_ = "";
+  dn_ = "";
 
   // iterate through each word in input
   // the validity of this code relies on correct input syntax
@@ -27,61 +27,87 @@ InputParser::InputParser(std::string &cmd) {
       if (!word.compare(commands_[i])) {
         switch (i) {
           case 0:
-            iss >> this->fn;
-            this->req = GETF;
+            iss >> fn_;
+            req_ = GETF;
             break;
           case 1:
-            iss >> this->fn;
-            this->req = PUTF;
-            this->contents = fh.Get(fn);
+            iss >> this->fn_;
+            req_ = PUTF;
+            contents_ = fh.Get(fn_);
             break;
           case 2:
-            iss >> this->fn;
-            this->req = DEL;
+            iss >> fn_;
+            req_ = DEL;
             break;
           case 3:
-            this->req = LS;
+            req_ = LS;
             break;
           case 4:
-            iss >> dn;
-            this->req = CD;
+            iss >> dn_;
+            req_ = CD;
             break;
           case 5:
-            iss >> dn;
-            this->req = MKDIR;
+            iss >> dn_;
+            req_ = MKDIR;
             break;
           case 6:
-            this->req = PWD;
+            req_ = PWD;
             break;
           case 7:
-            this->req = QUIT;
+            req_ = QUIT;
             break;
         }
       }
     }
   } while (iss);
 }  // InputParser
-InputParser::ReqType InputParser::GetReqType() {
-  return this->req;
-}  // GetReqType()
 
-std::string InputParser::GetFilename() { return fn; }
+std::string InputParser::GetFilename() { return fn_; }
 Request InputParser::CreateGetReq() {
   Request request;
-  request.mutable_get()->set_filename(this->fn);
+  request.mutable_get()->set_filename(fn_);
   return request;
 }
 
+Request InputParser::CreateReq() {
+    Request request;
+    switch (req_) {
+        case GETF:
+            return CreateGetReq();
+
+        case PUTF:
+            return CreatePutReq();
+
+        case DEL:
+            return CreateDelReq();
+
+        case LS:
+            return CreateListReq();
+
+        case CD:
+            return CreateCDReq();
+
+        case MKDIR:
+            return CreateMkdirReq();
+
+        case PWD:
+            return CreatePwdReq();
+
+        case QUIT:
+            return CreateQuitReq();
+    }
+    return (request);
+}
 Request InputParser::CreatePutReq() {
   Request request;
-  request.mutable_put()->set_filename(this->fn);
-  std::string c(contents.begin(), contents.end());
+  request.mutable_put()->set_filename(fn_);
+  std::string c(contents_.begin(), contents_.end());
   request.mutable_put()->set_file_contents(c);
   return request;
 }
-ftp_messages::DeleteRequest InputParser::CreateDelReq() {
-  ftp_messages::DeleteRequest request;
-  request.set_filename(this->fn);
+Request InputParser::CreateDelReq() {
+  Request request;
+  request.mutable_delete_()->set_filename(fn_);
   return request;
 }
 Request InputParser::CreateListReq() {
@@ -89,29 +115,31 @@ Request InputParser::CreateListReq() {
   request.mutable_list()->Clear();
   return request;
 }
-ftp_messages::ChangeDirRequest InputParser::CreateCDReq() {
-  ftp_messages::ChangeDirRequest request;
+Request InputParser::CreateCDReq() {
+  Request request;
 
   // compare returns 0 on equal strings, hence '!'
-  if (!this->dn.compare("..")) {
-    request.set_go_up(true);
+  if (!dn_.compare("..")) {
+    request.mutable_change_dir()->set_go_up(true);
   } else {
-    request.set_go_up(false);
+      request.mutable_change_dir()->set_go_up(false);
   }
-  request.set_dir_name(this->dn);
+  request.mutable_change_dir()->set_dir_name(dn_);
   return request;
 }
-ftp_messages::MakeDirRequest InputParser::CreateMkdirReq() {
-  ftp_messages::MakeDirRequest request;
-  request.set_dir_name(this->dn);
+Request InputParser::CreateMkdirReq() {
+  Request request;
+  request.mutable_make_dir()->set_dir_name(dn_);
   return request;
 }
-ftp_messages::PwdRequest InputParser::CreatePwdReq() {
-  ftp_messages::PwdRequest request;
+Request InputParser::CreatePwdReq() {
+  Request request;
+  request.mutable_pwd();
   return request;
 }
-ftp_messages::QuitRequest InputParser::CreateQuitReq() {
-  ftp_messages::QuitRequest request;
+Request InputParser::CreateQuitReq() {
+  Request request;
+  request.mutable_quit();
   return request;
 }
 }  // namespace client::input_parser

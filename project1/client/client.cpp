@@ -134,18 +134,29 @@ void Client::HandleResponse() {
   if (output_.compare("")) {
     Output();
   }
+
+  delete ip_;
 }
 
-void Client::Output() {}
+void Client::Output() {
+    std::istringstream iss(output_);
+    int i = 0;
+
+    //might be unnecessary
+    std::cout<<"\n";
+
+    do {
+        std::string word;
+        iss >> word;
+        std::cout<<word+"   ";
+        if (i==3){
+            std::cout<<"\n";
+            i = 0;
+        }
+        i++;
+    } while(iss);
+}
 bool Client::FtpShell() {
-  ftp_messages::GetRequest g;
-  ftp_messages::PutRequest p;
-  ftp_messages::ChangeDirRequest cd;
-  ftp_messages::ListRequest ls;
-  ftp_messages::PwdRequest pwd;
-  ftp_messages::DeleteRequest del;
-  ftp_messages::QuitRequest q;
-  ftp_messages::MakeDirRequest mkdir;
   ftp_messages::Request r;
 
   while (connected_) {
@@ -160,46 +171,19 @@ bool Client::FtpShell() {
 
     // determine command
     ip_ = new InputParser(input);
-    InputParser::ReqType req = ip_->GetReqType();
 
     // create & serialize request message for determined command
-    switch (req) {
-      case InputParser::GETF:
-        r = ip_->CreateGetReq();
-        wire_protocol::Serialize(r, &outgoing_msg_buf_);
-        break;
-      case InputParser::PUTF:
-        r = ip_->CreatePutReq();
-        wire_protocol::Serialize(r, &outgoing_msg_buf_);
-        break;
-      case InputParser::DEL:
-        del = ip_->CreateDelReq();
-        wire_protocol::Serialize(del, &outgoing_msg_buf_);
-        break;
-      case InputParser::LS:
-        r = ip_->CreateListReq();
-        wire_protocol::Serialize(r, &outgoing_msg_buf_);
-        break;
-      case InputParser::CD:
-        cd = ip_->CreateCDReq();
-        wire_protocol::Serialize(cd, &outgoing_msg_buf_);
-        break;
-      case InputParser::MKDIR:
-        mkdir = ip_->CreateMkdirReq();
-        wire_protocol::Serialize(mkdir, &outgoing_msg_buf_);
-        break;
-      case InputParser::PWD:
-        pwd = ip_->CreatePwdReq();
-        wire_protocol::Serialize(pwd, &outgoing_msg_buf_);
-        break;
-      case InputParser::QUIT:
-        q = ip_->CreateQuitReq();
+    r = ip_->CreateReq();
+    wire_protocol::Serialize(r, &outgoing_msg_buf_);
 
+    if (r.has_quit()){
         // close socket connection
         close(client_fd_);
-        connected_ = false;
+
+        delete ip_;
 
         // exit loop, no need to send request
+        connected_ = false;
         continue;
     }
     SendReq();

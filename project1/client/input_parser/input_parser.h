@@ -17,10 +17,8 @@ namespace client::input_parser {
 
     /**
      * @brief Assists in mapping input commands for FTP client to corresponding
-     * protobuf requests.
+     * protobuf request.
      *
-     * @note There's definitely some redundancy here. Will likely change
-     * this class to have templated CreateReq functions in project 2.
      */
     class InputParser {
     public:
@@ -32,21 +30,23 @@ namespace client::input_parser {
          * @note assumes correct syntax
          */
         InputParser(std::string& cmd);
-        ~InputParser();
 
-        /**
-         * @brief tells user the request type
-         * @return the request type. user relies on this information to determine
-         * which CreateReq function to call
-         */
-        ReqType GetReqType();
 
         /**
          * @brief getter for filename
          * @return the filename
          */
         std::string GetFilename();
+
         /**
+         * creates the request to be sent
+         * @return
+         */
+        ftp_messages::Request CreateReq();
+
+
+    private:
+/**
          * creates a get request
          * @return the request
          */
@@ -62,7 +62,7 @@ namespace client::input_parser {
          * creates a delete request
          * @return the request
          */
-        ftp_messages::DeleteRequest CreateDelReq();
+        ftp_messages::Request CreateDelReq();
 
         /**
          * creates a list request
@@ -74,36 +74,33 @@ namespace client::input_parser {
          * creates a cd request
          * @return the request
          */
-        ftp_messages::ChangeDirRequest CreateCDReq();
+        ftp_messages::Request CreateCDReq();
 
         /**
          * creates a mkdir request
          * @return the request
          */
-        ftp_messages::MakeDirRequest CreateMkdirReq();
+        ftp_messages::Request CreateMkdirReq();
 
         /**
          * creates a pwd request
          * @return the request
          */
-        ftp_messages::PwdRequest CreatePwdReq();
+        ftp_messages::Request CreatePwdReq();
 
         /**
          * creates a quit request
          * @return the request
          */
-        ftp_messages::QuitRequest CreateQuitReq();
-
-    private:
-
+        ftp_messages::Request CreateQuitReq();
 
         const std::array<std::string, 8> commands_ = {"get", "put", "delete", "ls", "cd", "mkdir", "pwd", "quit"};\
 
         //information to be extracted from input
-        ReqType req;
-        std::string fn;
-        std::string dn;
-        std::vector<uint8_t> contents;
+        ReqType req_;
+        std::string fn_;
+        std::string dn_;
+        std::vector<uint8_t> contents_;
     };
 };//namespace input_parser
 #endif //PROJECT1_INPUT_PARSER_H
