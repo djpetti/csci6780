@@ -6,7 +6,7 @@
 
 #include <cstdint>
 #include "../wire_protocol/wire_protocol.h"
-#include "../server/file_handler/my_file_handler.h"
+#include "../server/file_handler/file_handler.h"
 #include "ftp_messages.pb.h"
 #include "input_parser/input_parser.h"
 
@@ -35,7 +35,7 @@ namespace client {
          * @param port the port the FTP server is binded to
          * @return true on success, false on failure
          */
-        bool Connect(const std::string& hostname, uint16_t port);
+        bool Connect(const std::string &hostname, uint16_t port);
 
 
         /**
@@ -82,7 +82,7 @@ namespace client {
         wire_protocol::MessageParser<ftp_messages::Response> parser_;
 
         //parser for user input
-        client::input_parser::InputParser* ip_;
+        client::input_parser::InputParser *ip_;
 
 
     };

@@ -20,7 +20,7 @@ namespace client::input_parser {
         std::istringstream iss(cmd);
         do {
             std::string word;
-            server::file_handler::MyFileHandler fh;
+            server::file_handler::FileHandler fh;
             iss >> word;
             for (int i = 0; i < (int) commands->length(); i++) {
 

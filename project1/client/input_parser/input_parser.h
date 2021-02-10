@@ -2,7 +2,7 @@
 #define PROJECT1_INPUT_PARSER_H
 
 #include "../../wire_protocol/wire_protocol.h"
-#include "../../server/file_handler/my_file_handler.h"
+#include "../../server/file_handler/file_handler.h"
 #include "ftp_messages.pb.h"
 #include <sstream>
 #include <cstdint>
