@@ -1,5 +1,5 @@
-#include <cstdint>
 #include <condition_variable>
+#include <cstdint>
 #include <memory>
 #include <mutex>
 #include <queue>
@@ -24,9 +24,10 @@ class ThreadPool : public IThreadPool {
 
   ~ThreadPool() override;
 
-  Task::Handle AddTask(std::unique_ptr<Task> *task) final;
-  Task::Status GetTaskStatus(const Task::Handle &task_handle) final;
-  void CancelTask(const Task::Handle &task_handle) final;
+  void AddTask(const std::shared_ptr<Task> &task) final;
+  Task::Status GetTaskStatus(const std::shared_ptr<Task> &task) final;
+  void CancelTask(const std::shared_ptr<Task> &task_handle) final;
+  uint32_t NumThreads() final;
 
  private:
   /**
@@ -51,10 +52,10 @@ class ThreadPool : public IThreadPool {
    * @param status The current status of that task.
    * @return Whether we should keep running the task.
    */
-  bool UpdateTaskStatus(Task::Handle handle, Task::Status status);
+  bool UpdateTaskStatus(const Task::Handle &handle, Task::Status status);
 
   /// Maps task handles to task objects.
-  std::unordered_map<Task::Handle, std::unique_ptr<Task>> handle_to_task_{};
+  std::unordered_map<Task::Handle, std::shared_ptr<Task>> handle_to_task_{};
   /// Maps task handles to statuses.
   std::unordered_map<Task::Handle, Task::Status> handle_to_status_{};
   /// Maps task handles to threads.

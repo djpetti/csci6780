@@ -27,6 +27,7 @@ ThreadPool::~ThreadPool() {
   // Wake up the internal threads and force them to check should_close_.
   task_pending_.notify_one();
   task_done_.notify_one();
+  thread_available_.notify_one();
 
   // Wait for all threads to finish.
   dispatcher_thread_.join();
@@ -40,15 +41,15 @@ ThreadPool::~ThreadPool() {
   }
 }
 
-Task::Handle ThreadPool::AddTask(std::unique_ptr<Task>* task) {
-  const auto kTaskHandle = (*task)->GetHandle();
+void ThreadPool::AddTask(const std::shared_ptr<Task>& task) {
+  const auto kTaskHandle = task->GetHandle();
   LOG_S(INFO) << "Adding a new task with handle " << kTaskHandle << ".";
 
   {
     std::lock_guard<std::mutex> lock(mutex_);
 
     // Add the task to the bookkeeping data structures.
-    handle_to_task_.emplace((*task)->GetHandle(), std::move(*task));
+    handle_to_task_[kTaskHandle] = task;
     handle_to_status_[kTaskHandle] = Task::Status::RUNNING;
 
     // Add to the queue.
@@ -58,8 +59,6 @@ Task::Handle ThreadPool::AddTask(std::unique_ptr<Task>* task) {
   // Notify dispatcher thread. We deliberately release the lock before doing
   // this to avoid waking up the waiting thread only to block again.
   task_pending_.notify_one();
-
-  return kTaskHandle;
 }
 
 void ThreadPool::DispatcherThread() {
@@ -68,11 +67,13 @@ void ThreadPool::DispatcherThread() {
       std::unique_lock<std::mutex> lock(mutex_);
 
       // Check that we have a free thread.
-      if (max_pool_size_ != 0 && pool_size_ >= max_pool_size_) {
+      if (max_pool_size_ != 0 && pool_size_ >= max_pool_size_ &&
+          !should_close_) {
         // Wait for a thread to become available.
         LOG_S(1) << "Waiting for a free thread...";
-        thread_available_.wait(lock,
-                               [this] { return pool_size_ < max_pool_size_; });
+        thread_available_.wait(lock, [this] {
+          return pool_size_ < max_pool_size_ || should_close_;
+        });
       }
 
       // Wait for a new pending task.
@@ -91,7 +92,7 @@ void ThreadPool::DispatcherThread() {
       LOG_S(2) << "Pool size is now " << pool_size_ << ".";
 
       // Create a thread for the task.
-      const auto kTaskHandle = dispatch_queue_.back();
+      const auto kTaskHandle = dispatch_queue_.front();
       dispatch_queue_.pop();
       LOG_S(1) << "Got a new task: " << kTaskHandle << ".";
 
@@ -119,7 +120,7 @@ void ThreadPool::JoinerThread() {
       }
 
       // Finalize the task.
-      const auto kTaskHandle = joinable_queue_.back();
+      const auto kTaskHandle = joinable_queue_.front();
       joinable_queue_.pop();
       LOG_S(1) << "Got a finished task: " << kTaskHandle << ".";
 
@@ -141,7 +142,8 @@ void ThreadPool::JoinerThread() {
   }
 }
 
-bool ThreadPool::UpdateTaskStatus(Task::Handle handle, Task::Status status) {
+bool ThreadPool::UpdateTaskStatus(const Task::Handle& handle,
+                                  Task::Status status) {
   {
     std::lock_guard<std::mutex> lock(mutex_);
 
@@ -175,7 +177,7 @@ void ThreadPool::RunTask(Task* task) {
 
   // The task is finished. Perform cleanup.
   LOG_S(1) << "Cleaning up task " << task->GetHandle() << ".";
-  task->Cleanup();
+  task->CleanUp();
 
   // Notify that the task is complete.
   {
@@ -186,20 +188,25 @@ void ThreadPool::RunTask(Task* task) {
   task_done_.notify_one();
 }
 
-Task::Status ThreadPool::GetTaskStatus(const Task::Handle& task_handle) {
+Task::Status ThreadPool::GetTaskStatus(const std::shared_ptr<Task>& task) {
   std::lock_guard<std::mutex> lock(mutex_);
 
-  const auto handle_and_status = handle_to_status_.find(task_handle);
+  const auto handle_and_status = handle_to_status_.find(task->GetHandle());
   CHECK_S(handle_and_status != handle_to_status_.end())
       << "Attempt to get status of nonexistent thread.";
-  return handle_to_status_[task_handle];
+  return handle_to_status_[task->GetHandle()];
 }
 
-void ThreadPool::CancelTask(const Task::Handle& task_handle) {
+void ThreadPool::CancelTask(const std::shared_ptr<Task>& task_handle) {
   std::lock_guard<std::mutex> lock(mutex_);
 
   LOG_S(INFO) << "Cancelling task " << task_handle << ".";
-  cancelled_tasks_.insert(task_handle);
+  cancelled_tasks_.insert(task_handle->GetHandle());
+}
+
+uint32_t ThreadPool::NumThreads() {
+  std::lock_guard<std::mutex> lock(mutex_);
+  return pool_size_;
 }
 
 }  // namespace thread_pool

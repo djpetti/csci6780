@@ -23,3 +23,8 @@ add_library(loguru ${CMAKE_CURRENT_BINARY_DIR}/loguru-src/loguru.cpp)
 target_include_directories(loguru INTERFACE ${CMAKE_CURRENT_BINARY_DIR}/loguru-src)
 # Enable logging with streams by default.
 target_compile_definitions(loguru PUBLIC LOGURU_WITH_STREAMS=1)
+
+# Link with external dependencies.
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+find_package(Threads REQUIRED)
+target_link_libraries(loguru Threads::Threads ${CMAKE_DL_LIBS})

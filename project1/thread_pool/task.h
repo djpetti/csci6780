@@ -7,7 +7,7 @@
 namespace thread_pool {
 
 /**
- * @brief Represents a task that can be run in a tread pool.
+ * @brief Represents a task that can be run in a thread pool.
  */
 class Task {
  public:
@@ -36,7 +36,7 @@ class Task {
    * @brief Performs any necessary one-time setup when the task starts.
    * @return The updated status for this task.
    */
-  virtual Status SetUp() = 0;
+  virtual Status SetUp();
 
   /**
    * @brief Runs one iteration of the task main loop.
@@ -50,7 +50,7 @@ class Task {
    * @brief Will be called by the pool to perform any cleanup after the
    *    task status changes to either DONE or FAILED.
    */
-  virtual void Cleanup() = 0;
+  virtual void CleanUp();
 
   /**
    * @brief Gets a unique handle for this task.
