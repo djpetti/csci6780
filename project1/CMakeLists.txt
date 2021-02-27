@@ -5,6 +5,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_FLAGS "-Wall -Werror")
 
 include(googletest.cmake)
+include(loguru.cmake)
 
 add_subdirectory(server)
 add_subdirectory(wire_protocol)
