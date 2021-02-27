@@ -12,12 +12,14 @@ namespace thread_pool {
  */
 class IThreadPool {
  public:
+  virtual ~IThreadPool() = default;
+
   /**
    * @brief Adds a new task to the pool.
    * @param task The task to add. The pool will take ownership of it.
    * @return A handle to the task in the pool.
    */
-  virtual Task::Handle AddTask(const std::unique_ptr<Task>& task) = 0;
+  virtual Task::Handle AddTask(std::unique_ptr<Task>* task) = 0;
 
   /**
    * @brief Gets the current status of task.

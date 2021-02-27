@@ -1,6 +1,7 @@
 #ifndef PROJECT1_TASK_H
 #define PROJECT1_TASK_H
 
+#include <atomic>
 #include <cstdint>
 
 namespace thread_pool {
@@ -23,7 +24,13 @@ class Task {
     DONE,
     /// Task has failed.
     FAILED,
+    /// Task was cancelled.
+    CANCELLED,
   };
+
+  Task();
+
+  virtual ~Task() = default;
 
   /**
    * @brief Performs any necessary one-time setup when the task starts.
@@ -46,13 +53,15 @@ class Task {
   virtual void Cleanup() = 0;
 
   /**
-   * @brief Gets a unique ID for this task.
+   * @brief Gets a unique handle for this task.
    */
-  Handle GetId();
+  [[nodiscard]] Handle GetHandle() const;
 
  private:
   /// Static counter we use for generating task IDs.
-  static uint32_t current_id_;
+  static std::atomic<uint32_t> current_id_;
+  /// The ID of this instance.
+  uint32_t id_ = 0;
 };
 
 }  // namespace thread_pool
