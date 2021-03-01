@@ -1,2 +1,1 @@
 add_library(file_handler file_handler.cpp)
-set_target_properties(file_handler PROPERTIES LINKER_LANGUAGE CXX)
