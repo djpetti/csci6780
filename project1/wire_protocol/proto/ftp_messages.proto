@@ -63,6 +63,18 @@ message PwdResponse {
 /// Request to end the session.
 message QuitRequest {}
 
+/// Request to terminate a prior command.
+message TerminateRequest {
+  /// The command ID of the command to be terminated.
+  uint32 command_id = 1;
+}
+
+/// Response to GET and PUT with the terminate ID.
+message TerminateResponse {
+  /// The command ID of the associate GET or PUT request.
+  uint32 command_id = 1;
+}
+
 /**
  * @brief Captures all possible request types. This is so we can simply parse this
  * message type from the network and worry later about the exact request type.
@@ -77,6 +89,7 @@ message Request {
     MakeDirRequest make_dir = 6;
     PwdRequest pwd = 7;
     QuitRequest quit = 8;
+    TerminateRequest terminate = 9;
   }
 }
 
@@ -89,5 +102,6 @@ message Response {
     GetResponse get = 1;
     ListResponse list = 2;
     PwdResponse pwd = 3;
+    TerminateResponse terminate = 4;
   }
 }
