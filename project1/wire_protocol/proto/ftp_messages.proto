@@ -10,16 +10,19 @@ message GetRequest {
 
 /// Response from the server to getting a file.
 message GetResponse {
-  /// The binary contents of the file.
-  bytes file_contents = 1;
+  /// The command ID of the associate GET request.
+  uint32 command_id = 1;
 }
 
 /// Request to the server to write a file.
 message PutRequest {
   /// The name of the file to write.
   string filename = 1;
-  /// The contents of the file to write.
-  bytes file_contents = 2;
+}
+
+message PutResponse {
+  /// The command ID of the associate PUT request.
+  uint32 command_id = 1;
 }
 
 /// Request to the server to delete a file.
@@ -63,16 +66,10 @@ message PwdResponse {
 /// Request to end the session.
 message QuitRequest {}
 
-/// Request to terminate a prior command.
-message TerminateRequest {
-  /// The command ID of the command to be terminated.
-  uint32 command_id = 1;
-}
-
-/// Response to GET and PUT with the terminate ID.
-message TerminateResponse {
-  /// The command ID of the associate GET or PUT request.
-  uint32 command_id = 1;
+/// Bidirectional message for file contents
+message FileContents {
+  /// The contents of the file
+  bytes contents = 1;
 }
 
 /**
@@ -89,7 +86,6 @@ message Request {
     MakeDirRequest make_dir = 6;
     PwdRequest pwd = 7;
     QuitRequest quit = 8;
-    TerminateRequest terminate = 9;
   }
 }
 
@@ -102,6 +98,6 @@ message Response {
     GetResponse get = 1;
     ListResponse list = 2;
     PwdResponse pwd = 3;
-    TerminateResponse terminate = 4;
+    PutResponse put = 4;
   }
 }
