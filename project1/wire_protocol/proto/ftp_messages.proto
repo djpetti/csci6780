@@ -10,16 +10,19 @@ message GetRequest {
 
 /// Response from the server to getting a file.
 message GetResponse {
-  /// The binary contents of the file.
-  bytes file_contents = 1;
+  /// The command ID of the associate GET request.
+  uint32 command_id = 1;
 }
 
 /// Request to the server to write a file.
 message PutRequest {
   /// The name of the file to write.
   string filename = 1;
-  /// The contents of the file to write.
-  bytes file_contents = 2;
+}
+
+message PutResponse {
+  /// The command ID of the associate PUT request.
+  uint32 command_id = 1;
 }
 
 /// Request to the server to delete a file.
@@ -63,6 +66,12 @@ message PwdResponse {
 /// Request to end the session.
 message QuitRequest {}
 
+/// Bidirectional message for file contents
+message FileContents {
+  /// The contents of the file
+  bytes contents = 1;
+}
+
 /**
  * @brief Captures all possible request types. This is so we can simply parse this
  * message type from the network and worry later about the exact request type.
@@ -89,5 +98,6 @@ message Response {
     GetResponse get = 1;
     ListResponse list = 2;
     PwdResponse pwd = 3;
+    PutResponse put = 4;
   }
 }
