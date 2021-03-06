@@ -1,0 +1,3 @@
+add_executable(test_thread_safe_file_handler test_thread_safe_file_handler.cpp)
+target_link_libraries(test_thread_safe_file_handler gtest_main file_handler)
+add_test(NAME test_thread_safe_file_handler COMMAND test_thread_safe_file_handler)
