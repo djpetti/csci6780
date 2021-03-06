@@ -8,6 +8,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <vector>
@@ -21,13 +22,15 @@
 namespace server::file_handler {
 class FileHandler : public IFileHandler {
  public:
+  FileHandler();
+
   [[nodiscard]] std::vector<uint8_t> Get(
-      const std::string& filename) const final;
+      const std::string& filename) const override;
 
   bool Put(const std::string& filename,
-           const std::vector<uint8_t>& contents) final;
+           const std::vector<uint8_t>& contents) override;
 
-  bool Delete(const std::string& filename) final;
+  bool Delete(const std::string& filename) override;
 
   [[nodiscard]] std::vector<std::string> List() const final;
 
@@ -35,9 +38,13 @@ class FileHandler : public IFileHandler {
 
   bool UpDir() final;
 
-  bool MakeDir(const std::string& name) final;
+  bool MakeDir(const std::string& name) override;
 
   [[nodiscard]] std::string GetCurrentDir() const final;
+
+ private:
+  /// Keeps track of the current directory.
+  std::filesystem::path current_dir_;
 };
 }  // namespace server::file_handler
 #endif  // PROJECT1_FILE_HANDLER_H

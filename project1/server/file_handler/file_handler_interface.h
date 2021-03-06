@@ -16,6 +16,8 @@ namespace server::file_handler {
  */
 class IFileHandler {
  public:
+  virtual ~IFileHandler() = default;
+
   /**
    * @brief Gets the contents of a file in the current remote directory on the
    *    server.
