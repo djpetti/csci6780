@@ -9,64 +9,63 @@ using ftp_messages::MakeDirRequest;
 using ftp_messages::PutRequest;
 using ftp_messages::PwdRequest;
 using ftp_messages::QuitRequest;
+using ftp_messages::TerminateRequest;
 using ftp_messages::Request;
+using ftp_messages::FileContents;
 
 InputParser::InputParser(std::string &cmd) {
   fn_ = "";
   dn_ = "";
+  is_valid_ = true;
+  is_forking_ = false;
 
-  // iterate through each word in input
-  // the validity of this code relies on correct input syntax
   std::istringstream iss(cmd);
-  do {
-    std::string word;
-    server::file_handler::FileHandler fh;
-    iss >> word;
-    for (int i = 0; i < (int)commands_.size(); i++) {
-      // determine which command, extract further information if necessary
-      if (!word.compare(commands_[i])) {
-        switch (i) {
-          case 0:
-            iss >> fn_;
-            req_ = GETF;
-            break;
-          case 1:
-            iss >> this->fn_;
-            req_ = PUTF;
-            contents_ = fh.Get(fn_);
-            break;
-          case 2:
-            iss >> fn_;
-            req_ = DEL;
-            break;
-          case 3:
-            req_ = LS;
-            break;
-          case 4:
-            iss >> dn_;
-            req_ = CD;
-            break;
-          case 5:
-            iss >> dn_;
-            req_ = MKDIR;
-            break;
-          case 6:
-            req_ = PWD;
-            break;
-          case 7:
-            req_ = QUIT;
-            break;
-        }
-      }
-    }
-  } while (iss);
+  std::string word;
+  server::file_handler::FileHandler fh;
+  iss >> word;
+  auto itr = commands_.find(word);
+  if (itr == commands_.end()) {
+    is_valid_ = false;
+    return;
+  }
+  req_ = itr->second;
+  switch(itr->second) {
+    case PUTF:
+      iss >> this->fn_;
+      contents_ = fh.Get(fn_);
+      break;
+    case GETF:
+    case DEL:
+      iss >> fn_;
+      break;
+    case CD:
+    case MKDIR:
+      iss >> dn_;
+      break;
+    case TERMINATE:
+      iss >> cid_;
+      break;
+    case LS:
+    case PWD:
+    case QUIT:
+      break;
+  }
+  // assuming all else has processed properly,
+  iss >> word;
+  if (word == "&") {
+    is_forking_ = true;
+  }
 }  // InputParser
 
 std::string InputParser::GetFilename() { return fn_; }
-Request InputParser::CreateGetReq() {
-  Request request;
-  request.mutable_get()->set_filename(fn_);
-  return request;
+bool InputParser::IsValid() { return is_valid_; }
+bool InputParser::IsForking() { return is_forking_; }
+
+FileContents InputParser::GetContentsMessage() {
+  FileContents contents;
+  std::string c(contents_.begin(), contents_.end());
+  contents.set_contents(c);
+  return contents;
 }
 
 Request InputParser::CreateReq() {
@@ -84,7 +83,7 @@ Request InputParser::CreateReq() {
             return CreateListReq();
 
         case CD:
-            return CreateCDReq();
+            return CreateCdReq();
 
         case MKDIR:
             return CreateMkdirReq();
@@ -94,15 +93,21 @@ Request InputParser::CreateReq() {
 
         case QUIT:
             return CreateQuitReq();
+
+        case TERMINATE:
+            return CreateTerminateReq();
     }
 
     return {};
 }
+Request InputParser::CreateGetReq() {
+  Request request;
+  request.mutable_get()->set_filename(fn_);
+  return request;
+}
 Request InputParser::CreatePutReq() {
   Request request;
   request.mutable_put()->set_filename(fn_);
-  std::string c(contents_.begin(), contents_.end());
-  request.mutable_put()->set_file_contents(c);
   return request;
 }
 Request InputParser::CreateDelReq() {
@@ -115,15 +120,9 @@ Request InputParser::CreateListReq() {
   request.mutable_list()->Clear();
   return request;
 }
-Request InputParser::CreateCDReq() {
+Request InputParser::CreateCdReq() {
   Request request;
-
-  // compare returns 0 on equal strings, hence '!'
-  if (!dn_.compare("..")) {
-    request.mutable_change_dir()->set_go_up(true);
-  } else {
-      request.mutable_change_dir()->set_go_up(false);
-  }
+  request.mutable_change_dir()->set_go_up(dn_ == "..");
   request.mutable_change_dir()->set_dir_name(dn_);
   return request;
 }
@@ -140,6 +139,11 @@ Request InputParser::CreatePwdReq() {
 Request InputParser::CreateQuitReq() {
   Request request;
   request.mutable_quit();
+  return request;
+}
+Request InputParser::CreateTerminateReq() {
+  Request request;
+  request.mutable_terminate()->set_command_id(cid_);
   return request;
 }
 }  // namespace client::input_parser
