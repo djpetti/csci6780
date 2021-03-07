@@ -5,8 +5,8 @@
 #include "client.h"
 
 int main(int argc, const char **argv) {
-  if (argc != 3) {
-    std::cout << "\nIncorrect # of inputs. Server IP address & Port # expected";
+  if (argc != 4) {
+    std::cout << "\nIncorrect # of inputs. Server IP address, Command Port #, and Terminate Port # expected";
     return 1;
   }
   client::Client ftp_client;
