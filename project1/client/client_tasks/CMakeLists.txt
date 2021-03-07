@@ -1,2 +1,2 @@
-add_library(client_tasks_lib)
-target_link_libraries(client_tasks_lib thread_pool)
+add_library(client_tasks_lib terminate_task.cpp)
+target_link_libraries(client_tasks_lib thread_pool wire_protocol)
