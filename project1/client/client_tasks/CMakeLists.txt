@@ -1,0 +1,2 @@
+add_library(client_tasks_lib)
+target_link_libraries(client_tasks_lib thread_pool)
