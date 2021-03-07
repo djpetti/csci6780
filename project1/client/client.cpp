@@ -5,59 +5,15 @@
 
 #include <iostream>
 
-namespace {
-
-/**
- * @brief helper function for making a socket address structure
- *
- * @param port FTP server Port #
- */
-struct sockaddr_in MakeAddress(uint16_t port) {
-  struct sockaddr_in address {};
-  address.sin_family = AF_INET;
-  address.sin_addr.s_addr = INADDR_ANY;
-  address.sin_port = htons(port);
-
-  return address;
-}
-
-/**
- * @brief connects to socket
- * @param address socket address structure
- * @param hostname FTP server IP address
- * @return socket fd on success, -1 on failure
- *
- */
-int SetUpSocket(const struct sockaddr_in &address,
-                const std::string &hostname) {
-  int sock = 0;
-
-  if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-    perror("Socket creation error");
-    return -1;
-  }
-
-  if (inet_pton(AF_INET, hostname.c_str(),
-                (struct sockaddr *)&address.sin_addr) <= 0) {
-    perror("Invalid Address or Address not supported");
-    return -1;
-  }
-
-  if (connect(sock, (struct sockaddr *)&address, sizeof(address)) < 0) {
-    perror("Connection Failed");
-    return -1;
-  }
-
-  return sock;
-}
-}  // namespace
-
 namespace client {
 
 using client::input_parser::InputParser;
 
-bool Client::Connect(const std::string &hostname, uint16_t port) {
-  client_fd_ = SetUpSocket(MakeAddress(port), hostname);
+bool Client::Connect(const std::string &hostname, uint16_t nport, uint16_t tport) {
+  client_fd_ = client_util::SetUpSocket(client_util::MakeAddress(nport), hostname);
+  hostname_ = hostname;
+  nport_ = nport;
+  tport_ = tport;
   connected_ = true;
   return connected_;
 }

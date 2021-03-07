@@ -9,6 +9,7 @@
 #include "../server/file_handler/file_handler.h"
 #include "ftp_messages.pb.h"
 #include "input_parser/input_parser.h"
+#include "client_util.h"
 
 namespace client {
 
