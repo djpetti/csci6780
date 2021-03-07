@@ -1,4 +1,5 @@
 #include "client.h"
+#include "client_tasks/terminate_task.h"
 
 #include <netinet/in.h>
 #include <sys/socket.h>
@@ -35,7 +36,7 @@ bool Client::SendReq() {
 }
 
 bool Client::WaitForResponse() {
-  while (!parser_.HasCompleteMessage()) {
+  while (!response_parser_.HasCompleteMessage()) {
     incoming_msg_buf_.resize(kBufferSize);
 
     const auto bytes_read =
@@ -48,7 +49,7 @@ bool Client::WaitForResponse() {
 
     incoming_msg_buf_.resize(bytes_read);
 
-    parser_.AddNewData(incoming_msg_buf_);
+    response_parser_.AddNewData(incoming_msg_buf_);
   }
 
   // empty buffer
@@ -62,16 +63,10 @@ void Client::HandleResponse() {
 
   ftp_messages::Response msg;
 
-  parser_.GetMessage(&msg);
+  response_parser_.GetMessage(&msg);
 
   // determine type of response and respond accordingly
-  if (msg.has_get()) {
-    auto g_response = msg.get();
-
-    std::ofstream new_file;
-    new_file.open(ip_->GetFilename());
-    new_file << g_response.file_contents();
-  } else if (msg.has_list()) {
+  if (msg.has_list()) {
     auto l_response = msg.list();
 
     // append filenames to output string separated by whitespace
@@ -90,8 +85,14 @@ void Client::HandleResponse() {
   if (output_.compare("")) {
     Output();
   }
+}
 
-  delete ip_;
+void Client::HandleFileContents() {
+  ftp_messages::FileContents contents;
+  file_parser_.GetMessage(&contents);
+  std::ofstream new_file;
+  new_file.open(ip_->GetFilename());
+  new_file << contents.contents();
 }
 
 void Client::Output() {
@@ -114,13 +115,14 @@ void Client::Output() {
 }
 bool Client::FtpShell() {
   ftp_messages::Request r;
+  thread_pool::ThreadPool pool;
 
   while (connected_) {
-    // reset input string
-    std::string input;
-
     // will have to pay attention to formatting here when implementing Output()
     std::cout << "\nmyftp> ";
+
+    // reset input string
+    std::string input;
 
     // get input
     std::getline(std::cin, input);
@@ -130,21 +132,39 @@ bool Client::FtpShell() {
 
     // create & serialize request message for determined command
     r = ip_->CreateReq();
-    wire_protocol::Serialize(r, &outgoing_msg_buf_);
-
+    if (!ip_->IsValid()) {
+      std::cout << "Invalid command, try again." << "\n";
+      continue;
+    }
+    if (r.has_terminate()) {
+      auto terminate_task = std::make_shared<client_tasks::TerminateTask>(hostname_, tport_, r.mutable_terminate());
+      pool.AddTask(terminate_task);
+      continue;
+    }
     if (r.has_quit()) {
       // close socket connection
       close(client_fd_);
-
       delete ip_;
-
       // exit loop, no need to send request
       connected_ = false;
       continue;
     }
+    wire_protocol::Serialize(r, &outgoing_msg_buf_);
     SendReq();
     WaitForResponse();
-    HandleResponse();
+    if (r.has_get() || r.has_put()) {
+      // Since these two requests are the only two that require more messages,
+      // Continue processing messages accordingly
+      if (!ip_->IsForking()) {
+        HandleResponse();
+      } else {
+        // TODO forked tasks will be handled here
+      }
+      continue;
+    } else {
+      HandleResponse();
+    }
+    delete ip_;
   }
   return true;
 }
