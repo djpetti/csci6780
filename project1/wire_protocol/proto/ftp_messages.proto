@@ -72,6 +72,12 @@ message FileContents {
   bytes contents = 1;
 }
 
+/// Request to terminate a previous command.
+message TerminateRequest {
+  /// The command to be terminated
+  string command_id = 1;
+}
+
 /**
  * @brief Captures all possible request types. This is so we can simply parse this
  * message type from the network and worry later about the exact request type.
@@ -86,6 +92,7 @@ message Request {
     MakeDirRequest make_dir = 6;
     PwdRequest pwd = 7;
     QuitRequest quit = 8;
+    TerminateRequest terminate = 9;
   }
 }
 
