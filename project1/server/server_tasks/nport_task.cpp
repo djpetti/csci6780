@@ -25,17 +25,19 @@ namespace server_tasks {
             std::cout << "Handling new connection from client #" << client_fd << "." << std::endl;
 
             auto agent_task = std::make_shared<AgentTask>();
+
+            // pass client file descriptor to the agent task
             agent_task->SetClientFD(client_fd);
+
+            // pass file access managers to the agent task
             agent_task->SetFileAccessManagers(read_manager_,write_manager_);
+
+            // pass the active commands to the agent task
             agent_task->SetActiveCommands(active_ids_);
 
-            //need to spawn off new thread to handle clients
-            //instantiate create new agent task.
 
             pool_.AddTask(agent_task);
-            //std::thread agent_thread(HandleClient, client_fd);
 
-            //agent_thread.detach();
         }
     }
 

@@ -30,7 +30,17 @@ namespace server {
          *    will take ownership of it.
          */
         Agent(int client_fd,
-              std::unique_ptr<file_handler::ThreadSafeFileHandler> file_handler);
+              std::unique_ptr<file_handler::ThreadSafeFileHandler> file_handler,
+              std::shared_ptr<server_tasks::CommandIDs> active_commands);
+
+        /**
+         * @param client_fd The FD of the client socket. Note that it will take
+         *    responsibility for closing this socket on exit.
+         * @note Used for agents only handling Termination Requests.
+         *
+         */
+        Agent(int client_fd,
+              std::shared_ptr<server_tasks::CommandIDs> active_commands);
 
         ~Agent();
 
@@ -42,18 +52,9 @@ namespace server {
          */
         bool Handle();
 
-        /**
-         * @brief Setter for the array of active command IDs.
-         * @param cmd_ids The list of active command IDs.
-         * @Note Needs to be called before adding to the thread pool.
-         */
-        void SetActiveCommandIDs(std::shared_ptr<server_tasks::CommandIDs> cmd_ids);
 
 
     private:
-        std::shared_ptr<file_handler::FileAccessManager> read_manager_;
-        std::shared_ptr<file_handler::FileAccessManager> write_manager_;
-
 
         /// Size in bytes to use for the internal message buffer.
         static constexpr size_t kClientBufferSize = 4096;
@@ -78,9 +79,9 @@ namespace server {
         /**
          * @brief Reads a file contents message from the socket.
          * @param fc The message to read into.
-         * @return True if it succeded in reading the message, false if otherwise.
+         * @return True if it succeeded in reading the message, false if otherwise.
          */
-        ClientState ReadFileContents(ftp_messages::FileContents *fc);
+        ClientState ReadFileContents(ftp_messages::FileContents *fc, uint16_t command_id);
 
         /**
          * @brief Dispatches an incoming request to the proper handler.
@@ -110,6 +111,8 @@ namespace server {
 
         ClientState HandleRequest(const ftp_messages::QuitRequest &request);
 
+        ClientState HandleRequest(const ftp_messages::TerminateRequest &request);
+
         /**
          * @brief Sends a response message to the client.
          * @param response The message to send.
@@ -122,7 +125,7 @@ namespace server {
          * @param file_contents the file contents to be sent
          * @return True on Success, False if the command was terminated
          */
-        bool SendFileContents(const ftp_messages::FileContents &file_contents);
+        bool SendFileContents(const ftp_messages::FileContents &file_contents, uint16_t command_id);
 
         /// The FD to talk to the client on.
         int client_fd_;
@@ -140,7 +143,7 @@ namespace server {
         /// Parser to use for reading file contents on the socket.
         ::wire_protocol::MessageParser<ftp_messages::FileContents> fc_parser_;
 
-        /// Used for performing filesystem operations.
+        /// Used for performing thread-safe filesystem operations.
         std::unique_ptr<file_handler::ThreadSafeFileHandler> file_handler_;
 
 

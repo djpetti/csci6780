@@ -1,5 +1,6 @@
 #include "tport_task.h"
 #include "../../thread_pool/thread_pool.h"
+#include "agent_task.h"
 
 #include <sys/socket.h>
 #include <cstdio>
@@ -16,19 +17,23 @@ namespace server_tasks {
             int client_fd = accept(server_fd_, nullptr, nullptr);
             if (client_fd < 0) {
                 perror("accept() failed");
-                return thread_pool::Task::Status::FAILED;
+                break;
             }
 
             std::cout << "Handling new connection from client #" << client_fd << "." << std::endl;
 
-            //create new TerminationTask
-            //Add Task to ThreadPool
+            auto agent_task = std::make_shared<AgentTask>();
 
-            //pool_.AddTask()
-            //std::thread agent_thread(HandleClient, client_fd);
+            // pass down client file descriptor to the agent task
+            agent_task->SetClientFD(client_fd);
 
-            //agent_thread.detach();
+            // pass active commands structure to the agent task
+            agent_task->SetActiveCommands(active_ids_);
+
+            // begin task
+            pool_.AddTask(agent_task);
         }
+        return thread_pool::Task::Status::FAILED;
     }
 
 

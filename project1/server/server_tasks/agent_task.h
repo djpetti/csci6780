@@ -35,9 +35,6 @@ namespace server_tasks {
         void SetFileAccessManagers(std::shared_ptr<server::file_handler::FileAccessManager> read_mgr,
                                    std::shared_ptr<server::file_handler::FileAccessManager> write_mgr);
 
-        void SetReadManager(std::shared_ptr<server::file_handler::FileAccessManager> read_mgr);
-
-        void SetWriteManager(std::shared_ptr<server::file_handler::FileAccessManager> write_mgr);
     private:
 
         ///The agent.
@@ -50,6 +47,7 @@ namespace server_tasks {
         std::shared_ptr<CommandIDs> active_commands_;
 
 
+        ///The file access managers. @note To be inherited from NPortTask.
         std::shared_ptr<server::file_handler::FileAccessManager> read_manager_;
         std::shared_ptr<server::file_handler::FileAccessManager> write_manager_;
 

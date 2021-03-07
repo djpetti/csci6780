@@ -13,15 +13,14 @@
 namespace server_tasks {
 
     class TPortTask : public ServerTask {
+
     public:
-        thread_pool::Task::Status RunAtomic() final override;
 
-        thread_pool::Task::Status SetUp() override;
-
-        void CleanUp() final override;
-
+        /**
+         * Listens for Terminate Commands
+         * @return The client status.
+         */
         thread_pool::Task::Status Listen() final override;
-
 
     };
 }

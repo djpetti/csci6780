@@ -20,20 +20,23 @@ namespace server {
 
     }  // namespace
 
-    Agent::Agent(int client_fd, std::unique_ptr<ThreadSafeFileHandler> file_handler)
-            : client_fd_(client_fd), file_handler_(std::move(file_handler)) {}
+    Agent::Agent(int client_fd, std::unique_ptr<ThreadSafeFileHandler> file_handler,
+                 std::shared_ptr<server_tasks::CommandIDs> active_commands)
+            : client_fd_(client_fd), active_commands_(active_commands), file_handler_(std::move(file_handler)) {}
+
+    Agent::Agent(int client_fd,
+                 std::shared_ptr<server_tasks::CommandIDs> active_commands) :
+            client_fd_(client_fd), active_commands_(active_commands) {}
 
     Agent::~Agent() {
         // Close the socket.
         close(client_fd_);
     }
 
-    void Agent::SetActiveCommandIDs(std::shared_ptr<server_tasks::CommandIDs> cmd_ids) {
-        active_commands_ = cmd_ids;
-    }
-
     bool Agent::Handle() {
         ClientState client_state = ClientState::ACTIVE;
+
+
         while (client_state == ClientState::ACTIVE) {
             // Get the next message from the socket.
             Request message;
@@ -48,17 +51,16 @@ namespace server {
         return client_state != ClientState::ERROR;
     }
 
-    Agent::ClientState Agent::ReadFileContents(ftp_messages::FileContents *fc) {
+    Agent::ClientState Agent::ReadFileContents(ftp_messages::FileContents *fc, uint16_t command_id) {
 
-        bool terminated = false;
-        while (!fc_parser_.HasCompleteMessage()){
+        while (!fc_parser_.HasCompleteMessage()) {
             incoming_message_buffer_.resize(kClientBufferSize);
 
             uint8_t buf[1000];
 
             // Read 1000 bytes from the socket
             const auto bytes_read =
-                    recv(client_fd_, buf ,1000, 0);
+                    recv(client_fd_, buf, 1000, 0);
 
             if (bytes_read < 0) {
                 // Failed to read anything.
@@ -71,6 +73,8 @@ namespace server {
                 return ClientState::DISCONNECTED;
             }
 
+            bool terminated = !active_commands_->Contains(command_id);
+
             // only continue if this put request is an active command
             if (!terminated) {
 
@@ -79,6 +83,8 @@ namespace server {
                     incoming_message_buffer_.push_back(buf[i]);
                 }
 
+            } else {
+                std::cout << "Command #" << command_id << " successfully terminated." << std::endl;
             }
 
             // The parser assumes that the entire vector contains valid data, so limit
@@ -95,6 +101,7 @@ namespace server {
         }
         return ClientState::ACTIVE;
     }
+
     Agent::ClientState Agent::ReadNextMessage(Request *message) {
         while (!parser_.HasCompleteMessage()) {
             incoming_message_buffer_.resize(kClientBufferSize);
@@ -146,6 +153,8 @@ namespace server {
             return HandleRequest(message.pwd());
         } else if (message.has_quit()) {
             return HandleRequest(message.quit());
+        } else if (message.has_terminate()) {
+            return HandleRequest(message.terminate());
         }
 
         std::cerr << "No valid message was received." << std::endl;
@@ -167,7 +176,8 @@ namespace server {
         }
         return true;
     }
-    bool Agent::SendFileContents(const ftp_messages::FileContents &file_contents) {
+
+    bool Agent::SendFileContents(const ftp_messages::FileContents &file_contents, uint16_t command_id) {
         // Serialize the message.
         if (!wire_protocol::Serialize(file_contents, &outgoing_message_buffer_)) {
             std::cerr << "Failed to serialize message." << std::endl;
@@ -184,6 +194,8 @@ namespace server {
         // counter used to track
         int byte_counter = 0;
 
+        bool terminated = false;
+
         // continue until we've sent the entire message
         while (totalBytesSent < outgoing_message_buffer_.size()) {
 
@@ -193,23 +205,24 @@ namespace server {
 
                 // check if 1000 byte buffer is filled
                 if (byte_counter == 1000) {
-                    bool terminated = false;
+                    terminated = !active_commands_->Contains(command_id);
 
                     // check if the process has been terminated
                     if (!terminated) {
                         // Send 1000 bytes of the message.
                         if (send(client_fd_, buf,
                                  numBytesToSend, 0) < 0) {
-                            perror("Failed to send the message");
+                            perror("Failed to send the file contents.");
                             return false;
                         }
-                    }
-                    else {
-
+                    } else {
+                        return false;
                     }
 
                     // reset
                     byte_counter = 0;
+
+                    // update
                     totalBytesSent += 1000;
                 }
                 buf[byte_counter] = outgoing_message_buffer_.at(n);
@@ -230,7 +243,7 @@ namespace server {
         uint32_t id;
         do {
             // ensure this id is not already in use
-            id = rand()%1000000 + 1;
+            id = rand() % 1000000 + 1;
         } while (active_commands_->Contains(id));
 
         // register this command as an active command
@@ -252,7 +265,7 @@ namespace server {
 
         fc.set_contents(file_data.data(), file_data.size());
 
-        return SendFileContents(fc) ? ClientState::ACTIVE : ClientState::ERROR;
+        return SendFileContents(fc, id) ? ClientState::ACTIVE : ClientState::ERROR;
     }
 
     Agent::ClientState Agent::HandleRequest(
@@ -262,7 +275,7 @@ namespace server {
         Response r;
         uint32_t id;
         do {
-            id = rand()%1000000 + 1;
+            id = rand() % 1000000 + 1;
         } while (active_commands_->Contains(id));
 
         r.mutable_put()->set_command_id(id);
@@ -274,7 +287,7 @@ namespace server {
         ftp_messages::FileContents fc;
 
         //Retrieve the file contents
-        ReadFileContents(&fc);
+        ReadFileContents(&fc, id);
 
         // Write the file data.
         std::vector<uint8_t> file_contents(fc.contents().begin(),
@@ -369,10 +382,37 @@ namespace server {
     }
 
     Agent::ClientState Agent::HandleRequest(
+            const ftp_messages::TerminateRequest &request) {
+        std::cout<< "Terminating an active GET or PUT command." << std::endl;
+
+        // Retrieve the command id.
+        std::string cmd_str = request.command_id();
+
+        // Case to uint16_t
+        int cmd_int(std::stoi(cmd_str));
+        uint16_t cmd_id(0);
+
+        if (cmd_int <= static_cast<int>(UINT16_MAX) && cmd_int >=0) {
+            cmd_id = static_cast<uint16_t>(cmd_int);
+        }
+        else {
+            std::cout << "Casting Error. " << std::endl;
+        }
+
+        // remove command from active command list.
+        active_commands_->Delete(cmd_id);
+
+        return ClientState::ACTIVE;
+
+    }
+
+    Agent::ClientState Agent::HandleRequest(
             const ftp_messages::QuitRequest &request) {
         std::cout << "Got a QUIT request. Exiting." << std::endl;
         // Indicate that we are finished with this client.
         return ClientState::DISCONNECTED;
     }
+
+
 
 }  // namespace server

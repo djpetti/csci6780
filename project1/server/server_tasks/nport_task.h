@@ -28,6 +28,8 @@ namespace server_tasks {
                                    std::shared_ptr<server::file_handler::FileAccessManager> write_mgr);
 
     private:
+
+        ///The file access managers. @Note Inherited from the server.
         std::shared_ptr<server::file_handler::FileAccessManager> read_manager_;
         std::shared_ptr<server::file_handler::FileAccessManager> write_manager_;
 
