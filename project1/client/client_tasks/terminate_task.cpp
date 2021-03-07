@@ -2,6 +2,7 @@
 #include "../client_util.h"
 
 #include <sys/socket.h>
+#include <unistd.h>
 
 namespace client_tasks {
 thread_pool::Task::Status TerminateTask::SetUp() {
@@ -18,8 +19,7 @@ thread_pool::Task::Status TerminateTask::RunAtomic() {
   outgoing_terminate_buf_.clear();
   return thread_pool::Task::Status::RUNNING;
 }
-thread_pool::Task::Status TerminateTask::CleanUp() {
+void TerminateTask::CleanUp() {
   close(socket_);
-  return thread_pool::Task::Status::DONE;
 }
 }

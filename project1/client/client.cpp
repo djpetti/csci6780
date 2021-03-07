@@ -137,7 +137,7 @@ bool Client::FtpShell() {
       continue;
     }
     if (r.has_terminate()) {
-      auto terminate_task = std::make_shared<client_tasks::TerminateTask>(hostname_, tport_, r.mutable_terminate());
+      auto terminate_task = std::make_shared<client_tasks::TerminateTask>(hostname_, tport_, r.terminate());
       pool.AddTask(terminate_task);
       continue;
     }
