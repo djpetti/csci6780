@@ -6,6 +6,7 @@
 #define PROJECT1_SERVER_H
 
 #include <cstdint>
+#include "vector"
 
 namespace server {
 
@@ -22,6 +23,10 @@ class Server {
    * @param port The port to listen on.
    */
   void Listen(uint16_t port);
+private:
+
+    ///Active Get and Put commands
+    std::vector<int> ActiveCommands;
 };
 
 }  // namespace server

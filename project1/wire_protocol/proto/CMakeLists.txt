@@ -8,3 +8,6 @@ add_library(proto ${PROTO_HEADER} ${PROTO_SRC})
 target_link_libraries(proto INTERFACE ${Protobuf_LIBRARIES})
 # Make sure everything that depends on this can find the headers.
 target_include_directories(proto INTERFACE ${CMAKE_CURRENT_BINARY_DIR})
+
+# For Mac Users
+target_include_directories(proto INTERFACE "/usr/local/Cellar/protobuf/3.14.0/include")

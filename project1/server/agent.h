@@ -12,95 +12,139 @@
 #include "../wire_protocol/wire_protocol.h"
 #include "file_handler/file_handler_interface.h"
 #include "ftp_messages.pb.h"
+#include "server_tasks/command_ids.h"
+#include "file_handler/thread_safe_file_handler.h"
+#include "file_handler/file_access_manager.h"
 
 namespace server {
 
 /**
  * @brief Contains logic for handling individual connections to the server.
  */
-class Agent {
- public:
-  /**
-   * @param client_fd The FD of the client socket. Note that it will take
-   *    responsibility for closing this socket on exit.
-   * @param file_handler The `FileHandler` to use internally. Note this class
-   *    will take ownership of it.
-   */
-  Agent(int client_fd,
-        std::unique_ptr<file_handler::IFileHandler> file_handler);
+    class Agent {
+    public:
+        /**
+         * @param client_fd The FD of the client socket. Note that it will take
+         *    responsibility for closing this socket on exit.
+         * @param file_handler The `FileHandler` to use internally. Note this class
+         *    will take ownership of it.
+         */
+        Agent(int client_fd,
+              std::unique_ptr<file_handler::ThreadSafeFileHandler> file_handler);
 
-  ~Agent();
+        ~Agent();
 
-  /**
-   * @brief Handles this particular client, until the client disconnects.
-   * @note This will block and is meant to be run in its own thread..
-   * @return True if the client was serviced and disconnected normally, false
-   *    if a failure forced a premature disconnect.
-   */
-  bool Handle();
+        /**
+         * @brief Handles this particular client, until the client disconnects.
+         * @note This will block and is meant to be run in its own thread..
+         * @return True if the client was serviced and disconnected normally, false
+         *    if a failure forced a premature disconnect.
+         */
+        bool Handle();
 
- private:
-  /// Size in bytes to use for the internal message buffer.
-  static constexpr size_t kClientBufferSize = 4096;
+        /**
+         * @brief Setter for the array of active command IDs.
+         * @param cmd_ids The list of active command IDs.
+         * @Note Needs to be called before adding to the thread pool.
+         */
+        void SetActiveCommandIDs(std::shared_ptr<server_tasks::CommandIDs> cmd_ids);
 
-  /// Enumerates state of connected client.
-  enum class ClientState {
-    /// We expect more messages from the client.
-    ACTIVE,
-    /// The client has disconnected normally.
-    DISCONNECTED,
-    /// There was some error communicating with the client.
-    ERROR,
-  };
 
-  /**
-   * @brief Reads the next message from the socket.
-   * @param message The message to read into.
-   * @return True if it succeeded in reading the message, false otherwise.
-   */
-  ClientState ReadNextMessage(ftp_messages::Request* message);
+    private:
+        std::shared_ptr<file_handler::FileAccessManager> read_manager_;
+        std::shared_ptr<file_handler::FileAccessManager> write_manager_;
 
-  /**
-   * @brief Dispatches an incoming request to the proper handler.
-   * @param message The request.
-   * @return The updated state of the client.
-   */
-  ClientState DispatchMessage(const ftp_messages::Request& message);
 
-  /**
-   * @brief All these methods are handlers for specific types of requests.
-   * @param request The request to handle.
-   * @return The updated state of the client.
-   */
-  ClientState HandleRequest(const ftp_messages::GetRequest& request);
-  ClientState HandleRequest(const ftp_messages::PutRequest& request);
-  ClientState HandleRequest(const ftp_messages::DeleteRequest& request);
-  ClientState HandleRequest(const ftp_messages::ListRequest& request);
-  ClientState HandleRequest(const ftp_messages::ChangeDirRequest& request);
-  ClientState HandleRequest(const ftp_messages::MakeDirRequest& request);
-  ClientState HandleRequest(const ftp_messages::PwdRequest& request);
-  ClientState HandleRequest(const ftp_messages::QuitRequest& request);
+        /// Size in bytes to use for the internal message buffer.
+        static constexpr size_t kClientBufferSize = 4096;
 
-  /**
-   * @brief Sends a response message to the client.
-   * @param response The message to send.
-   * @return The updated state of the client.
-   */
-  bool SendResponse(const ftp_messages::Response& response);
+        /// Enumerates state of connected client.
+        enum class ClientState {
+            /// We expect more messages from the client.
+            ACTIVE,
+            /// The client has disconnected normally.
+            DISCONNECTED,
+            /// There was some error communicating with the client.
+            ERROR,
+        };
 
-  /// The FD to talk to the client on.
-  int client_fd_;
+        /**
+         * @brief Reads the next message from the socket.
+         * @param message The message to read into.
+         * @return True if it succeeded in reading the message, false otherwise.
+         */
+        ClientState ReadNextMessage(ftp_messages::Request *message);
 
-  /// Internal buffer to use for incoming messages.
-  std::vector<uint8_t> incoming_message_buffer_{};
-  /// Internal buffer to use for outgoing messages.
-  std::vector<uint8_t> outgoing_message_buffer_{};
-  /// Parser to use for reading messages on the socket.
-  ::wire_protocol::MessageParser<ftp_messages::Request> parser_;
+        /**
+         * @brief Reads a file contents message from the socket.
+         * @param fc The message to read into.
+         * @return True if it succeded in reading the message, false if otherwise.
+         */
+        ClientState ReadFileContents(ftp_messages::FileContents *fc);
 
-  /// Used for performing filesystem operations.
-  std::unique_ptr<file_handler::IFileHandler> file_handler_;
-};
+        /**
+         * @brief Dispatches an incoming request to the proper handler.
+         * @param message The request.
+         * @return The updated state of the client.
+         */
+        ClientState DispatchMessage(const ftp_messages::Request &message);
+
+        /**
+         * @brief All these methods are handlers for specific types of requests.
+         * @param request The request to handle.
+         * @return The updated state of the client.
+         */
+        ClientState HandleRequest(const ftp_messages::GetRequest &request);
+
+        ClientState HandleRequest(const ftp_messages::PutRequest &request);
+
+        ClientState HandleRequest(const ftp_messages::DeleteRequest &request);
+
+        ClientState HandleRequest(const ftp_messages::ListRequest &request);
+
+        ClientState HandleRequest(const ftp_messages::ChangeDirRequest &request);
+
+        ClientState HandleRequest(const ftp_messages::MakeDirRequest &request);
+
+        ClientState HandleRequest(const ftp_messages::PwdRequest &request);
+
+        ClientState HandleRequest(const ftp_messages::QuitRequest &request);
+
+        /**
+         * @brief Sends a response message to the client.
+         * @param response The message to send.
+         * @return The updated state of the client.
+         */
+        bool SendResponse(const ftp_messages::Response &response);
+
+        /**
+         * @brief Sends the file contents for a get request
+         * @param file_contents the file contents to be sent
+         * @return True on Success, False if the command was terminated
+         */
+        bool SendFileContents(const ftp_messages::FileContents &file_contents);
+
+        /// The FD to talk to the client on.
+        int client_fd_;
+
+        ///Active Commands @Note: To be inherited from the AgentTask
+        std::shared_ptr<server_tasks::CommandIDs> active_commands_;
+
+        /// Internal buffer to use for incoming messages.
+        std::vector<uint8_t> incoming_message_buffer_{};
+        /// Internal buffer to use for outgoing messages.
+        std::vector<uint8_t> outgoing_message_buffer_{};
+        /// Parser to use for reading messages on the socket.
+        ::wire_protocol::MessageParser<ftp_messages::Request> parser_;
+
+        /// Parser to use for reading file contents on the socket.
+        ::wire_protocol::MessageParser<ftp_messages::FileContents> fc_parser_;
+
+        /// Used for performing filesystem operations.
+        std::unique_ptr<file_handler::ThreadSafeFileHandler> file_handler_;
+
+
+    };
 
 }  // namespace server
 

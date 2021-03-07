@@ -10,6 +10,7 @@
 
 #include "agent.h"
 #include "file_handler/file_handler.h"
+#include "../thread_pool/thread_pool.h"
 
 namespace server {
 namespace {
@@ -73,19 +74,21 @@ int SetUpSocket(const struct sockaddr_in &address) {
  * @brief Handles a single connection. Meant to be run in a thread.
  * @param client_fd The file descriptor of the client.
  * @return True if the client was successfully serviced.
- */
+
 bool HandleClient(int client_fd) {
   auto file_handler = std::make_unique<FileHandler>();
   Agent agent(client_fd, std::move(file_handler));
 
   return agent.Handle();
 }
-
+*/
 }  // namespace
 
 void Server::Listen(uint16_t port) {
   // Create the socket.
   const auto kAddress = MakeAddress(port);
+
+  thread_pool::ThreadPool pool;
   int server_fd = SetUpSocket(kAddress);
   if (server_fd < 0) {
     return;

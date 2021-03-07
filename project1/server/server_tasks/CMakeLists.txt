@@ -1,0 +1,3 @@
+add_library(server_tasks_lib)
+
+target_link_libraries(server_tasks_lib thread_pool)
