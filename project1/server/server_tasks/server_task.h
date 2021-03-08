@@ -16,15 +16,12 @@
 #include <cstdint>
 
 namespace server_tasks {
+
+    /**
+     * @class Represents a server task dealing with socket creation/binding and handling client connection.
+     */
     class ServerTask : public thread_pool::Task {
     public:
-
-        /**
-         * @brief Represents how this ServerTask will listen on a socket.
-         * @return The status of the thread pool.
-         * @note This will be called in RunAtomic.
-         */
-        virtual thread_pool::Task::Status Listen();
 
         thread_pool::Task::Status SetUp() override;
         thread_pool::Task::Status RunAtomic() override;
@@ -42,6 +39,13 @@ namespace server_tasks {
         void SetPort(uint16_t port);
 
     protected:
+
+        /**
+         * @brief Listens on a socket.
+         * @return The status of the thread pool.
+         * @note This will be called in RunAtomic.
+         */
+        virtual thread_pool::Task::Status Listen();
 
         /**
          * @brief Helper function to make address structure for socket creation
@@ -67,7 +71,7 @@ namespace server_tasks {
         int server_fd_;
 
         /// Maximum queue size to use for listening on the server socket.
-        uint8_t kMaxQueueSize_= 5;
+        uint8_t static constexpr kMaxQueueSize_= 5;
 
         ///The list containing the active command IDs
         std::shared_ptr<CommandIDs> active_ids_;

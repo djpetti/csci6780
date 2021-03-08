@@ -185,19 +185,19 @@ namespace server {
         }
 
         // monitor for termination request for get and put commands
-        uint16_t totalBytesSent = 0;
+        uint16_t total_bytes_sent = 0;
 
         // make 1000 byte buffer
-        int numBytesToSend = 1000;
-        uint8_t buf[numBytesToSend];
+        int num_bytes_to_send = 1000;
+        uint8_t buf[num_bytes_to_send];
 
-        // counter used to track
+        // counter used to track when buf is filled
         int byte_counter = 0;
 
         bool terminated = false;
 
         // continue until we've sent the entire message
-        while (totalBytesSent < outgoing_message_buffer_.size()) {
+        while (total_bytes_sent < outgoing_message_buffer_.size()) {
 
 
             // fill the buffer one byte at a time
@@ -211,7 +211,7 @@ namespace server {
                     if (!terminated) {
                         // Send 1000 bytes of the message.
                         if (send(client_fd_, buf,
-                                 numBytesToSend, 0) < 0) {
+                                 num_bytes_to_send, 0) < 0) {
                             perror("Failed to send the file contents.");
                             return false;
                         }
@@ -223,10 +223,14 @@ namespace server {
                     byte_counter = 0;
 
                     // update
-                    totalBytesSent += 1000;
+                    total_bytes_sent += 1000;
                 }
                 buf[byte_counter] = outgoing_message_buffer_.at(n);
                 ++byte_counter;
+
+                if (active_commands_->Contains(command_id)){
+
+                }
 
             }
         }

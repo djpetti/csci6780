@@ -14,16 +14,21 @@
 
 namespace server_tasks {
 
+    /**
+     * @class Monitors for client connections to the Normal Command Port.
+     */
     class NPortTask : public ServerTask {
     public:
-        thread_pool::Task::Status RunAtomic() final override;
 
-        thread_pool::Task::Status SetUp() override;
-
-        void CleanUp() final override;
-
+        /**
+         * @brief Listens for client socket connections.
+         * @return Status::RUNNING
+         */
         thread_pool::Task::Status Listen() override;
 
+        /**
+         * @brief Sets the file access managers
+         */
         void SetFileAccessManagers(std::shared_ptr<server::file_handler::FileAccessManager> read_mgr,
                                    std::shared_ptr<server::file_handler::FileAccessManager> write_mgr);
 

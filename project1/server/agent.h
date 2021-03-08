@@ -28,6 +28,7 @@ namespace server {
          *    responsibility for closing this socket on exit.
          * @param file_handler The `FileHandler` to use internally. Note this class
          *    will take ownership of it.
+         * @param active_commands The list of active commands to be used internally.
          */
         Agent(int client_fd,
               std::unique_ptr<file_handler::ThreadSafeFileHandler> file_handler,
@@ -36,6 +37,7 @@ namespace server {
         /**
          * @param client_fd The FD of the client socket. Note that it will take
          *    responsibility for closing this socket on exit.
+         * @param active_commands The list of active commands to be used internally.
          * @note Used for agents only handling Termination Requests.
          *
          */

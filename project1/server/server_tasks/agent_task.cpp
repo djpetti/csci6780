@@ -19,6 +19,7 @@ namespace server_tasks {
     thread_pool::Task::Status AgentTask::SetUp() {
         // give the agent a unique file handler with the shared access managers
         auto fh = std::make_unique<server::file_handler::ThreadSafeFileHandler>(read_manager_,write_manager_);
+        agent_ = std::unique_ptr<server::Agent>(client_fd_, std::move(fh), active_commands_);
         agent_ = new server::Agent(client_fd_, std::move(fh),active_commands_);
         return Status::RUNNING;
     }

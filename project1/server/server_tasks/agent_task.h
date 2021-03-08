@@ -32,6 +32,11 @@ namespace server_tasks {
          */
         void SetActiveCommands(std::shared_ptr<CommandIDs> cmds);
 
+        /**
+         * @brief Sets the file access managers to be given to the agent.
+         * @param read_mgr
+         * @param write_mgr
+         */
         void SetFileAccessManagers(std::shared_ptr<server::file_handler::FileAccessManager> read_mgr,
                                    std::shared_ptr<server::file_handler::FileAccessManager> write_mgr);
 

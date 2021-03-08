@@ -8,7 +8,7 @@ namespace server_tasks {
         server_fd_ = SetUpSocket(kAddress);
         if (server_fd_ < 0) {
             return thread_pool::Task::Status::FAILED;
-        } else return thread_pool::Task::Status::RUNNING;
+        } else {return thread_pool::Task::Status::RUNNING;}
     }
 
     thread_pool::Task::Status ServerTask::RunAtomic() {

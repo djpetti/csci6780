@@ -10,4 +10,6 @@ target_link_libraries(proto INTERFACE ${Protobuf_LIBRARIES})
 target_include_directories(proto INTERFACE ${CMAKE_CURRENT_BINARY_DIR})
 
 # For Mac Users
-target_include_directories(proto INTERFACE "/usr/local/Cellar/protobuf/3.14.0/include")
+if (APPLE)
+    target_include_directories(proto INTERFACE "/usr/local/Cellar/protobuf/3.14.0/include")
+    endif()
