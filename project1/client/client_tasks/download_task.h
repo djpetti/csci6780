@@ -24,10 +24,20 @@ class DownloadTask : public thread_pool::Task {
   void CleanUp() override;
 
  protected:
+
+  // the name of the file to be retreived
   std::string filename_{};
+
+  // incoming buffer that stores serialized data to be received from the server
   std::vector<uint8_t> incoming_file_buf_{};
+
+  // client socket
   int client_fd_;
+
+  // buffer size, provided by client
   size_t buffer_size_;
+
+  // parser used to parse incoming FileContents messages
   wire_protocol::MessageParser<google::protobuf::Message> parser_;
 };
 }

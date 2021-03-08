@@ -17,8 +17,13 @@ class UploadTask : public thread_pool::Task {
   void CleanUp() override;
 
  protected:
+
+  // client socket
   int client_fd_;
+
+  // outgoing buffer that stores serialized data to be sent to the server
   std::vector<uint8_t> outgoing_file_buf_{};
+
 };
 }
 #endif  // PROJECT1_UPLOAD_TASK_H

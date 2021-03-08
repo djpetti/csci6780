@@ -27,11 +27,22 @@ class TerminateTask : public thread_pool::Task {
   void CleanUp() override;
 
  protected:
+
+  // outgoing buffer that stores serialized data to be sent to the server
   std::vector<uint8_t> outgoing_terminate_buf_{};
+
+  // address of the server
   std::string address_{};
+
+  // termination port of the server
   uint16_t port_;
+
+  // the encapsulated termination request
   ftp_messages::TerminateRequest terminate_req_;
+
+  // socket used to send the termination request
   int socket_{};
+
 };
 }
 #endif  // PROJECT1_TERMINATE_TASK_H
