@@ -13,22 +13,27 @@
  */
 void PrintUsageAndExit(const char* program_name) {
   std::cout << "Usage:" << std::endl
-            << "  " << program_name << " listen_port" << std::endl;
+            << "  " << program_name << " normal_port termination_port" << std::endl;
   exit(1);
 }
 
 int main(int argc, const char** argv) {
-  if (argc != 2) {
+  if (argc != 3) {
     PrintUsageAndExit(argv[0]);
   }
 
-  const auto kPort = strtol(argv[1], nullptr, 10);
-  if (kPort == 0) {
+  const auto nPort = strtol(argv[1], nullptr, 10);
+  if (nPort == 0) {
     // Invalid port number.
     PrintUsageAndExit(argv[0]);
   }
+  const auto tPort = strtol(argv[2], nullptr, 10);
+    if (tPort == 0) {
+        // Invalid port number.
+        PrintUsageAndExit(argv[0]);
+    }
 
   // Create the server.
   server::Server server;
-  server.Listen(kPort);
+  server.FtpService(nPort,tPort);
 }
