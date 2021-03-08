@@ -151,6 +151,7 @@ bool Client::FtpShell() {
     WaitForMessage();
     HandleResponse();
     if (r.has_put()) {
+      // If put command, FileContents will have to be sent.
       auto contents = ip_->GetContentsMessage();
       wire_protocol::Serialize(contents, &outgoing_msg_buf_);
       if (!ip_->IsForking()) {
@@ -160,6 +161,7 @@ bool Client::FtpShell() {
         pool.AddTask(put_task);
       }
     } else if (r.has_get()) {
+      // If get command, FileContents will have to be received.
       if (!ip_->IsForking()) {
         WaitForMessage();
         client_util::SaveIncomingFile(parser_, ip_->GetFilename());
