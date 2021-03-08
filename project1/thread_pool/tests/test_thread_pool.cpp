@@ -72,6 +72,27 @@ class InfiniteTask : public Task {
 };
 
 /**
+ * @brief A task that runs for a set amount of time.
+ */
+class DelayTask : public Task {
+ public:
+  /**
+   * @param delay_time Milliseconds to run the task for.
+   */
+  explicit DelayTask(const std::chrono::milliseconds& delay_time)
+      : delay_time_(delay_time) {}
+
+  Status RunAtomic() final {
+    std::this_thread::sleep_for(delay_time_);
+    return Status::DONE;
+  }
+
+ private:
+  /// Time to sleep for.
+  std::chrono::milliseconds delay_time_;
+};
+
+/**
  * @brief A task with non-trivial SetUp and CleanUp methods.
  */
 class TaskWithInit : public Task {
@@ -227,7 +248,8 @@ TEST(ThreadPool, LimittedThreads) {
 
   // Assert.
   // Despite there being three tasks, it should only have created two threads.
-  EXPECT_EQ(2U, pool.NumThreads());
+  // (One or more might have exited already.)
+  EXPECT_LE(pool.NumThreads(), 2);
 }
 
 /**
@@ -278,6 +300,44 @@ TEST(ThreadPool, SetUpFailed) {
   // It should never run the main loop if the setup fails.
   EXPECT_FALSE(task->ran_loop);
   EXPECT_TRUE(task->ran_clean_up);
+}
+
+/**
+ * @test Tests that we can wait for a task to finish.
+ */
+TEST(ThreadPool, WaitForCompletion) {
+  // Arrange.
+  ThreadPool pool;
+
+  // These tasks will complete one after the other.
+  auto task1 = std::make_shared<DelayTask>(std::chrono::milliseconds(50));
+  auto task2 = std::make_shared<DelayTask>(std::chrono::milliseconds(100));
+
+  // Act.
+  pool.AddTask(task1);
+  pool.AddTask(task2);
+
+  // Assert.
+  // Make sure we can wait for both tasks to finish.
+  while (pool.GetTaskStatus(task1) != Task::Status::DONE ||
+         pool.GetTaskStatus(task2) != Task::Status::DONE) {
+    pool.WaitForCompletion();
+  }
+
+  // When we exit here, both tasks should be marked as done.
+  EXPECT_EQ(Task::Status::DONE, pool.GetTaskStatus(task1));
+  EXPECT_EQ(Task::Status::DONE, pool.GetTaskStatus(task2));
+}
+
+/**
+ * @test Tests that waiting exits immediately when no tasks are running.
+ */
+TEST(ThreadPool, WaitEmptyPool) {
+  // Arrange.
+  ThreadPool pool;
+
+  // Act and assert.
+  pool.WaitForCompletion();
 }
 
 }  // namespace thread_pool::tests
