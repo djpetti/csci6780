@@ -26,7 +26,7 @@ ThreadPool::~ThreadPool() {
   LOG_S(1) << "Joining internal threads...";
   // Wake up the internal threads and force them to check should_close_.
   task_pending_.notify_one();
-  task_done_.notify_one();
+  task_done_.notify_all();
   thread_available_.notify_one();
 
   // Wait for all threads to finish.
@@ -184,8 +184,9 @@ void ThreadPool::RunTask(Task* task) {
     std::lock_guard<std::mutex> lock(mutex_);
 
     joinable_queue_.push(task->GetHandle());
+    ++num_completed_tasks_;
   }
-  task_done_.notify_one();
+  task_done_.notify_all();
 }
 
 Task::Status ThreadPool::GetTaskStatus(const std::shared_ptr<Task>& task) {
@@ -202,6 +203,23 @@ void ThreadPool::CancelTask(const std::shared_ptr<Task>& task_handle) {
 
   LOG_S(INFO) << "Cancelling task " << task_handle << ".";
   cancelled_tasks_.insert(task_handle->GetHandle());
+}
+
+void ThreadPool::WaitForCompletion() {
+  std::unique_lock<std::mutex> lock(mutex_);
+
+  if (dispatch_queue_.empty() && pool_size_ == 0) {
+    // No running or pending tasks.
+    return;
+  }
+
+  const uint32_t kInitialCompletedTasks = num_completed_tasks_;
+
+  // Wait for a task to finish.
+  task_done_.wait(lock, [this, kInitialCompletedTasks]() {
+    return num_completed_tasks_ != kInitialCompletedTasks ||
+           (dispatch_queue_.empty() && pool_size_ == 0);
+  });
 }
 
 uint32_t ThreadPool::NumThreads() {

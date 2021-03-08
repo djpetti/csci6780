@@ -38,6 +38,12 @@ class IThreadPool {
   virtual void CancelTask(const std::shared_ptr<Task>& task) = 0;
 
   /**
+   * @brief Blocks until at least one task completes. If no tasks are running,
+   *    it returns immediately.
+   */
+  virtual void WaitForCompletion() = 0;
+
+  /**
    * @return Number of threads that are currently running.
    */
   virtual uint32_t NumThreads() = 0;
