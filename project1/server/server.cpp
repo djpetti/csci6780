@@ -22,8 +22,8 @@ namespace server {
         pool.AddTask(nPortTask);
         pool.AddTask(tPortTask);
 
-        while (pool.GetTaskStatus(nPortTask) != thread_pool::Task::Status::DONE ||
-               pool.GetTaskStatus(tPortTask) != thread_pool::Task::Status::DONE) {
+        while (pool.GetTaskStatus(nPortTask) != thread_pool::Task::Status::RUNNING ||
+               pool.GetTaskStatus(tPortTask) != thread_pool::Task::Status::RUNNING) {
             pool.WaitForCompletion();
         }
 
