@@ -5,87 +5,93 @@
 #define PROJECT1_CLIENT_H
 
 #include <cstdint>
-#include "../wire_protocol/wire_protocol.h"
+
 #include "../server/file_handler/file_handler.h"
+#include "../wire_protocol/wire_protocol.h"
 #include "ftp_messages.pb.h"
 #include "input_parser/input_parser.h"
+#include "client_util.h"
 
 namespace client {
 
-    /**
-     * @brief FTP Client. Contains logic for connecting to server, sending requests, outputting responses,
-     * and shell continuity.
-     *
-     */
-    class Client {
-    public:
+/**
+ * @brief FTP Client. Contains logic for connecting to server, sending requests,
+ * outputting responses, and shell continuity.
+ *
+ */
+class Client {
+ public:
+  /**
+   * @brief The shell logic.
+   *
+   * @return True when user properly quits
+   *
+   * @note will never return false.
+   */
+  void FtpShell();
 
-        /**
-         * @brief The shell logic.
-         *
-         * @return True when user properly quits
-         *
-         * @note will never return false.
-         */
-        bool FtpShell();
+  /**
+   *
+   * @param hostname the ip address of the FTP server
+   * @param nport the port the FTP server listens to for various requests
+   * @param tport the port the FTP server listens to for termination requests
+   * @return true on success, false on failure
+   */
+  bool Connect(const std::string &hostname, uint16_t nport, uint16_t tport);
 
-        /**
-         *
-         * @param hostname the ip address of the FTP server
-         * @param port the port the FTP server is binded to
-         * @return true on success, false on failure
-         */
-        bool Connect(const std::string &hostname, uint16_t port);
+  /**
+   * @brief sends the serialized message via a socket
+   * @return true on success, false on failure
+   */
+  bool SendReq();
 
+  /**
+   * @brief expects a message from socket, stores message in parser
+   * @return true on message received, false otherwise
+   */
+  bool WaitForMessage();
 
-        /**
-         * @brief sends the serialized message via a socket
-         * @return true on success, false on failure
-         */
-        bool SendReq();
+  /**
+   * @brief extracts relevant information to be displayed to user from response
+   */
+  void HandleResponse();
 
-        /**
-         * @brief expects a response message from socket, stores message in parser
-         * @return true on response received, false otherwise
-         */
-        bool WaitForResponse();
+ private:
+  /**
+   * @brief Handles output formatting for responses
+   */
+  void Output();
 
-        /**
-         * @brief extracts relevant information to be displayed to user from response
-         */
-        void HandleResponse();
+  /// tracking connection status
+  bool connected_;
 
-    private:
+  /// buffer that stores serialized data to be sent to the server
+  std::vector<uint8_t> outgoing_msg_buf_{};
 
-        /**
-         * @brief Handles output formatting for responses
-         */
-        void Output();
+  /// buffer that stores serialized data to be received from the server
+  std::vector<uint8_t> incoming_msg_buf_{};
 
-        //tracking connection status
-        bool connected_;
+  /// buffer size for client.
+  static constexpr size_t kBufferSize = 4096;
 
-        //buffer that stores serialized data to be sent to and received from server
-        std::vector<uint8_t> outgoing_msg_buf_{};
-        std::vector<uint8_t> incoming_msg_buf_{};
+  /// hostname of the server
+  std::string hostname_;
 
-        //buffer size for client.
-        static constexpr size_t kBufferSize = 4096;
+  /// client port
+  uint16_t nport_;
 
-        //client socket fd
-        int client_fd_;
+  /// terminate port;
+  uint16_t tport_;
 
-        //response info to be formatted and outputted
-        std::string output_;
+  /// client socket fd
+  int client_fd_;
 
-        //parser for handling messages
-        wire_protocol::MessageParser<ftp_messages::Response> parser_;
+  /// response info to be formatted and outputted
+  std::string output_;
 
-        //parser for user input
-        client::input_parser::InputParser *ip_;
+  /// parser for handling messages
+  wire_protocol::MessageParser<google::protobuf::Message> parser_;
+};
+}  // namespace client
 
-
-    };
-}
-
-#endif //PROJECT1_CLIENT_H
+#endif  // PROJECT1_CLIENT_H

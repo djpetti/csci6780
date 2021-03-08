@@ -15,92 +15,118 @@
 
 namespace client::input_parser {
 
-    /**
-     * @brief Assists in mapping input commands for FTP client to corresponding
-     * protobuf request.
-     *
-     */
-    class InputParser {
-    public:
-        enum ReqType {GETF, PUTF, DEL, LS, CD, MKDIR, PWD, QUIT};
-
-        /**
-         * @brief Initializes relevant info about this input command
-         * @param cmd the user input
-         * @note assumes correct syntax
-         */
-        InputParser(std::string& cmd);
-
-
-        /**
-         * @brief getter for filename
-         * @return the filename
-         */
-        std::string GetFilename();
-
-        /**
-         * creates the request to be sent
-         * @return
-         */
-        ftp_messages::Request CreateReq();
-
-
-    private:
 /**
-         * creates a get request
-         * @return the request
-         */
-        ftp_messages::Request CreateGetReq();
+ * @brief Assists in mapping input commands for FTP client to corresponding
+ * protobuf request.
+ *
+ */
+class InputParser {
+ public:
+  enum ReqType { GETF, PUTF, DEL, LS, CD, MKDIR, PWD, QUIT, TERMINATE };
 
-        /**
-         * creates a put request
-         * @return the request
-         */
-        ftp_messages::Request CreatePutReq();
+  /**
+   * @brief Initializes relevant info about this input command
+   * @param cmd the user input
+   * @note assumes correct syntax
+   */
+  InputParser(std::string& cmd);
 
-        /**
-         * creates a delete request
-         * @return the request
-         */
-        ftp_messages::Request CreateDelReq();
+  /**
+   * @brief getter for filename
+   * @return the filename
+   */
+  std::string GetFilename();
 
-        /**
-         * creates a list request
-         * @return the request
-         */
-        ftp_messages::Request CreateListReq();
+  /**
+   * @return whether or not the root command was valid
+   */
+  bool IsValid();
 
-        /**
-         * creates a cd request
-         * @return the request
-         */
-        ftp_messages::Request CreateCDReq();
+  /**
+   * @return whether or not the user requested to fork the command
+   */
+  bool IsForking();
 
-        /**
-         * creates a mkdir request
-         * @return the request
-         */
-        ftp_messages::Request CreateMkdirReq();
+  /**
+   * @brief gets the contents of a file
+   * @return file contents message
+   */
+  ftp_messages::FileContents GetContentsMessage();
 
-        /**
-         * creates a pwd request
-         * @return the request
-         */
-        ftp_messages::Request CreatePwdReq();
+  /**
+   * creates the request to be sent
+   * @return
+   */
+  ftp_messages::Request CreateReq();
 
-        /**
-         * creates a quit request
-         * @return the request
-         */
-        ftp_messages::Request CreateQuitReq();
+ private:
+  /**
+   * creates a get request
+   * @return the request
+   */
+  ftp_messages::Request CreateGetReq();
 
-        const std::array<std::string, 8> commands_ = {"get", "put", "delete", "ls", "cd", "mkdir", "pwd", "quit"};\
+  /**
+   * creates a put request
+   * @return the request
+   */
+  ftp_messages::Request CreatePutReq();
 
-        //information to be extracted from input
-        ReqType req_;
-        std::string fn_;
-        std::string dn_;
-        std::vector<uint8_t> contents_;
-    };
-};//namespace input_parser
-#endif //PROJECT1_INPUT_PARSER_H
+  /**
+   * creates a delete request
+   * @return the request
+   */
+  ftp_messages::Request CreateDelReq();
+
+  /**
+   * creates a list request
+   * @return the request
+   */
+  ftp_messages::Request CreateListReq();
+
+  /**
+   * creates a cd request
+   * @return the request
+   */
+  ftp_messages::Request CreateCdReq();
+
+  /**
+   * creates a mkdir request
+   * @return the request
+   */
+  ftp_messages::Request CreateMkdirReq();
+
+  /**
+   * creates a pwd request
+   * @return the request
+   */
+  ftp_messages::Request CreatePwdReq();
+
+  /**
+   * creates a quit request
+   * @return the request
+   */
+  ftp_messages::Request CreateQuitReq();
+
+  /**
+   * creates a terminate request
+   * @return the request
+   */
+  ftp_messages::Request CreateTerminateReq();
+
+  const std::map<std::string, ReqType> commands_ = {
+      {"get", GETF}, {"put", PUTF},  {"delete", DEL},
+      {"ls", LS},    {"cd", CD},     {"mkdir", MKDIR},
+      {"pwd", PWD},  {"quit", QUIT}, {"terminate", TERMINATE}};
+
+  /// information to be extracted from input
+  bool is_valid_;
+  bool is_forking_;
+  ReqType req_;
+  std::string fn_;
+  std::string dn_;
+  std::string cid_;
+  std::vector<uint8_t> contents_;
+};
+};      // namespace client::input_parser
+#endif  // PROJECT1_INPUT_PARSER_H
