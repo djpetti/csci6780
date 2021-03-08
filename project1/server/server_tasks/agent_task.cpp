@@ -19,10 +19,10 @@ namespace server_tasks {
         if (read_manager_ && write_manager_) {
             // give the agent a unique file handler with the shared access managers
             auto fh = std::make_unique<server::file_handler::ThreadSafeFileHandler>(read_manager_, write_manager_);
-            agent_ = new server::Agent(client_fd_, std::move(fh), active_commands_);
+            agent_ = std::make_unique<server::Agent>(client_fd_,std::move(fh),std::move(active_commands_));
         } else {
             // no need to give an Agent a file handler for termination commands
-            agent_ = new server::Agent(client_fd_, active_commands_);
+            agent_ = std::make_unique<server::Agent>(client_fd_,std::move(active_commands_));
         }
 
         return Status::RUNNING;
@@ -33,10 +33,6 @@ namespace server_tasks {
             return Status::DONE;
         }
         return Status::FAILED;
-    }
-
-    void AgentTask::CleanUp() {
-        delete agent_;
     }
 
 

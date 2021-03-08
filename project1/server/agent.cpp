@@ -6,6 +6,8 @@
 #include <cstdio>
 #include "stdlib.h"
 #include <iostream>
+#include <algorithm>
+#include <limits>
 
 namespace server {
 
@@ -180,15 +182,18 @@ namespace server {
         }
 
         // monitor for termination request for get and put commands
-        uint16_t kBytesSent = 0;
-        const uint32_t kBytesToSend = 1000;
+        uint16_t total_bytes_sent = 0;
         bool terminated = false;
 
         // continue until we've sent the entire message
-        while (kBytesSent < outgoing_message_buffer_.size()) {
+        while (total_bytes_sent < outgoing_message_buffer_.size()) {
             if (!terminated) {
-                kBytesSent += send(client_fd_, outgoing_message_buffer_.data() + kBytesSent,
-                                   kBytesToSend, 0);
+                const uint32_t kBytesToSend = std::min( (int) outgoing_message_buffer_.size() - total_bytes_sent, 1000);
+                int bytes_sent =  send(client_fd_, outgoing_message_buffer_.data() + total_bytes_sent,
+                                       kBytesToSend, 0);
+                if (bytes_sent != -1) {
+                    total_bytes_sent+=bytes_sent;
+                }
             } else {
                 return false;
             }
@@ -346,7 +351,7 @@ namespace server {
         int cmd_int(std::stoi(cmd_str));
         uint16_t cmd_id(0);
 
-        if (cmd_int <= static_cast<int>(UINT16_MAX) && cmd_int >= 0) {
+        if (cmd_int <= std::numeric_limits<uint16_t>::max() && cmd_int >= 0) {
             cmd_id = static_cast<uint16_t>(cmd_int);
         } else {
             std::cout << "Casting Error. " << std::endl;

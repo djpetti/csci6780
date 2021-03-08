@@ -24,6 +24,7 @@ namespace server {
     class Agent {
     public:
         /**
+         * @brief Constructor used for agents handling normal commands.
          * @param client_fd The FD of the client socket. Note that it will take
          *    responsibility for closing this socket on exit.
          * @param file_handler The `FileHandler` to use internally. Note this class
@@ -34,6 +35,12 @@ namespace server {
               std::unique_ptr<file_handler::ThreadSafeFileHandler> file_handler,
               std::shared_ptr<server_tasks::CommandIDs> active_commands);
 
+        /**
+         * @brief Constructor used for agents handling terminate commands.
+         * @param client_fd The FD of the client socket. Note that it will take
+         *    responsibility for closing this socket on exit.
+         * @param active_commands The list of active commands to be used internally.
+         */
         Agent(int client_fd,
               std::shared_ptr<server_tasks::CommandIDs> active_commands);
 
@@ -124,7 +131,7 @@ namespace server {
         bool SendFileContents(const ftp_messages::FileContents &file_contents, uint16_t command_id);
 
         /**
-         * @bried Generates a command ID for a GET or PUT request.
+         * @brief Generates a command ID for a GET or PUT request.
          * @return the command ID
          */
         uint32_t GenerateCommandID();

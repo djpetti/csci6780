@@ -34,7 +34,7 @@ namespace server_tasks {
         std::shared_ptr<CommandIDs> active_commands_;
 
         ///This AgentTask's Agent.
-        server::Agent* agent_;
+        std::unique_ptr<server::Agent> agent_;
 
         ///The file access managers. @note To be inherited from NPortTask.
         std::shared_ptr<server::file_handler::FileAccessManager> read_manager_;

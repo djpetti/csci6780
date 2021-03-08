@@ -10,8 +10,7 @@ namespace server_tasks {
     }
     bool CommandIDs::Contains(uint16_t id) {
         std::lock_guard<std::mutex> guard(mutex_);
-        std::unordered_set<uint16_t>::iterator find = std::find(command_ids_.begin(),
-                                                       command_ids_.end(),id);
+        const auto& find = command_ids_.find(id);
         return find != command_ids_.end();
     }
 }
