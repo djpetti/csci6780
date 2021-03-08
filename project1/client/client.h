@@ -28,12 +28,13 @@ class Client {
    *
    * @note will never return false.
    */
-  bool FtpShell();
+  void FtpShell();
 
   /**
    *
    * @param hostname the ip address of the FTP server
-   * @param port the port the FTP server is binded to
+   * @param nport the port the FTP server listens to for various requests
+   * @param tport the port the FTP server listens to for termination requests
    * @return true on success, false on failure
    */
   bool Connect(const std::string &hostname, uint16_t nport, uint16_t tport);
@@ -88,9 +89,6 @@ class Client {
 
   // parser for handling messages
   wire_protocol::MessageParser<google::protobuf::Message> parser_;
-
-  // parser for user input
-  client::input_parser::InputParser *ip_;
 };
 }  // namespace client
 

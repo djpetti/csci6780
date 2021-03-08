@@ -1,3 +1,7 @@
+/**
+ * @file Task to upload a file to the server asynchronously
+ */
+
 #ifndef PROJECT1_UPLOAD_TASK_H
 #define PROJECT1_UPLOAD_TASK_H
 
@@ -8,9 +12,8 @@
 namespace client_tasks {
 class UploadTask : public thread_pool::Task {
  public:
-  UploadTask(int client_fd, std::vector<uint8_t> &outgoing_buf) {
+  UploadTask(int client_fd) {
     client_fd_ = client_fd;
-    outgoing_file_buf_ = outgoing_buf;
   }
   Status RunAtomic() override;
 

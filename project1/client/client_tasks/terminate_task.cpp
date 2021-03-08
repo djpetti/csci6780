@@ -13,7 +13,7 @@ thread_pool::Task::Status TerminateTask::RunAtomic() {
     return thread_pool::Task::Status::FAILED;
   }
   outgoing_terminate_buf_.clear();
-  return thread_pool::Task::Status::RUNNING;
+  return thread_pool::Task::Status::DONE;
 }
 void TerminateTask::CleanUp() {
   close(socket_);

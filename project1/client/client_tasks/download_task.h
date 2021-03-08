@@ -1,3 +1,7 @@
+/**
+ * @file Task for downloading a FileContents message asynchronously
+ */
+
 #ifndef PROJECT1_DOWNLOAD_TASK_H
 #define PROJECT1_DOWNLOAD_TASK_H
 
@@ -8,15 +12,10 @@
 namespace client_tasks {
 class DownloadTask : public thread_pool::Task {
  public:
-  DownloadTask(const std::string& filename, std::vector<uint8_t> &incoming_buf,
-               size_t buf_size, int client_fd,
-               wire_protocol::MessageParser<google::protobuf::Message> &parser
-               ) {
+  DownloadTask(const std::string& filename, size_t buf_size, int client_fd) {
     filename_ = filename;
-    incoming_file_buf_ = incoming_buf;
     buffer_size_ = buf_size;
     client_fd_ = client_fd;
-    parser_ = parser;
   }
 
   Status RunAtomic() override;
@@ -38,7 +37,7 @@ class DownloadTask : public thread_pool::Task {
   size_t buffer_size_;
 
   // parser used to parse incoming FileContents messages
-  wire_protocol::MessageParser<google::protobuf::Message> parser_;
+  wire_protocol::MessageParser<ftp_messages::FileContents> parser_;
 };
 }
 #endif  // PROJECT1_DOWNLOAD_TASK_H

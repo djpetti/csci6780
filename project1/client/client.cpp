@@ -39,9 +39,7 @@ bool Client::WaitForMessage() {
 
     const auto bytes_read =
         recv(client_fd_, incoming_msg_buf_.data(), kBufferSize, 0);
-    if (bytes_read < 0) {
-      connected_ = false;
-    } else if (bytes_read == 0) {
+    if (bytes_read < 1) {
       connected_ = false;
     }
 
@@ -109,7 +107,7 @@ void Client::Output() {
     i++;
   } while (iss);
 }
-bool Client::FtpShell() {
+void Client::FtpShell() {
   ftp_messages::Request r;
   thread_pool::ThreadPool pool;
 
@@ -124,7 +122,7 @@ bool Client::FtpShell() {
     std::getline(std::cin, input);
 
     // determine command
-    ip_ = new InputParser(input);
+    auto ip_ = new InputParser(input);
 
     // create & serialize request message for determined command
     r = ip_->CreateReq();
@@ -157,21 +155,22 @@ bool Client::FtpShell() {
       if (!ip_->IsForking()) {
         SendReq();
       } else {
-        auto put_task = std::make_shared<client_tasks::UploadTask>(client_fd_, outgoing_msg_buf_);
+        auto put_task = std::make_shared<client_tasks::UploadTask>(client_fd_);
         pool.AddTask(put_task);
       }
     } else if (r.has_get()) {
       // If get command, FileContents will have to be received.
       if (!ip_->IsForking()) {
         WaitForMessage();
-        client_util::SaveIncomingFile(parser_, ip_->GetFilename());
+        ftp_messages::FileContents contents;
+        parser_.GetMessage(&contents);
+        client_util::SaveIncomingFile(contents.contents(), ip_->GetFilename());
       } else {
-        auto get_task = std::make_shared<client_tasks::DownloadTask>(ip_->GetFilename(), incoming_msg_buf_, kBufferSize, client_fd_, parser_);
+        auto get_task = std::make_shared<client_tasks::DownloadTask>(ip_->GetFilename(), kBufferSize, client_fd_);
         pool.AddTask(get_task);
       }
     }
     delete ip_;
   }
-  return true;
 }
 }  // namespace client

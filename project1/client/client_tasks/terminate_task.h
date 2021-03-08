@@ -1,3 +1,7 @@
+/**
+ * @file Task to send a TerminateRequest message to server:tport
+ */
+
 #ifndef PROJECT1_TERMINATE_TASK_H
 #define PROJECT1_TERMINATE_TASK_H
 

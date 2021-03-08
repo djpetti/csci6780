@@ -47,14 +47,11 @@ inline int SetUpSocket(const struct sockaddr_in &address,
 }
 
 // utility function to write a file to the local system
-inline void SaveIncomingFile(
-    wire_protocol::MessageParser<google::protobuf::Message> f_parser,
-    const std::string& name) {
-  ftp_messages::FileContents contents;
-  f_parser.GetMessage(&contents);
+inline void SaveIncomingFile(const std::string &contents,
+                             const std::string &name) {
   std::ofstream new_file;
   new_file.open(name);
-  new_file << contents.contents();
+  new_file << contents;
 }
 }
 #endif  // PROJECT1_UTIL_H
