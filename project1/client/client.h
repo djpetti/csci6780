@@ -62,32 +62,34 @@ class Client {
    */
   void Output();
 
-  // tracking connection status
+  /// tracking connection status
   bool connected_;
 
-  // buffer that stores serialized data to be sent to and received from server
+  /// buffer that stores serialized data to be sent to the server
   std::vector<uint8_t> outgoing_msg_buf_{};
+
+  /// buffer that stores serialized data to be received from the server
   std::vector<uint8_t> incoming_msg_buf_{};
 
-  // buffer size for client.
+  /// buffer size for client.
   static constexpr size_t kBufferSize = 4096;
 
-  // hostname of the server
+  /// hostname of the server
   std::string hostname_;
 
-  // client port
+  /// client port
   uint16_t nport_;
 
-  // terminate port;
+  /// terminate port;
   uint16_t tport_;
 
-  // client socket fd
+  /// client socket fd
   int client_fd_;
 
-  // response info to be formatted and outputted
+  /// response info to be formatted and outputted
   std::string output_;
 
-  // parser for handling messages
+  /// parser for handling messages
   wire_protocol::MessageParser<google::protobuf::Message> parser_;
 };
 }  // namespace client

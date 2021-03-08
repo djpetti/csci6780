@@ -12,11 +12,7 @@
 namespace client_tasks {
 class DownloadTask : public thread_pool::Task {
  public:
-  DownloadTask(const std::string& filename, size_t buf_size, int client_fd) {
-    filename_ = filename;
-    buffer_size_ = buf_size;
-    client_fd_ = client_fd;
-  }
+  DownloadTask(const std::string& filename, size_t buf_size, int client_fd);
 
   Status RunAtomic() override;
 
@@ -24,19 +20,19 @@ class DownloadTask : public thread_pool::Task {
 
  protected:
 
-  // the name of the file to be retreived
+  /// the name of the file to be retreived
   std::string filename_{};
 
-  // incoming buffer that stores serialized data to be received from the server
+  /// incoming buffer that stores serialized data to be received from the server
   std::vector<uint8_t> incoming_file_buf_{};
 
-  // client socket
+  /// client socket
   int client_fd_;
 
-  // buffer size, provided by client
+  /// buffer size, provided by client
   size_t buffer_size_;
 
-  // parser used to parse incoming FileContents messages
+  /// parser used to parse incoming FileContents messages
   wire_protocol::MessageParser<ftp_messages::FileContents> parser_;
 };
 }

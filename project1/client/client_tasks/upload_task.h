@@ -12,19 +12,18 @@
 namespace client_tasks {
 class UploadTask : public thread_pool::Task {
  public:
-  UploadTask(int client_fd) {
-    client_fd_ = client_fd;
-  }
+  UploadTask(int client_fd);
+
   Status RunAtomic() override;
 
   void CleanUp() override;
 
  protected:
 
-  // client socket
+  /// client socket
   int client_fd_;
 
-  // outgoing buffer that stores serialized data to be sent to the server
+  /// outgoing buffer that stores serialized data to be sent to the server
   std::vector<uint8_t> outgoing_file_buf_{};
 
 };

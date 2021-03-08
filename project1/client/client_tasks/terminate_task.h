@@ -18,11 +18,7 @@ namespace client_tasks {
 class TerminateTask : public thread_pool::Task {
  public:
   TerminateTask(const std::string &address, uint16_t port,
-                ftp_messages::TerminateRequest terminate_req) {
-    address_ = address;
-    port_ = port;
-    terminate_req_ = std::move(terminate_req);
-  }
+                ftp_messages::TerminateRequest terminate_req);
 
   thread_pool::Task::Status SetUp() override;
 
@@ -32,19 +28,19 @@ class TerminateTask : public thread_pool::Task {
 
  protected:
 
-  // outgoing buffer that stores serialized data to be sent to the server
+  /// outgoing buffer that stores serialized data to be sent to the server
   std::vector<uint8_t> outgoing_terminate_buf_{};
 
-  // address of the server
+  /// address of the server
   std::string address_{};
 
-  // termination port of the server
+  /// termination port of the server
   uint16_t port_;
 
-  // the encapsulated termination request
+  /// the encapsulated termination request
   ftp_messages::TerminateRequest terminate_req_;
 
-  // socket used to send the termination request
+  /// socket used to send the termination request
   int socket_{};
 
 };

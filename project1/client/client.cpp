@@ -124,11 +124,11 @@ void Client::FtpShell() {
     std::getline(std::cin, input);
 
     // determine command
-    std::unique_ptr<input_parser::InputParser> ip_ = std::make_unique<input_parser::InputParser>(input);
+    std::unique_ptr<input_parser::InputParser> ip = std::make_unique<input_parser::InputParser>(input);
 
     // create & serialize request message for determined command
-    r = ip_->CreateReq();
-    if (!ip_->IsValid()) {
+    r = ip->CreateReq();
+    if (!ip->IsValid()) {
       std::cout << "Invalid command, try again." << "\n";
       continue;
     }
@@ -150,9 +150,9 @@ void Client::FtpShell() {
     HandleResponse();
     if (r.has_put()) {
       // If put command, FileContents will have to be sent.
-      auto contents = ip_->GetContentsMessage();
+      auto contents = ip->GetContentsMessage();
       wire_protocol::Serialize(contents, &outgoing_msg_buf_);
-      if (!ip_->IsForking()) {
+      if (!ip->IsForking()) {
         SendReq();
       } else {
         auto put_task = std::make_shared<client_tasks::UploadTask>(client_fd_);
@@ -160,13 +160,14 @@ void Client::FtpShell() {
       }
     } else if (r.has_get()) {
       // If get command, FileContents will have to be received.
-      if (!ip_->IsForking()) {
+      if (!ip->IsForking()) {
         WaitForMessage();
         ftp_messages::FileContents contents;
         parser_.GetMessage(&contents);
-        client_util::SaveIncomingFile(contents.contents(), ip_->GetFilename());
+        client_util::SaveIncomingFile(contents.contents(), ip->GetFilename());
       } else {
-        auto get_task = std::make_shared<client_tasks::DownloadTask>(ip_->GetFilename(), kBufferSize, client_fd_);
+        auto get_task = std::make_shared<client_tasks::DownloadTask>(
+            ip->GetFilename(), kBufferSize, client_fd_);
         pool.AddTask(get_task);
       }
     }

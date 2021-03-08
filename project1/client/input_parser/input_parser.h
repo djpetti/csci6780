@@ -119,7 +119,7 @@ class InputParser {
       {"ls", LS},    {"cd", CD},     {"mkdir", MKDIR},
       {"pwd", PWD},  {"quit", QUIT}, {"terminate", TERMINATE}};
 
-  // information to be extracted from input
+  /// information to be extracted from input
   bool is_valid_;
   bool is_forking_;
   ReqType req_;
