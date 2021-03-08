@@ -1,4 +1,6 @@
 #include "client.h"
+
+#include <memory>
 #include "client_tasks/terminate_task.h"
 #include "client_tasks/upload_task.h"
 #include "client_tasks/download_task.h"
@@ -122,7 +124,7 @@ void Client::FtpShell() {
     std::getline(std::cin, input);
 
     // determine command
-    auto ip_ = new InputParser(input);
+    std::unique_ptr<input_parser::InputParser> ip_ = std::make_unique<input_parser::InputParser>(input);
 
     // create & serialize request message for determined command
     r = ip_->CreateReq();
@@ -133,13 +135,11 @@ void Client::FtpShell() {
     if (r.has_terminate()) {
       auto terminate_task = std::make_shared<client_tasks::TerminateTask>(hostname_, tport_, r.terminate());
       pool.AddTask(terminate_task);
-      delete ip_;
       continue;
     }
     if (r.has_quit()) {
       // close socket connection
       close(client_fd_);
-      delete ip_;
       // exit loop, no need to send request
       connected_ = false;
       continue;
@@ -170,7 +170,6 @@ void Client::FtpShell() {
         pool.AddTask(get_task);
       }
     }
-    delete ip_;
   }
 }
 }  // namespace client
