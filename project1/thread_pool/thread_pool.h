@@ -27,6 +27,7 @@ class ThreadPool : public IThreadPool {
   void AddTask(const std::shared_ptr<Task> &task) final;
   Task::Status GetTaskStatus(const std::shared_ptr<Task> &task) final;
   void CancelTask(const std::shared_ptr<Task> &task_handle) final;
+  void WaitForCompletion() final;
   uint32_t NumThreads() final;
 
  private:
@@ -97,6 +98,12 @@ class ThreadPool : public IThreadPool {
   uint32_t max_pool_size_;
   /// Current number of threads in the pool.
   uint32_t pool_size_ = 0;
+  /**
+   * @brief Total number of completed tasks.
+   * @note It is okay if this wraps; it is just used to check the completion
+   *   of a new task by `WaitForCompletion`.
+   */
+   uint32_t num_completed_tasks_ = 0;
 };
 
 }  // namespace thread_pool
