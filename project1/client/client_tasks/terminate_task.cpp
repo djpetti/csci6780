@@ -1,11 +1,10 @@
 #include "terminate_task.h"
 
 namespace client_tasks {
-TerminateTask::TerminateTask(const std::string &address, uint16_t port, ftp_messages::TerminateRequest terminate_req) {
-  address_ = address;
-  port_ = port;
-  terminate_req_ = std::move(terminate_req);
-}
+TerminateTask::TerminateTask(const std::string &address, uint16_t port,
+                             ftp_messages::TerminateRequest terminate_req)
+    : address_(address), port_(port), terminate_req_(std::move(terminate_req)) {};
+
 thread_pool::Task::Status TerminateTask::SetUp() {
   socket_ = client_util::SetUpSocket( client_util::MakeAddress(port_), address_);
   return thread_pool::Task::Status::RUNNING;

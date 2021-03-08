@@ -12,7 +12,10 @@
 namespace client_tasks {
 class UploadTask : public thread_pool::Task {
  public:
-  UploadTask(int client_fd);
+  /**
+   * @param client_fd The socket used to upload the FileContents
+   */
+  explicit UploadTask(int client_fd);
 
   Status RunAtomic() override;
 

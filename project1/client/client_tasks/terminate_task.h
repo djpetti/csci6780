@@ -17,6 +17,11 @@
 namespace client_tasks {
 class TerminateTask : public thread_pool::Task {
  public:
+  /**
+   * @param address the address of the server
+   * @param port the terminate port of the server
+   * @param terminate_req the TerminateRequest to be sent
+   */
   TerminateTask(const std::string &address, uint16_t port,
                 ftp_messages::TerminateRequest terminate_req);
 

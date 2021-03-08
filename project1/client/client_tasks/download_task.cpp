@@ -2,11 +2,7 @@
 
 namespace client_tasks {
 DownloadTask::DownloadTask(const std::string &filename, size_t buf_size,
-                           int client_fd) {
-  filename_ = filename;
-  buffer_size_ = buf_size;
-  client_fd_ = client_fd;
-}
+                           int client_fd) : filename_(filename), client_fd_(client_fd), buffer_size_(buf_size) {};
 thread_pool::Task::Status DownloadTask::RunAtomic() {
   while(!parser_.HasCompleteMessage()) {
     incoming_file_buf_.resize(buffer_size_);
