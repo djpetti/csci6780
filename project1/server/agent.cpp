@@ -228,9 +228,6 @@ namespace server {
                 buf[byte_counter] = outgoing_message_buffer_.at(n);
                 ++byte_counter;
 
-                if (active_commands_->Contains(command_id)){
-
-                }
 
             }
         }
