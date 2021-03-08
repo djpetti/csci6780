@@ -18,11 +18,11 @@ namespace server_tasks {
         // if this is an agent for a normal command, these members should be initialized
         if (read_manager_ && write_manager_) {
             // give the agent a unique file handler with the shared access managers
-            auto fh = std::make_unique<server::file_handler::ThreadSafeFileHandler>(read_manager_, write_manager_);
-            agent_ = std::make_unique<server::Agent>(client_fd_,std::move(fh),std::move(active_commands_));
+            auto fh = std::make_unique<server::file_handler::ThreadSafeFileHandler>(std::move(read_manager_), std::move(write_manager_));
+            agent_ = std::make_unique<server::Agent>(client_fd_,std::move(fh),active_commands_);
         } else {
             // no need to give an Agent a file handler for termination commands
-            agent_ = std::make_unique<server::Agent>(client_fd_,std::move(active_commands_));
+            agent_ = std::make_unique<server::Agent>(client_fd_,active_commands_);
         }
 
         return Status::RUNNING;

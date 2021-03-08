@@ -24,8 +24,8 @@ namespace server_tasks {
 
             std::cout << "Handling new connection from client #" << client_fd << "." << std::endl;
 
-            auto agent_task = std::make_shared<AgentTask>(client_fd, active_ids_,
-                                                          read_manager_, write_manager_);
+            auto agent_task = std::make_shared<AgentTask>(client_fd, std::move(active_ids_),
+                                                          std::move(read_manager_), std::move(write_manager_));
             pool_.AddTask(agent_task);
 
         }
