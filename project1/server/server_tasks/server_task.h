@@ -42,7 +42,7 @@ namespace server_tasks {
          * @return The status of the thread pool.
          * @note This will be called in RunAtomic.
          */
-        virtual thread_pool::Task::Status Listen();
+        virtual thread_pool::Task::Status Listen() = 0;
 
         /**
          * @brief Helper function to make address structure for socket creation

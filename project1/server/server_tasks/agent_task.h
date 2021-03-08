@@ -8,7 +8,7 @@
 #include "../../thread_pool/task.h"
 #include "../../thread_pool/thread_pool.h"
 #include "../file_handler/file_handler.h"
-#include "../agent.h"
+#include "agent.h"
 #include "command_ids.h"
 
 namespace server_tasks {
@@ -23,7 +23,6 @@ namespace server_tasks {
 
         thread_pool::Task::Status RunAtomic() final;
         thread_pool::Task::Status SetUp() final;
-        void CleanUp() final;
 
     private:
 

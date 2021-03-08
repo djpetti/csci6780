@@ -1,3 +1,6 @@
+#ifndef PROJECT1_THREAD_POOL_H
+#define PROJECT1_THREAD_POOL_H
+
 #include <condition_variable>
 #include <cstdint>
 #include <memory>
@@ -107,3 +110,5 @@ class ThreadPool : public IThreadPool {
 };
 
 }  // namespace thread_pool
+
+#endif  // PROJECT1_THREAD_POOL_H

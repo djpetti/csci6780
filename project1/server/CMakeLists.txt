@@ -1,7 +1,8 @@
-add_subdirectory(file_handler server_tasks)
+add_subdirectory(file_handler)
+add_subdirectory(server_tasks)
 
-add_library(server_lib server.cpp agent.cpp)
-target_link_libraries(server_lib wire_protocol file_handler thread_pool)
+add_library(server_lib server.cpp)
+target_link_libraries(server_lib thread_pool server_tasks_lib)
 
-add_executable(server server_main.cpp server_tasks/nport_task.cpp server_tasks/agent_task.cpp server_tasks/tport_task.cpp server_tasks/command_ids.cpp server_tasks/server_task.cpp)
+add_executable(server server_main.cpp)
 target_link_libraries(server server_lib)
