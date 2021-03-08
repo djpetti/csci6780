@@ -22,7 +22,7 @@ namespace server_tasks {
 
             std::cout << "Handling new connection from client #" << client_fd << "." << std::endl;
 
-            auto agent_task = std::make_shared<AgentTask>(client_fd, std::move(active_ids_));
+            auto agent_task = std::make_shared<AgentTask>(client_fd, active_ids_);
 
             pool_.AddTask(agent_task);
         }

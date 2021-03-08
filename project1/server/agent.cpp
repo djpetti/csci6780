@@ -183,14 +183,15 @@ namespace server {
 
         // monitor for termination request for get and put commands
         uint32_t total_bytes_sent = 0;
+        uint32_t constexpr kChunkSize = 1000;
         bool terminated = false;
 
         // continue until we've sent the entire message
         while (total_bytes_sent < outgoing_message_buffer_.size()) {
             if (!terminated) {
-                const uint32_t kSendChunkSize = std::min((int) outgoing_message_buffer_.size() - total_bytes_sent, kSendChunkSize);
+                const uint32_t kBytesToSend = std::min((int) outgoing_message_buffer_.size() - total_bytes_sent, kChunkSize);
                 int bytes_sent =  send(client_fd_, outgoing_message_buffer_.data() + total_bytes_sent,
-                                       kSendChunkSize, 0);
+                                       kBytesToSend, 0);
                 if (bytes_sent != -1) {
                     total_bytes_sent+=bytes_sent;
                 }
