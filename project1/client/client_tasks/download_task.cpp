@@ -1,7 +1,7 @@
 #include "download_task.h"
 
 namespace client_tasks {
-DownloadTask::DownloadTask(const std::string &filename, size_t buf_size,
+DownloadTask::DownloadTask(std::string filename, size_t buf_size,
                            int client_fd) : filename_(filename), client_fd_(client_fd), buffer_size_(buf_size) {};
 thread_pool::Task::Status DownloadTask::RunAtomic() {
   while(!parser_.HasCompleteMessage()) {

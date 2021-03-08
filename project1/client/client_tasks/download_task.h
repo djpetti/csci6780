@@ -17,7 +17,7 @@ class DownloadTask : public thread_pool::Task {
    * @param buf_size the size of the buffer defined by client
    * @param client_fd the socket to retreive the FileContents message
    */
-  DownloadTask(const std::string& filename, size_t buf_size, int client_fd);
+  DownloadTask(std::string filename, size_t buf_size, int client_fd);
 
   Status RunAtomic() override;
 
