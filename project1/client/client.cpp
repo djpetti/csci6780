@@ -114,7 +114,7 @@ bool Client::FtpShell() {
   thread_pool::ThreadPool pool;
 
   while (connected_) {
-    // will have to pay attention to formatting here when implementing Output()
+    // display myftp prompt
     std::cout << "\nmyftp> ";
 
     // reset input string
