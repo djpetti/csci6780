@@ -40,18 +40,18 @@ class InputParser {
   /**
    * @return whether or not the root command was valid
    */
-   bool IsValid();
+  bool IsValid();
 
-   /**
-    * @return whether or not the user requested to fork the command
-    */
-    bool IsForking();
+  /**
+   * @return whether or not the user requested to fork the command
+   */
+  bool IsForking();
 
   /**
    * @brief gets the contents of a file
    * @return file contents message
    */
-   ftp_messages::FileContents GetContentsMessage();
+  ftp_messages::FileContents GetContentsMessage();
 
   /**
    * creates the request to be sent
