@@ -24,28 +24,12 @@ namespace server_tasks {
 
             std::cout << "Handling new connection from client #" << client_fd << "." << std::endl;
 
-            auto agent_task = std::make_shared<AgentTask>();
-
-            // pass client file descriptor to the agent task
-            agent_task->SetClientFD(client_fd);
-
-            // pass file access managers to the agent task
-            agent_task->SetFileAccessManagers(read_manager_,write_manager_);
-
-            // pass the active commands to the agent task
-            agent_task->SetActiveCommands(active_ids_);
-
-
+            auto agent_task = std::make_shared<AgentTask>(client_fd, active_ids_,
+                                                          read_manager_, write_manager_);
             pool_.AddTask(agent_task);
 
         }
+
+
     }
-
-    void NPortTask::SetFileAccessManagers(std::shared_ptr<server::file_handler::FileAccessManager> read_mgr,
-                                          std::shared_ptr<server::file_handler::FileAccessManager> write_mgr) {
-        read_manager_ = read_mgr;
-        write_manager_ = write_mgr;
-    }
-
-
-} //namespace server_tasks
+}// namespace server_tasks

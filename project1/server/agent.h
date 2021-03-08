@@ -34,15 +34,9 @@ namespace server {
               std::unique_ptr<file_handler::ThreadSafeFileHandler> file_handler,
               std::shared_ptr<server_tasks::CommandIDs> active_commands);
 
-        /**
-         * @param client_fd The FD of the client socket. Note that it will take
-         *    responsibility for closing this socket on exit.
-         * @param active_commands The list of active commands to be used internally.
-         * @note Used for agents only handling Termination Requests.
-         *
-         */
         Agent(int client_fd,
               std::shared_ptr<server_tasks::CommandIDs> active_commands);
+
 
         ~Agent();
 
@@ -59,7 +53,7 @@ namespace server {
     private:
 
         /// Size in bytes to use for the internal message buffer.
-        static constexpr size_t kClientBufferSize = 4096;
+        static constexpr size_t kClientBufferSize = 1000;
 
         /// Enumerates state of connected client.
         enum class ClientState {
@@ -128,6 +122,12 @@ namespace server {
          * @return True on Success, False if the command was terminated
          */
         bool SendFileContents(const ftp_messages::FileContents &file_contents, uint16_t command_id);
+
+        /**
+         * @bried Generates a command ID for a GET or PUT request.
+         * @return the command ID
+         */
+        uint32_t GenerateCommandID();
 
         /// The FD to talk to the client on.
         int client_fd_;

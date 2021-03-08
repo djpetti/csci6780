@@ -1,6 +1,9 @@
 #include "server_task.h"
 namespace server_tasks {
 
+    ServerTask::ServerTask(std::shared_ptr<CommandIDs> active_ids, uint16_t port)
+    : port_(port),active_ids_(active_ids){}
+
     thread_pool::Task::Status ServerTask::SetUp()  {
         // Create the socket.
         const auto kAddress = MakeAddress(port_);
@@ -12,18 +15,9 @@ namespace server_tasks {
     }
 
     thread_pool::Task::Status ServerTask::RunAtomic() {
-
         return Listen();
-
     }
 
-    void ServerTask::SetPort(uint16_t port) {
-        port_ = port;
-    }
-
-    void ServerTask::SetActiveCommandIDs(std::shared_ptr<CommandIDs> cmd_ids) {
-        active_ids_ = cmd_ids;
-    }
     struct sockaddr_in ServerTask::MakeAddress(uint16_t port) {
         struct sockaddr_in address{};
         address.sin_family = AF_INET;

@@ -27,16 +27,13 @@ namespace server_tasks {
         thread_pool::Task::Status RunAtomic() override;
 
         /**
-         * @brief Sets the list of active commands for this server task.
+         * @brief Constructor for a server task.
          * @param active_ids The list of active command ID's
+         * @param port The port to bind to
          */
-        void SetActiveCommandIDs(std::shared_ptr<CommandIDs> active_ids);
+        ServerTask(std::shared_ptr<CommandIDs> active_ids,
+                   uint16_t port);
 
-        /**
-         * @brief Sets the port that this server task will bind to.
-         * @param port
-         */
-        void SetPort(uint16_t port);
 
     protected:
 

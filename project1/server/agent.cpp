@@ -25,8 +25,8 @@ namespace server {
             : client_fd_(client_fd), active_commands_(active_commands), file_handler_(std::move(file_handler)) {}
 
     Agent::Agent(int client_fd,
-                 std::shared_ptr<server_tasks::CommandIDs> active_commands) :
-            client_fd_(client_fd), active_commands_(active_commands) {}
+                 std::shared_ptr<server_tasks::CommandIDs> active_commands)
+                 : client_fd_(client_fd), active_commands_(active_commands){}
 
     Agent::~Agent() {
         // Close the socket.
@@ -54,13 +54,12 @@ namespace server {
     Agent::ClientState Agent::ReadFileContents(ftp_messages::FileContents *fc, uint16_t command_id) {
 
         while (!fc_parser_.HasCompleteMessage()) {
+            bool terminated = !active_commands_->Contains(command_id);
             incoming_message_buffer_.resize(kClientBufferSize);
-
-            uint8_t buf[1000];
 
             // Read 1000 bytes from the socket
             const auto bytes_read =
-                    recv(client_fd_, buf, 1000, 0);
+                    recv(client_fd_, incoming_message_buffer_.data(), kClientBufferSize, 0);
 
             if (bytes_read < 0) {
                 // Failed to read anything.
@@ -73,26 +72,21 @@ namespace server {
                 return ClientState::DISCONNECTED;
             }
 
-            bool terminated = !active_commands_->Contains(command_id);
-
             // only continue if this put request is an active command
             if (!terminated) {
 
-                // place data into the incoming message buffer
-                for (int i = 0; i < 1000; i++) {
-                    incoming_message_buffer_.push_back(buf[i]);
-                }
+                // The parser assumes that the entire vector contains valid data, so limit
+                // the size.
+                incoming_message_buffer_.resize(bytes_read);
+
+                // Add the data to the parser.
+                fc_parser_.AddNewData(incoming_message_buffer_);
 
             } else {
                 std::cout << "Command #" << command_id << " successfully terminated." << std::endl;
+                break;
             }
 
-            // The parser assumes that the entire vector contains valid data, so limit
-            // the size.
-            incoming_message_buffer_.resize(bytes_read);
-
-            // Add the data to the parser.
-            fc_parser_.AddNewData(incoming_message_buffer_);
         }
         // Get the parsed message.
         if (!fc_parser_.GetMessage(fc)) {
@@ -109,6 +103,7 @@ namespace server {
             // Read some more data from the socket.
             const auto bytes_read =
                     recv(client_fd_, incoming_message_buffer_.data(), kClientBufferSize, 0);
+
             if (bytes_read < 0) {
                 // Failed to read anything.
                 perror("Failed to read from client socket");
@@ -185,51 +180,19 @@ namespace server {
         }
 
         // monitor for termination request for get and put commands
-        uint16_t total_bytes_sent = 0;
-
-        // make 1000 byte buffer
-        int num_bytes_to_send = 1000;
-        uint8_t buf[num_bytes_to_send];
-
-        // counter used to track when buf is filled
-        int byte_counter = 0;
-
+        uint16_t kBytesSent = 0;
+        const uint32_t kBytesToSend = 1000;
         bool terminated = false;
 
         // continue until we've sent the entire message
-        while (total_bytes_sent < outgoing_message_buffer_.size()) {
-
-
-            // fill the buffer one byte at a time
-            for (int n:outgoing_message_buffer_) {
-
-                // check if 1000 byte buffer is filled
-                if (byte_counter == 1000) {
-                    terminated = !active_commands_->Contains(command_id);
-
-                    // check if the process has been terminated
-                    if (!terminated) {
-                        // Send 1000 bytes of the message.
-                        if (send(client_fd_, buf,
-                                 num_bytes_to_send, 0) < 0) {
-                            perror("Failed to send the file contents.");
-                            return false;
-                        }
-                    } else {
-                        return false;
-                    }
-
-                    // reset
-                    byte_counter = 0;
-
-                    // update
-                    total_bytes_sent += 1000;
-                }
-                buf[byte_counter] = outgoing_message_buffer_.at(n);
-                ++byte_counter;
-
-
+        while (kBytesSent < outgoing_message_buffer_.size()) {
+            if (!terminated) {
+                kBytesSent += send(client_fd_, outgoing_message_buffer_.data() + kBytesSent,
+                                   kBytesToSend, 0);
+            } else {
+                return false;
             }
+            terminated = !active_commands_->Contains(command_id);
         }
         return true;
     }
@@ -241,11 +204,7 @@ namespace server {
         Response r;
 
         // generate a random # for the command id
-        uint32_t id;
-        do {
-            // ensure this id is not already in use
-            id = rand() % 1000000 + 1;
-        } while (active_commands_->Contains(id));
+        uint32_t id = GenerateCommandID();
 
         // register this command as an active command
         active_commands_->Insert(id);
@@ -261,11 +220,8 @@ namespace server {
 
         // Send the response.
         Response response;
-
         ftp_messages::FileContents fc;
-
         fc.set_contents(file_data.data(), file_data.size());
-
         return SendFileContents(fc, id) ? ClientState::ACTIVE : ClientState::ERROR;
     }
 
@@ -274,10 +230,7 @@ namespace server {
         std::cout << "Performing a PUT operation." << std::endl;
 
         Response r;
-        uint32_t id;
-        do {
-            id = rand() % 1000000 + 1;
-        } while (active_commands_->Contains(id));
+        uint32_t id = GenerateCommandID();
 
         r.mutable_put()->set_command_id(id);
 
@@ -384,7 +337,7 @@ namespace server {
 
     Agent::ClientState Agent::HandleRequest(
             const ftp_messages::TerminateRequest &request) {
-        std::cout<< "Terminating an active GET or PUT command." << std::endl;
+        std::cout << "Terminating an active GET or PUT command." << std::endl;
 
         // Retrieve the command id.
         std::string cmd_str = request.command_id();
@@ -393,10 +346,9 @@ namespace server {
         int cmd_int(std::stoi(cmd_str));
         uint16_t cmd_id(0);
 
-        if (cmd_int <= static_cast<int>(UINT16_MAX) && cmd_int >=0) {
+        if (cmd_int <= static_cast<int>(UINT16_MAX) && cmd_int >= 0) {
             cmd_id = static_cast<uint16_t>(cmd_int);
-        }
-        else {
+        } else {
             std::cout << "Casting Error. " << std::endl;
         }
 
@@ -414,6 +366,13 @@ namespace server {
         return ClientState::DISCONNECTED;
     }
 
+    uint32_t Agent::GenerateCommandID() {
+        uint32_t id;
+        do {
+            id = rand() % 1000000 + 1;
+        } while (active_commands_->Contains(id));
+        return id;
+    }
 
 
 }  // namespace server

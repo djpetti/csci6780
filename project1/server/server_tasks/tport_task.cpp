@@ -17,25 +17,17 @@ namespace server_tasks {
             int client_fd = accept(server_fd_, nullptr, nullptr);
             if (client_fd < 0) {
                 perror("accept() failed");
-                break;
+                return thread_pool::Task::Status::FAILED;
             }
 
             std::cout << "Handling new connection from client #" << client_fd << "." << std::endl;
 
-            auto agent_task = std::make_shared<AgentTask>();
+            auto agent_task = std::make_shared<AgentTask>(client_fd, active_ids_);
 
-            // pass down client file descriptor to the agent task
-            agent_task->SetClientFD(client_fd);
-
-            // pass active commands structure to the agent task
-            agent_task->SetActiveCommands(active_ids_);
-
-            // begin task
             pool_.AddTask(agent_task);
         }
-        return thread_pool::Task::Status::FAILED;
-    }
 
+    }
 
 }
 
