@@ -1,8 +1,4 @@
 #include "terminate_task.h"
-#include "../client_util.h"
-
-#include <sys/socket.h>
-#include <unistd.h>
 
 namespace client_tasks {
 thread_pool::Task::Status TerminateTask::SetUp() {

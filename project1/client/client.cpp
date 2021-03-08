@@ -1,10 +1,8 @@
 #include "client.h"
 #include "client_tasks/terminate_task.h"
-
-#include <netinet/in.h>
-#include <sys/socket.h>
-
-#include <iostream>
+#include "client_tasks/upload_task.h"
+#include "client_tasks/download_task.h"
+#include "../thread_pool/thread_pool.h"
 
 namespace client {
 
@@ -15,7 +13,7 @@ bool Client::Connect(const std::string &hostname, uint16_t nport, uint16_t tport
   hostname_ = hostname;
   nport_ = nport;
   tport_ = tport;
-  connected_ = true;
+  connected_ = client_fd_ != -1;
   return connected_;
 }
 
@@ -35,8 +33,8 @@ bool Client::SendReq() {
   return true;
 }
 
-bool Client::WaitForResponse() {
-  while (!response_parser_.HasCompleteMessage()) {
+bool Client::WaitForMessage() {
+  while (!parser_.HasCompleteMessage()) {
     incoming_msg_buf_.resize(kBufferSize);
 
     const auto bytes_read =
@@ -49,7 +47,7 @@ bool Client::WaitForResponse() {
 
     incoming_msg_buf_.resize(bytes_read);
 
-    response_parser_.AddNewData(incoming_msg_buf_);
+    parser_.AddNewData(incoming_msg_buf_);
   }
 
   // empty buffer
@@ -63,7 +61,7 @@ void Client::HandleResponse() {
 
   ftp_messages::Response msg;
 
-  response_parser_.GetMessage(&msg);
+  parser_.GetMessage(&msg);
 
   // determine type of response and respond accordingly
   if (msg.has_list()) {
@@ -79,20 +77,18 @@ void Client::HandleResponse() {
   } else if (msg.has_pwd()) {
     auto pwd_response = msg.pwd();
     output_ = pwd_response.dir_name();
+  } else if (msg.has_put()) {
+    auto put_response = msg.put();
+    output_ = put_response.command_id();
+  } else if (msg.has_get()) {
+    auto get_response = msg.get();
+    output_ = get_response.command_id();
   }
 
   // make sure outputting is necessary
-  if (output_.compare("")) {
+  if (!output_.empty()) {
     Output();
   }
-}
-
-void Client::HandleFileContents() {
-  ftp_messages::FileContents contents;
-  file_parser_.GetMessage(&contents);
-  std::ofstream new_file;
-  new_file.open(ip_->GetFilename());
-  new_file << contents.contents();
 }
 
 void Client::Output() {
@@ -139,6 +135,7 @@ bool Client::FtpShell() {
     if (r.has_terminate()) {
       auto terminate_task = std::make_shared<client_tasks::TerminateTask>(hostname_, tport_, r.terminate());
       pool.AddTask(terminate_task);
+      delete ip_;
       continue;
     }
     if (r.has_quit()) {
@@ -151,18 +148,25 @@ bool Client::FtpShell() {
     }
     wire_protocol::Serialize(r, &outgoing_msg_buf_);
     SendReq();
-    WaitForResponse();
-    if (r.has_get() || r.has_put()) {
-      // Since these two requests are the only two that require more messages,
-      // Continue processing messages accordingly
+    WaitForMessage();
+    HandleResponse();
+    if (r.has_put()) {
+      auto contents = ip_->GetContentsMessage();
+      wire_protocol::Serialize(contents, &outgoing_msg_buf_);
       if (!ip_->IsForking()) {
-        HandleResponse();
+        SendReq();
       } else {
-        // TODO forked tasks will be handled here
+        auto put_task = std::make_shared<client_tasks::UploadTask>(client_fd_, outgoing_msg_buf_);
+        pool.AddTask(put_task);
       }
-      continue;
-    } else {
-      HandleResponse();
+    } else if (r.has_get()) {
+      if (!ip_->IsForking()) {
+        WaitForMessage();
+        client_util::SaveIncomingFile(parser_, ip_->GetFilename());
+      } else {
+        auto get_task = std::make_shared<client_tasks::DownloadTask>(ip_->GetFilename(), incoming_msg_buf_, kBufferSize, client_fd_, parser_);
+        pool.AddTask(get_task);
+      }
     }
     delete ip_;
   }

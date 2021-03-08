@@ -45,20 +45,15 @@ class Client {
   bool SendReq();
 
   /**
-   * @brief expects a response message from socket, stores message in parser
-   * @return true on response received, false otherwise
+   * @brief expects a message from socket, stores message in parser
+   * @return true on message received, false otherwise
    */
-  bool WaitForResponse();
+  bool WaitForMessage();
 
   /**
    * @brief extracts relevant information to be displayed to user from response
    */
   void HandleResponse();
-
-  /**
-   * @brief handles extracting the contents from a FileContents message
-   */
-  void HandleFileContents();
 
  private:
   /**
@@ -91,11 +86,8 @@ class Client {
   // response info to be formatted and outputted
   std::string output_;
 
-  // parser for handling Responses
-  wire_protocol::MessageParser<ftp_messages::Response> response_parser_;
-
-  // parser for handling Contents
-  wire_protocol::MessageParser<ftp_messages::FileContents> file_parser_;
+  // parser for handling messages
+  wire_protocol::MessageParser<google::protobuf::Message> parser_;
 
   // parser for user input
   client::input_parser::InputParser *ip_;

@@ -18,7 +18,10 @@ int main(int argc, const char **argv) {
   const auto tPort = strtol(argv[3], nullptr, 10);
 
   // first program argument should be the server IP address
-  ftp_client.Connect(argv[1], nPort, tPort);
+  if (!ftp_client.Connect(argv[1], nPort, tPort)) {
+    std::cout << "Failed to connect to " << argv[1] << ":" << nPort;
+    return 1;
+  }
 
   // spawn the shell
   ftp_client.FtpShell();
