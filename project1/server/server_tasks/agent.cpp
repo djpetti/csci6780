@@ -267,8 +267,7 @@ namespace server {
             return ClientState::ERROR;
         }
 
-        return SendResponse(kEmptyResponse) ? ClientState::ACTIVE
-                                            : ClientState::ERROR;
+        return ClientState::ACTIVE;
     }
 
     Agent::ClientState Agent::HandleRequest(
