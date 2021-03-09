@@ -16,5 +16,12 @@ namespace server_tasks {
         const auto& find = command_ids_.find(id);
         return find != command_ids_.end();
     }
+    uint16_t CommandIDs::GenerateID() {
+        do {
+            id_++;
+        } while (Contains(id_));
+
+        return id_;
+    }
 }
 

@@ -35,6 +35,12 @@ namespace server_tasks {
          */
         void Delete(uint16_t id);
 
+        /**
+         * @brief Generates an id for a GET or PUT task.
+         * @return the id
+         */
+        uint16_t GenerateID();
+
     private:
 
         /// The set of active command ids.
@@ -42,6 +48,9 @@ namespace server_tasks {
 
         /// Mutex for implementing thread safety.
         std::mutex mutex_;
+
+        /// The id to give to new GET or PUT commands. @note Will increment if it's current value is already in use.
+        uint16_t id_ = 0;
     };
 }// namespace server_tasks
 #endif //PROJECT1_COMMAND_IDS_H

@@ -3,6 +3,7 @@
  */
 
 #include "client.h"
+#include <loguru.hpp>
 
 int main(int argc, const char **argv) {
   if (argc != 4) {

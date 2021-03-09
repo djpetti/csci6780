@@ -83,14 +83,10 @@ void Client::HandleResponse() {
     output_ = pwd_response.dir_name();
   } else if (msg.has_put()) {
     auto put_response = msg.put();
-    std::stringstream id_to_string;
-    id_to_string << put_response.command_id();
-    output_ = id_to_string.str();
+    output_ = std::to_string(put_response.command_id());
   } else if (msg.has_get()) {
     auto get_response = msg.get();
-    std::stringstream id_to_string;
-    id_to_string << get_response.command_id();
-    output_ = id_to_string.str();
+    output_ = std::to_string(get_response.command_id());
   }
 
   // make sure outputting is necessary

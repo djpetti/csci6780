@@ -25,7 +25,7 @@ int main(int argc, const char **argv) {
     loguru::add_file("server.log",loguru::Append, loguru::Verbosity_MAX);
     loguru::add_file("error.log", loguru::Append, loguru::Verbosity_ERROR);
     loguru::add_file("latest_error.log",loguru::Truncate, loguru::Verbosity_ERROR);
-    loguru::suggest_log_path("../loguru/", log_path, sizeof(log_path));
+    loguru::suggest_log_path("~/loguru/", log_path, sizeof(log_path));
     loguru::add_file(log_path, loguru::FileMode::Truncate, loguru::Verbosity_MAX);
 
     if (argc != 3) {

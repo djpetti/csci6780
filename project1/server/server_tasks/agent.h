@@ -130,12 +130,6 @@ namespace server {
          */
         bool SendFileContents(const ftp_messages::FileContents &file_contents, uint16_t command_id);
 
-        /**
-         * @brief Generates a command ID for a GET or PUT request.
-         * @return the command ID
-         */
-        uint32_t GenerateCommandID();
-
         /// The FD to talk to the client on.
         int client_fd_;
 

@@ -207,6 +207,7 @@ namespace server {
             }
             terminated = !active_commands_->Contains(command_id);
         }
+        active_commands_->Delete(command_id);
         return true;
     }
 
@@ -217,7 +218,7 @@ namespace server {
         Response r;
 
         // generate a random # for the command id
-        uint32_t id = GenerateCommandID();
+        uint32_t id = active_commands_->GenerateID();
 
         // register this command as an active command
         active_commands_->Insert(id);
@@ -243,7 +244,7 @@ namespace server {
         LOG_F(INFO, "Performing a PUT operation for client (%i).", client_fd_);
 
         Response r;
-        uint32_t id = GenerateCommandID();
+        uint32_t id = active_commands_->GenerateID();
         // register this command as an active command
         active_commands_->Insert(id);
         r.mutable_put()->set_command_id(id);
@@ -266,7 +267,7 @@ namespace server {
             LOG_F(ERROR, "Failed to write the file (%s) for client (%i).", fn.c_str(), client_fd_);
             return ClientState::ERROR;
         }
-
+        active_commands_->Delete(id);
         return ClientState::ACTIVE;
     }
 
@@ -369,14 +370,5 @@ namespace server {
         // Indicate that we are finished with this client.
         return ClientState::DISCONNECTED;
     }
-
-    uint32_t Agent::GenerateCommandID() {
-        uint32_t id;
-        do {
-            id = rand() % 1000000 + 1;
-        } while (active_commands_->Contains(id));
-        return id;
-    }
-
 
 }  // namespace server
