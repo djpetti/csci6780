@@ -5,9 +5,9 @@
 namespace thread_pool {
 
 ThreadPool::ThreadPool(uint32_t num_threads)
-    : dispatcher_thread_(&ThreadPool::DispatcherThread, this),
-      joiner_thread_(&ThreadPool::JoinerThread, this),
-      max_pool_size_(num_threads) {}
+    : max_pool_size_(num_threads),
+      dispatcher_thread_(&ThreadPool::DispatcherThread, this),
+      joiner_thread_(&ThreadPool::JoinerThread, this) {}
 
 ThreadPool::~ThreadPool() {
   LOG_S(INFO) << "Closing thread pool.";

@@ -4,14 +4,14 @@
 
 namespace server_tasks {
 
-    AgentTask::AgentTask(int id, std::shared_ptr<CommandIDs> cmds,
+    AgentTask::AgentTask(int id, std::shared_ptr<CommandIDs> commands,
                          std::shared_ptr<server::file_handler::FileAccessManager> read_mgr,
                          std::shared_ptr<server::file_handler::FileAccessManager> write_mgr)
-            : client_fd_(id), active_commands_(std::move(cmds)),
+            : client_fd_(id), active_commands_(std::move(commands)),
               read_manager_(std::move(read_mgr)), write_manager_(std::move(write_mgr)) {}
 
-    AgentTask::AgentTask(int id, std::shared_ptr<CommandIDs> cmds)
-    : client_fd_(id), active_commands_(cmds) {}
+    AgentTask::AgentTask(int id, std::shared_ptr<CommandIDs> commands)
+    : client_fd_(id), active_commands_(std::move(commands)) {}
 
     thread_pool::Task::Status AgentTask::SetUp() {
 

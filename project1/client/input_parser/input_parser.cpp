@@ -143,7 +143,7 @@ Request InputParser::CreateQuitReq() {
 }
 Request InputParser::CreateTerminateReq() {
   Request request;
-  request.mutable_terminate()->set_command_id(cid_);
+  request.mutable_terminate()->set_command_id(std::stoi(cid_));
   return request;
 }
 }  // namespace client::input_parser

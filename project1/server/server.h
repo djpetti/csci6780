@@ -6,10 +6,11 @@
 #define PROJECT1_SERVER_H
 
 #include <cstdint>
-#include "vector"
+
 #include "../thread_pool/thread_pool.h"
-#include "server_tasks/command_ids.h"
 #include "file_handler/file_access_manager.h"
+#include "server_tasks/command_ids.h"
+#include "vector"
 
 namespace server {
 
@@ -19,6 +20,8 @@ namespace server {
  */
 class Server {
  public:
+  Server();
+
   /**
    * @brief Starts the FTP service
    * @details This should run forever; if it ever returns, it is safe to assume
@@ -27,12 +30,11 @@ class Server {
    * @param tPort The port # for terminate commands.
    */
   void FtpService(uint16_t nPort, uint16_t tPort);
-private:
 
-    ///File access managers. @note To be given to nPortTask and tPort Task
-    std::shared_ptr<file_handler::FileAccessManager> read_manager_;
-    std::shared_ptr<file_handler::FileAccessManager> write_manager_;
-
+ private:
+  /// File access managers. @note To be given to nPortTask and tPort Task
+  std::shared_ptr<file_handler::FileAccessManager> read_manager_{};
+  std::shared_ptr<file_handler::FileAccessManager> write_manager_{};
 };
 
 }  // namespace server

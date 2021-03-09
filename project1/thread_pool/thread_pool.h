@@ -90,15 +90,16 @@ class ThreadPool : public IThreadPool {
   /// Mutex to use for synchronization among all threads.
   std::mutex mutex_;
 
+  /**
+   * @brief Maximum number of threads in the pool, or zero if there is no limit.
+   */
+  uint32_t max_pool_size_;
+
   /// Thread for dispatching new tasks.
   std::thread dispatcher_thread_;
   /// Thread for finalizing completed tasks.
   std::thread joiner_thread_;
 
-  /**
-   * @brief Maximum number of threads in the pool, or zero if there is no limit.
-   */
-  uint32_t max_pool_size_;
   /// Current number of threads in the pool.
   uint32_t pool_size_ = 0;
   /**

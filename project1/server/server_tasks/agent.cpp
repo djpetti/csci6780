@@ -8,6 +8,7 @@
 #include <iostream>
 #include <algorithm>
 #include <limits>
+#include <utility>
 
 namespace server {
 
@@ -24,11 +25,11 @@ namespace server {
 
     Agent::Agent(int client_fd, std::unique_ptr<ThreadSafeFileHandler> file_handler,
                  std::shared_ptr<server_tasks::CommandIDs> active_commands)
-            : client_fd_(client_fd), active_commands_(active_commands), file_handler_(std::move(file_handler)) {}
+            : client_fd_(client_fd), active_commands_(std::move(active_commands)), file_handler_(std::move(file_handler)) {}
 
     Agent::Agent(int client_fd,
                  std::shared_ptr<server_tasks::CommandIDs> active_commands)
-                 : client_fd_(client_fd), active_commands_(active_commands){}
+                 : client_fd_(client_fd), active_commands_(std::move(active_commands)){}
 
     Agent::~Agent() {
         // Close the socket.
@@ -237,7 +238,8 @@ namespace server {
 
         Response r;
         uint32_t id = GenerateCommandID();
-
+        // register this command as an active command
+        active_commands_->Insert(id);
         r.mutable_put()->set_command_id(id);
 
         // send client command id for possible termination
@@ -346,20 +348,9 @@ namespace server {
         std::cout << "Terminating an active GET or PUT command." << std::endl;
 
         // Retrieve the command id.
-        std::string cmd_str = request.command_id();
-
-        // Case to uint16_t
-        int cmd_int(std::stoi(cmd_str));
-        uint16_t cmd_id(0);
-
-        if (cmd_int <= std::numeric_limits<uint16_t>::max() && cmd_int >= 0) {
-            cmd_id = static_cast<uint16_t>(cmd_int);
-        } else {
-            std::cout << "Casting Error. " << std::endl;
-        }
-
+        const uint32_t kCommandId = request.command_id();
         // remove command from active command list.
-        active_commands_->Delete(cmd_id);
+        active_commands_->Delete(kCommandId);
 
         return ClientState::ACTIVE;
 

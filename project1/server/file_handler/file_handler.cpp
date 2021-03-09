@@ -5,7 +5,7 @@ namespace server::file_handler {
 FileHandler::FileHandler() : current_dir_(std::filesystem::current_path()) {}
 
 bool FileHandler::Delete(const std::string &filename) {
-  return remove(filename.c_str()) == 0;
+  return std::filesystem::remove(current_dir_ / filename);
 
 }  // Delete
 bool FileHandler::Put(const std::string &filename,
@@ -30,7 +30,7 @@ bool FileHandler::MakeDir(const std::string &name) {
 }  // MakeDir
 
 bool FileHandler::ChangeDir(const std::string &sub_folder) {
-  std::filesystem::current_path(current_dir_ / sub_folder);
+  current_dir_ = current_dir_ / sub_folder;
   return true;
 
 }  // ChangeDir

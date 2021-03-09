@@ -15,11 +15,11 @@ namespace server_tasks {
     class AgentTask : public thread_pool::Task {
     public:
 
-        AgentTask(int id, std::shared_ptr<CommandIDs> cmds,
+        AgentTask(int id, std::shared_ptr<CommandIDs> commands,
                   std::shared_ptr<server::file_handler::FileAccessManager> read_mgr,
                   std::shared_ptr<server::file_handler::FileAccessManager> write_mgr);
 
-        AgentTask(int id, std::shared_ptr<CommandIDs> cmds);
+        AgentTask(int id, std::shared_ptr<CommandIDs> commands);
 
         thread_pool::Task::Status RunAtomic() final;
         thread_pool::Task::Status SetUp() final;

@@ -1,17 +1,21 @@
 #include "client.h"
 
 #include <memory>
+#include <sstream>
+
+#include "../thread_pool/thread_pool.h"
+#include "client_tasks/download_task.h"
 #include "client_tasks/terminate_task.h"
 #include "client_tasks/upload_task.h"
-#include "client_tasks/download_task.h"
-#include "../thread_pool/thread_pool.h"
 
 namespace client {
 
 using client::input_parser::InputParser;
 
-bool Client::Connect(const std::string &hostname, uint16_t nport, uint16_t tport) {
-  client_fd_ = client_util::SetUpSocket(client_util::MakeAddress(nport), hostname);
+bool Client::Connect(const std::string &hostname, uint16_t nport,
+                     uint16_t tport) {
+  client_fd_ =
+      client_util::SetUpSocket(client_util::MakeAddress(nport), hostname);
   hostname_ = hostname;
   nport_ = nport;
   tport_ = tport;
@@ -79,10 +83,14 @@ void Client::HandleResponse() {
     output_ = pwd_response.dir_name();
   } else if (msg.has_put()) {
     auto put_response = msg.put();
-    output_ = put_response.command_id();
+    std::stringstream id_to_string;
+    id_to_string << put_response.command_id();
+    output_ = id_to_string.str();
   } else if (msg.has_get()) {
     auto get_response = msg.get();
-    output_ = get_response.command_id();
+    std::stringstream id_to_string;
+    id_to_string << get_response.command_id();
+    output_ = id_to_string.str();
   }
 
   // make sure outputting is necessary
@@ -124,16 +132,19 @@ void Client::FtpShell() {
     std::getline(std::cin, input);
 
     // determine command
-    std::unique_ptr<input_parser::InputParser> ip = std::make_unique<input_parser::InputParser>(input);
+    std::unique_ptr<input_parser::InputParser> ip =
+        std::make_unique<input_parser::InputParser>(input);
 
     // create & serialize request message for determined command
     r = ip->CreateReq();
     if (!ip->IsValid()) {
-      std::cout << "Invalid command, try again." << "\n";
+      std::cout << "Invalid command, try again."
+                << "\n";
       continue;
     }
     if (r.has_terminate()) {
-      auto terminate_task = std::make_shared<client_tasks::TerminateTask>(hostname_, tport_, r.terminate());
+      auto terminate_task = std::make_shared<client_tasks::TerminateTask>(
+          hostname_, tport_, r.terminate());
       pool.AddTask(terminate_task);
       continue;
     }
@@ -155,7 +166,8 @@ void Client::FtpShell() {
       if (!ip->IsForking()) {
         SendReq();
       } else {
-        auto put_task = std::make_shared<client_tasks::UploadTask>(client_fd_);
+        auto put_task = std::make_shared<client_tasks::UploadTask>(
+            client_fd_, outgoing_msg_buf_);
         pool.AddTask(put_task);
       }
     } else if (r.has_get()) {

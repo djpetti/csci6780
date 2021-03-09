@@ -75,7 +75,7 @@ message FileContents {
 /// Request to terminate a previous command.
 message TerminateRequest {
   /// The command to be terminated
-  string command_id = 1;
+  uint32 command_id = 1;
 }
 
 /**

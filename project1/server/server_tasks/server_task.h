@@ -65,7 +65,7 @@ namespace server_tasks {
         uint16_t port_;
 
         ///The file descriptor for the server
-        int server_fd_;
+        int server_fd_ = -1;
 
         /// Maximum queue size to use for listening on the server socket.
         uint8_t static constexpr kMaxQueueSize_= 5;

@@ -15,7 +15,7 @@ class DownloadTask : public thread_pool::Task {
   /**
    * @param filename the name of the file to be saved
    * @param buf_size the size of the buffer defined by client
-   * @param client_fd the socket to retreive the FileContents message
+   * @param client_fd the socket to retrieve the FileContents message
    */
   DownloadTask(std::string filename, size_t buf_size, int client_fd);
 

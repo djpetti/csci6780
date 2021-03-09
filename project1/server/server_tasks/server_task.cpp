@@ -1,8 +1,10 @@
 #include "server_task.h"
+
+#include <utility>
 namespace server_tasks {
 
     ServerTask::ServerTask(std::shared_ptr<CommandIDs> active_ids, uint16_t port)
-    : port_(port),active_ids_(active_ids){}
+    : port_(port),active_ids_(std::move(active_ids)){}
 
     thread_pool::Task::Status ServerTask::SetUp()  {
         // Create the socket.
