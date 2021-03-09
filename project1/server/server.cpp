@@ -2,8 +2,7 @@
 
 #include <netinet/in.h>
 #include <memory>
-#include <loguru.cpp>
-#include "../thread_pool/thread_pool.h"
+#include <loguru.hpp>
 #include "server_tasks/nport_task.h"
 #include "server_tasks/tport_task.h"
 
