@@ -2,10 +2,23 @@
  * @brief Entry point for the FTP client.
  */
 
-#include "client.h"
 #include <loguru.hpp>
 
-int main(int argc, const char **argv) {
+#include "client.h"
+
+int main(int argc, char **argv) {
+  char log_path[1024];
+
+  // initialize client logging
+  loguru::init(argc, argv);
+  loguru::add_file("client_error.log", loguru::Append, loguru::Verbosity_ERROR);
+  loguru::add_file("client_latest_error.log", loguru::Truncate,
+                   loguru::Verbosity_ERROR);
+  loguru::suggest_log_path("./logs", log_path, sizeof(log_path));
+  loguru::add_file(log_path, loguru::FileMode::Truncate, loguru::Verbosity_MAX);
+  // Turn off stderr logging for the client because it interferes with our CLI.
+  loguru::g_stderr_verbosity = loguru::Verbosity_OFF;
+
   if (argc != 4) {
     std::cout << "\nIncorrect # of inputs. Server IP address, Command Port #, and Terminate Port # expected";
     return 1;
