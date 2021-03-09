@@ -5,8 +5,10 @@
 
 #include <cstdio>
 #include "stdlib.h"
+#include <string>
 #include <iostream>
 #include <algorithm>
+#include <loguru.hpp>
 #include <limits>
 
 namespace server {
@@ -65,12 +67,14 @@ namespace server {
 
             if (bytes_read < 0) {
                 // Failed to read anything.
-                perror("Failed to read from client socket");
+
+                LOG_F(ERROR, "Failed to read from client socket.");
                 fc_parser_.ResetParser();
                 return ClientState::ERROR;
             } else if (bytes_read == 0) {
                 // Client has disconnected nicely.
                 std::cout << "Detected client disconnect." << std::endl;
+                LOG_F(INFO, "Client with FD %i has disconnected.",client_fd_);
                 return ClientState::DISCONNECTED;
             }
 
@@ -85,14 +89,14 @@ namespace server {
                 fc_parser_.AddNewData(incoming_message_buffer_);
 
             } else {
-                std::cout << "Command #" << command_id << " successfully terminated." << std::endl;
+                LOG_F(INFO, "Command #%i successfully terminated.", command_id);
                 break;
             }
 
         }
         // Get the parsed message.
         if (!fc_parser_.GetMessage(fc)) {
-            std::cerr << "Failed to get the parsed message." << std::endl;
+            LOG_F(ERROR, "Failed to get the parsed message from client (%i).", client_fd_);
             return ClientState::ERROR;
         }
         return ClientState::ACTIVE;
@@ -107,13 +111,14 @@ namespace server {
                     recv(client_fd_, incoming_message_buffer_.data(), kClientBufferSize, 0);
 
             if (bytes_read < 0) {
+
                 // Failed to read anything.
-                perror("Failed to read from client socket");
+                LOG_F(ERROR, "Failed to read from client (%i) socket.", client_fd_);
                 parser_.ResetParser();
                 return ClientState::ERROR;
             } else if (bytes_read == 0) {
                 // Client has disconnected nicely.
-                std::cout << "Detected client disconnect." << std::endl;
+                LOG_F(INFO, "Client with FD %i has disconnected.",client_fd_);
                 return ClientState::DISCONNECTED;
             }
 
@@ -127,7 +132,7 @@ namespace server {
 
         // Get the parsed message.
         if (!parser_.GetMessage(message)) {
-            std::cerr << "Failed to get the parsed message." << std::endl;
+            LOG_F(ERROR, "Failed to get the parsed message from client (%i).", client_fd_);
             return ClientState::ERROR;
         }
         return ClientState::ACTIVE;
@@ -154,21 +159,21 @@ namespace server {
             return HandleRequest(message.terminate());
         }
 
-        std::cerr << "No valid message was received." << std::endl;
+        LOG_F(ERROR, "No valid message from client (%i) was recieved.", client_fd_);
         return ClientState::ERROR;
     }
 
     bool Agent::SendResponse(const Response &response) {
         // Serialize the message.
         if (!wire_protocol::Serialize(response, &outgoing_message_buffer_)) {
-            std::cerr << "Failed to serialize message." << std::endl;
+            LOG_F(ERROR, "Failed to serialize message.");
             return false;
         }
 
         // Send the message.
         if (send(client_fd_, outgoing_message_buffer_.data(),
                  outgoing_message_buffer_.size(), 0) < 0) {
-            perror("Failed to send the message");
+            LOG_F(ERROR, "Failed to send message.");
             return false;
         }
         return true;
@@ -177,7 +182,7 @@ namespace server {
     bool Agent::SendFileContents(const ftp_messages::FileContents &file_contents, uint16_t command_id) {
         // Serialize the message.
         if (!wire_protocol::Serialize(file_contents, &outgoing_message_buffer_)) {
-            std::cerr << "Failed to serialize message." << std::endl;
+            LOG_F(ERROR, "Failed to serialize message.");
             return false;
         }
 
@@ -196,6 +201,7 @@ namespace server {
                     total_bytes_sent+=bytes_sent;
                 }
             } else {
+                LOG_F(ERROR, "Failed to read from client (%i) socket.", client_fd_);
                 return false;
             }
             terminated = !active_commands_->Contains(command_id);
@@ -205,7 +211,7 @@ namespace server {
 
     Agent::ClientState Agent::HandleRequest(
             const ftp_messages::GetRequest &request) {
-        std::cout << "Performing a GET operation." << std::endl;
+        LOG_F(INFO, "Performing a GET operation for client (%i).", client_fd_);
 
         Response r;
 
@@ -233,7 +239,7 @@ namespace server {
 
     Agent::ClientState Agent::HandleRequest(
             const ftp_messages::PutRequest &request) {
-        std::cout << "Performing a PUT operation." << std::endl;
+        LOG_F(INFO, "Performing a PUT operation for client (%i).", client_fd_);
 
         Response r;
         uint32_t id = GenerateCommandID();
@@ -254,7 +260,8 @@ namespace server {
                                            fc.contents().end());
 
         if (!file_handler_->Put(request.filename(), file_contents)) {
-            std::cerr << "Failed to write the file." << std::endl;
+            std::string fn = request.filename();
+            LOG_F(ERROR, "Failed to write the file (%s) for client (%i).", fn.c_str(), client_fd_);
             return ClientState::ERROR;
         }
 
@@ -264,11 +271,12 @@ namespace server {
 
     Agent::ClientState Agent::HandleRequest(
             const ftp_messages::DeleteRequest &request) {
-        std::cout << "Performing a DELETE request." << std::endl;
+        LOG_F(INFO, "Performing a DELETE operation for client (%i).", client_fd_);
 
         // Delete the file.
         if (!file_handler_->Delete(request.filename())) {
-            std::cerr << "Failed to delete the file." << std::endl;
+            std::string fn = request.filename();
+            LOG_F(ERROR, "Failed to delete the file (%s) for client (%i).", fn.c_str(), client_fd_);
             return ClientState::ERROR;
         }
 
@@ -278,7 +286,7 @@ namespace server {
 
     Agent::ClientState Agent::HandleRequest(
             const ftp_messages::ListRequest &request) {
-        std::cout << "Performing a LIST request." << std::endl;
+        LOG_F(INFO, "Performing a PUT operation for client (%i).", client_fd_);
 
         // List the directory contents.
         const auto &kDirectoryContents = file_handler_->List();
@@ -294,18 +302,18 @@ namespace server {
 
     Agent::ClientState Agent::HandleRequest(
             const ftp_messages::ChangeDirRequest &request) {
-        std::cout << "Performing a CD request." << std::endl;
+        LOG_F(INFO, "Performing a PUT operation for client (%i).", client_fd_);
 
         if (request.go_up()) {
             // Go up a directory.
             if (!file_handler_->UpDir()) {
-                std::cerr << "Failed to go up a directory." << std::endl;
+                LOG_F(ERROR, "Failed to go up a directory for client (%i).", client_fd_);
                 return ClientState::ERROR;
             }
         } else {
             // Go down a directory.
             if (!file_handler_->ChangeDir(request.dir_name())) {
-                std::cerr << "Failed to go down a directory." << std::endl;
+                LOG_F(ERROR, "Failed to go down a directory for client (%i).", client_fd_);
                 return ClientState::ERROR;
             }
         }
@@ -316,11 +324,12 @@ namespace server {
 
     Agent::ClientState Agent::HandleRequest(
             const ftp_messages::MakeDirRequest &request) {
-        std::cout << "Performing a MKDIR request." << std::endl;
+        LOG_F(INFO, "Performing a MKDIR operation for client (%i).", client_fd_);
 
         // Create the directory.
         if (!file_handler_->MakeDir(request.dir_name())) {
-            std::cerr << "Failed to create a directory." << std::endl;
+            LOG_F(ERROR, "Failed to create directory (%s) for client (%i).",
+                  request.dir_name().c_str(), client_fd_);
             return ClientState::ERROR;
         }
 
@@ -330,7 +339,7 @@ namespace server {
 
     Agent::ClientState Agent::HandleRequest(
             const ftp_messages::PwdRequest &request) {
-        std::cout << "Performing a PWD request." << std::endl;
+        LOG_F(INFO, "Performing a PWD operation for client (%i).", client_fd_);
 
         // Get the directory.
         const auto &kCurrentDir = file_handler_->GetCurrentDir();
@@ -343,19 +352,20 @@ namespace server {
 
     Agent::ClientState Agent::HandleRequest(
             const ftp_messages::TerminateRequest &request) {
-        std::cout << "Terminating an active GET or PUT command." << std::endl;
 
         // Retrieve the command id.
         std::string cmd_str = request.command_id();
 
-        // Case to uint16_t
+        // Cast to uint16_t
         int cmd_int(std::stoi(cmd_str));
         uint16_t cmd_id(0);
+
+        LOG_F(INFO, "Terminating an active GET or PUT command (%i) for client (%i).",cmd_id, client_fd_);
 
         if (cmd_int <= std::numeric_limits<uint16_t>::max() && cmd_int >= 0) {
             cmd_id = static_cast<uint16_t>(cmd_int);
         } else {
-            std::cout << "Casting Error. " << std::endl;
+            LOG_F(ERROR, "Casting Error for client (%i)",client_fd_);
         }
 
         // remove command from active command list.
@@ -367,7 +377,7 @@ namespace server {
 
     Agent::ClientState Agent::HandleRequest(
             const ftp_messages::QuitRequest &request) {
-        std::cout << "Got a QUIT request. Exiting." << std::endl;
+        LOG_F(INFO, "Quit request for client (%i).",client_fd_);
         // Indicate that we are finished with this client.
         return ClientState::DISCONNECTED;
     }

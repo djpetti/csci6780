@@ -10,6 +10,7 @@
 namespace server {
 
     void Server::FtpService(uint16_t nPort, uint16_t tPort) {
+        LOG_F(INFO, "FtpService now starting.");
         thread_pool::ThreadPool pool;
         std::shared_ptr<server_tasks::CommandIDs> active_ids;
 
@@ -21,7 +22,7 @@ namespace server {
 
         pool.AddTask(nPortTask);
         pool.AddTask(tPortTask);
-
+        LOG_F(INFO, "Normal Port and Termination port added to thread pool.");
         while (pool.GetTaskStatus(nPortTask) == thread_pool::Task::Status::RUNNING ||
                pool.GetTaskStatus(tPortTask) == thread_pool::Task::Status::RUNNING) {
             pool.WaitForCompletion();

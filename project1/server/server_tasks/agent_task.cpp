@@ -1,6 +1,8 @@
 #include "agent_task.h"
 
 #include <utility>
+#include <loguru.hpp>
+#include <string>
 
 namespace server_tasks {
 
@@ -14,7 +16,8 @@ namespace server_tasks {
     : client_fd_(id), active_commands_(cmds) {}
 
     thread_pool::Task::Status AgentTask::SetUp() {
-
+        std::string thread_name = "Agent Thread #"+ std::to_string(client_fd_);
+        loguru::set_thread_name(thread_name.c_str());
         // if this is an agent for a normal command, these members should be initialized
         if (read_manager_ && write_manager_) {
             // give the agent a unique file handler with the shared access managers
@@ -29,6 +32,7 @@ namespace server_tasks {
     }
 
     thread_pool::Task::Status AgentTask::RunAtomic() {
+
         if (agent_->Handle()) {
             return Status::DONE;
         }
