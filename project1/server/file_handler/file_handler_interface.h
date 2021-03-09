@@ -25,6 +25,8 @@ class IFileHandler {
   [[nodiscard]] virtual std::vector<uint8_t> Get(
       const std::string& filename) const = 0;
 
+  virtual ~IFileHandler() = default;
+
   /**
    * @brief Creates a new file in the current remote directory on the server.
    * @param filename The name of the file to create.

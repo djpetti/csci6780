@@ -7,23 +7,23 @@
 #include <utility>
 
 #include "agent_task.h"
+#include <loguru.hpp>
 
 namespace server_tasks {
 
 thread_pool::Task::Status NPortTask::Listen() {
-  std::cout << "Server is listening for normal commands on port " << port_
-            << "." << std::endl;
+  loguru::set_thread_name("TPort Thread");
+  LOG_F(INFO, "Server is listening for normal commands on port %i.", port_);
 
   while (true) {
     // Accept a new connection.
     int client_fd = accept(server_fd_, nullptr, nullptr);
     if (client_fd < 0) {
-      perror("accept() failed");
+      LOG_F(ERROR, "accept() failed");
       return thread_pool::Task::Status::FAILED;
     }
 
-    std::cout << "Handling new connection from client #" << client_fd << "."
-              << std::endl;
+    LOG_F(INFO, "Normal Port handling new connection from client #%i.",client_fd);
 
     auto agent_task = std::make_shared<AgentTask>(
         client_fd, active_ids_, read_manager_, write_manager_);
