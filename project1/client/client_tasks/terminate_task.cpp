@@ -29,6 +29,7 @@ thread_pool::Task::Status TerminateTask::RunAtomic() {
   if (send(socket_, outgoing_terminate_buf_.data(),
            outgoing_terminate_buf_.size(), 0) < 0) {
     perror("Failed to send request");
+
     return thread_pool::Task::Status::FAILED;
   }
   outgoing_terminate_buf_.clear();

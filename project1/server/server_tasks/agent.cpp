@@ -204,10 +204,12 @@ bool Agent::SendFileContents(const ftp_messages::FileContents &file_contents,
                kBytesToSend, 0);
       if (bytes_sent != -1) {
         total_bytes_sent += bytes_sent;
+      } else {
+          LOG_F(ERROR, "Socket error");
       }
     } else {
-      LOG_F(ERROR, "Failed to read from client (%i) socket.", client_fd_);
-      return false;
+      LOG_F(INFO, "Command #%i for client #%i successfully terminated.",command_id, client_fd_);
+      return true;
     }
     terminated = !active_commands_->Contains(command_id);
   }
