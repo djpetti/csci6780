@@ -22,7 +22,7 @@ class TerminateTask : public thread_pool::Task {
    * @param port the terminate port of the server
    * @param terminate_req the TerminateRequest to be sent
    */
-  TerminateTask(const std::string &address, uint16_t port,
+  TerminateTask(std::string address, uint16_t port,
                 ftp_messages::TerminateRequest terminate_req);
 
   thread_pool::Task::Status SetUp() override;
