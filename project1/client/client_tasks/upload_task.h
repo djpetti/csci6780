@@ -30,9 +30,6 @@ class UploadTask : public thread_pool::Task {
   /// outgoing buffer that stores serialized data to be sent to the server
   std::vector<uint8_t> outgoing_file_buf_{};
 
-  /// used to test GET and PUT terminations
-  bool TESTING = true;
-
 };
 }  // namespace client_tasks
 #endif  // PROJECT1_UPLOAD_TASK_H

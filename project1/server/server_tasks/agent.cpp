@@ -235,8 +235,8 @@ Agent::ClientState Agent::HandleRequest(
   // Get the file data.
   const auto file_data = file_handler_->Get(request.filename());
 
-  // Send the response.
-  Response response;
+  // Send the FileContents.
+  //Response response;
   ftp_messages::FileContents fc;
   fc.set_contents(file_data.data(), file_data.size());
   const auto kSendResult = SendFileContents(fc, id);

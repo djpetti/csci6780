@@ -66,8 +66,6 @@ bool Client::WaitForMessage() {
 }
 
 void Client::HandleResponse() {
-  output_ = "";
-
   ftp_messages::Response msg;
 
   parser_.GetMessage(&msg);
@@ -75,49 +73,26 @@ void Client::HandleResponse() {
   // determine type of response and respond accordingly
   if (msg.has_list()) {
     auto l_response = msg.list();
-
-    // append filenames to output string separated by whitespace
-    for (int i = 0; i < l_response.filenames_size(); i++) {
-      output_.append(l_response.filenames(i));
-      if (i != l_response.filenames_size() - 1) {
-        output_.append(" ");
+    for (int i = 0, step = 1; i < l_response.filenames_size(); i++, step++) {
+      std::cout << l_response.filenames(i);
+      if (step % 3 == 0 && i != l_response.filenames_size() - 1) {
+        std::cout << "\n";
+      } else {
+        std::cout << "   ";
       }
     }
   } else if (msg.has_pwd()) {
     auto pwd_response = msg.pwd();
-    output_ = pwd_response.dir_name();
+    std::cout << pwd_response.dir_name();
   } else if (msg.has_put()) {
     auto put_response = msg.put();
-    output_ = std::to_string(put_response.command_id());
+    std::cout << "command_id: " << std::to_string(put_response.command_id());
   } else if (msg.has_get()) {
     auto get_response = msg.get();
-    output_ = std::to_string(get_response.command_id());
-  }
-
-  // make sure outputting is necessary
-  if (!output_.empty()) {
-    Output();
+    std::cout << "command_id: " << std::to_string(get_response.command_id());
   }
 }
 
-void Client::Output() {
-  std::istringstream iss(output_);
-  int i = 0;
-
-  // might be unnecessary
-  std::cout << "\n";
-
-  do {
-    std::string word;
-    iss >> word;
-    std::cout << word + "   ";
-    if (i == 3) {
-      std::cout << "\n";
-      i = 0;
-    }
-    i++;
-  } while (iss);
-}
 void Client::FtpShell() {
   ftp_messages::Request r;
   thread_pool::ThreadPool pool;
