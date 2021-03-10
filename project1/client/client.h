@@ -57,11 +57,6 @@ class Client {
   void HandleResponse();
 
  private:
-  /**
-   * @brief Handles output formatting for responses
-   */
-  void Output();
-
   /// tracking connection status
   bool connected_;
 
