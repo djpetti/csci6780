@@ -9,6 +9,7 @@
 #include <limits>
 #include <loguru.hpp>
 #include <string>
+#include <thread>
 #include <utility>
 
 #include "stdlib.h"
@@ -199,6 +200,9 @@ bool Agent::SendFileContents(const ftp_messages::FileContents &file_contents,
     if (!terminated) {
       const uint32_t kBytesToSend = std::min(
           (int)outgoing_message_buffer_.size() - total_bytes_sent, kChunkSize);
+
+      // used for testing
+      // std::this_thread::sleep_for(std::chrono::milliseconds(10000));
       int bytes_sent =
           send(client_fd_, outgoing_message_buffer_.data() + total_bytes_sent,
                kBytesToSend, 0);

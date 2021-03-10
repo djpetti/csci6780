@@ -41,13 +41,18 @@ bool Client::SendReq() {
 }
 
 bool Client::WaitForMessage() {
+  parser_.ResetParser();
   while (!parser_.HasCompleteMessage()) {
     incoming_msg_buf_.resize(kBufferSize);
 
+    // ONLY after successful termination of a forked GET request
+    // subsequent 'LIST' and 'PWD' requests
+    // fail at this line on the first iteration of this loop
+    // recv will read an enormous amount of bytes and program freezes,  or it reads -1, then on the next subsequent command reads an enormous amount bytes
+    // enormous amount of bytes: 140732703310832
     const auto bytes_read =
         recv(client_fd_, incoming_msg_buf_.data(), kBufferSize, 0);
     if (bytes_read < 0) {
-      connected_ = false;
       break;
     }
     else if (bytes_read == 0) {
@@ -95,8 +100,10 @@ void Client::HandleResponse() {
 
 void Client::FtpShell() {
   ftp_messages::Request r;
+  ftp_messages::Request r_old;
+  std::shared_ptr<client_tasks::UploadTask> put_task;
+  std::shared_ptr<client_tasks::DownloadTask> get_task;
   thread_pool::ThreadPool pool;
-
   while (connected_) {
     // display myftp prompt
     std::cout << "\nmyftp> ";
@@ -113,6 +120,9 @@ void Client::FtpShell() {
 
     // create & serialize request message for determined command
     r = ip->CreateReq();
+
+
+
     if (!ip->IsValid()) {
       std::cout << "Invalid command, try again."
                 << "\n";
@@ -122,6 +132,12 @@ void Client::FtpShell() {
       auto terminate_task = std::make_shared<client_tasks::TerminateTask>(
           hostname_, tport_, r.terminate());
       pool.AddTask(terminate_task);
+
+      if (r_old.has_get()) {
+          pool.CancelTask(get_task);
+      } else if (r_old.has_put()){
+          pool.CancelTask(put_task);
+      }
       continue;
     }
     if (r.has_quit()) {
@@ -142,8 +158,9 @@ void Client::FtpShell() {
       if (!ip->IsForking()) {
         SendReq();
       } else {
-        auto put_task = std::make_shared<client_tasks::UploadTask>(
-            client_fd_, outgoing_msg_buf_);
+
+          put_task = std::make_shared<client_tasks::UploadTask>(
+                  client_fd_, outgoing_msg_buf_);
         pool.AddTask(put_task);
       }
     } else if (r.has_get()) {
@@ -154,10 +171,12 @@ void Client::FtpShell() {
         parser_.GetMessage(&contents);
         client_util::SaveIncomingFile(contents.contents(), ip->GetFilename());
       } else {
-        auto get_task = std::make_shared<client_tasks::DownloadTask>(
+        get_task = std::make_shared<client_tasks::DownloadTask>(
             ip->GetFilename(), kBufferSize, client_fd_);
         pool.AddTask(get_task);
+
       }
+      r_old = r;
     }
   }
 }
