@@ -296,7 +296,7 @@ Agent::ClientState Agent::HandleRequest(
 
 Agent::ClientState Agent::HandleRequest(
     const ftp_messages::ListRequest &request) {
-  LOG_F(INFO, "Performing a PUT operation for client (%i).", client_fd_);
+  LOG_F(INFO, "Performing a LIST operation for client (%i).", client_fd_);
 
   // List the directory contents.
   const auto &kDirectoryContents = file_handler_->List();

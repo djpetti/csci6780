@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <sstream>
+#include <chrono>
 
 #include "../thread_pool/thread_pool.h"
 #include "client_tasks/download_task.h"
@@ -45,8 +46,12 @@ bool Client::WaitForMessage() {
 
     const auto bytes_read =
         recv(client_fd_, incoming_msg_buf_.data(), kBufferSize, 0);
-    if (bytes_read < 1) {
+    if (bytes_read < 0) {
       connected_ = false;
+      break;
+    }
+    else if (bytes_read == 0) {
+        break;
     }
 
     incoming_msg_buf_.resize(bytes_read);

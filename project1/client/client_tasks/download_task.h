@@ -39,6 +39,10 @@ class DownloadTask : public thread_pool::Task {
 
   /// parser used to parse incoming FileContents messages
   wire_protocol::MessageParser<ftp_messages::FileContents> parser_;
+
+  /// used to test GET and PUT terminations
+  bool TESTING = true;
+
 };
 }
 #endif  // PROJECT1_DOWNLOAD_TASK_H

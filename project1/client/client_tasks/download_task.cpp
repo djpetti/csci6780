@@ -1,15 +1,20 @@
 #include "download_task.h"
+#include <thread>
 
 namespace client_tasks {
 DownloadTask::DownloadTask(std::string filename, size_t buf_size,
                            int client_fd) : filename_(filename), client_fd_(client_fd), buffer_size_(buf_size) {};
 thread_pool::Task::Status DownloadTask::RunAtomic() {
+
   while(!parser_.HasCompleteMessage()) {
     incoming_file_buf_.resize(buffer_size_);
     const auto bytes_read =
         recv(client_fd_, incoming_file_buf_.data(), buffer_size_, 0);
-    if (bytes_read < 1) {
-      perror("Connection error.");
+    if (bytes_read < 0) {
+        perror("Connection error.");
+        return thread_pool::Task::Status::DONE;
+    } else if (bytes_read == 0){
+        return thread_pool::Task::Status::DONE;
     }
     incoming_file_buf_.resize(bytes_read);
     parser_.AddNewData(incoming_file_buf_);
