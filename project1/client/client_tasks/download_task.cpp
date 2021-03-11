@@ -21,6 +21,7 @@ thread_pool::Task::Status DownloadTask::RunAtomic() {
       }
 
       LOG_S(ERROR) << "Socket error: " << strerror(errno);
+      receiver_.Reset();
       return thread_pool::Task::Status::FAILED;
     } else if (bytes_read == 0) {
       // Orderly shutdown from server.
@@ -37,6 +38,10 @@ thread_pool::Task::Status DownloadTask::RunAtomic() {
 
     return thread_pool::Task::Status::DONE;
   }
+}
+
+void DownloadTask::CleanUp() {
+  receiver_.CleanUp();
 }
 
 }  // namespace client_tasks

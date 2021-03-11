@@ -28,9 +28,7 @@ int ChunkedFileReceiver::ReceiveNextChunk() {
 
     if (bytes_read < 0) {
       // Failed to read anything.
-
       LOG_F(ERROR, "Failed to read from client socket.");
-      parser_.ResetParser();
       return bytes_read;
     } else if (bytes_read == 0) {
       // Client has disconnected nicely.

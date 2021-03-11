@@ -20,6 +20,8 @@ class DownloadTask : public thread_pool::Task {
 
   Status RunAtomic() override;
 
+  void CleanUp() override;
+
  protected:
 
   /// the name of the file to be retrieved
