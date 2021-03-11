@@ -2,8 +2,8 @@
 
 #include <memory>
 #include <sstream>
-#include <chrono>
 
+#include "../thread_pool/task.h"
 #include "../thread_pool/thread_pool.h"
 #include "client_tasks/download_task.h"
 #include "client_tasks/terminate_task.h"
@@ -12,6 +12,8 @@
 namespace client {
 
 using client::input_parser::InputParser;
+using client_util::ReceiveForever;
+using client_util::SendForever;
 
 bool Client::Connect(const std::string &hostname, uint16_t nport,
                      uint16_t tport) {
@@ -29,7 +31,7 @@ bool Client::SendReq() {
     perror("Cannot Send Request... no longer connected to server");
     return false;
   }
-  if (send(client_fd_, outgoing_msg_buf_.data(), outgoing_msg_buf_.size(), 0) <
+  if (SendForever(client_fd_, outgoing_msg_buf_.data(), outgoing_msg_buf_.size(), 0) <
       0) {
     perror("Failed to send request");
     return false;
@@ -45,18 +47,10 @@ bool Client::WaitForMessage() {
   while (!parser_.HasCompleteMessage()) {
     incoming_msg_buf_.resize(kBufferSize);
 
-    // ONLY after successful termination of a forked GET request
-    // subsequent 'LIST' and 'PWD' requests
-    // fail at this line on the first iteration of this loop
-    // recv will read an enormous amount of bytes and program freezes,  or it reads -1, then on the next subsequent command reads an enormous amount bytes
-    // enormous amount of bytes: 140732703310832
     const auto bytes_read =
-        recv(client_fd_, incoming_msg_buf_.data(), kBufferSize, 0);
-    if (bytes_read < 0) {
+        ReceiveForever(client_fd_, incoming_msg_buf_.data(), kBufferSize, 0);
+    if (bytes_read <= 0) {
       break;
-    }
-    else if (bytes_read == 0) {
-        break;
     }
 
     incoming_msg_buf_.resize(bytes_read);
@@ -96,6 +90,7 @@ void Client::HandleResponse() {
     auto get_response = msg.get();
     std::cout << "command_id: " << std::to_string(get_response.command_id());
   }
+  std::cout << std::endl;
 }
 
 void Client::FtpShell() {
@@ -121,8 +116,6 @@ void Client::FtpShell() {
     // create & serialize request message for determined command
     r = ip->CreateReq();
 
-
-
     if (!ip->IsValid()) {
       std::cout << "Invalid command, try again."
                 << "\n";
@@ -134,10 +127,16 @@ void Client::FtpShell() {
       pool.AddTask(terminate_task);
 
       if (r_old.has_get()) {
-          pool.CancelTask(get_task);
-      } else if (r_old.has_put()){
-          pool.CancelTask(put_task);
+        pool.CancelTask(get_task);
+        // CancelTask returns possibly before the task is actually cancelled.
+        // Wait here to ensure this task is not still listening on the socket
+        // when we move on.
+        pool.WaitForCompletion(get_task);
+      } else if (r_old.has_put()) {
+        pool.CancelTask(put_task);
+        pool.WaitForCompletion(put_task);
       }
+
       continue;
     }
     if (r.has_quit()) {
@@ -155,26 +154,23 @@ void Client::FtpShell() {
       // If put command, FileContents will have to be sent.
       auto contents = ip->GetContentsMessage();
       wire_protocol::Serialize(contents, &outgoing_msg_buf_);
-      if (!ip->IsForking()) {
-        SendReq();
-      } else {
+      put_task = std::make_shared<client_tasks::UploadTask>(
+          client_fd_, outgoing_msg_buf_);
+      pool.AddTask(put_task);
 
-          put_task = std::make_shared<client_tasks::UploadTask>(
-                  client_fd_, outgoing_msg_buf_);
-        pool.AddTask(put_task);
+      if (!ip->IsForking()) {
+        // Wait synchronously for put.
+        pool.WaitForCompletion(put_task);
       }
     } else if (r.has_get()) {
       // If get command, FileContents will have to be received.
-      if (!ip->IsForking()) {
-        WaitForMessage();
-        ftp_messages::FileContents contents;
-        parser_.GetMessage(&contents);
-        client_util::SaveIncomingFile(contents.contents(), ip->GetFilename());
-      } else {
-        get_task = std::make_shared<client_tasks::DownloadTask>(
-            ip->GetFilename(), kBufferSize, client_fd_);
-        pool.AddTask(get_task);
+      get_task = std::make_shared<client_tasks::DownloadTask>(
+          ip->GetFilename(), client_fd_);
+      pool.AddTask(get_task);
 
+      if (!ip->IsForking()) {
+        // Wait synchronously for get.
+        pool.WaitForCompletion(get_task);
       }
       r_old = r;
     }

@@ -97,6 +97,20 @@ class MessageParser {
     overflow_message_data_.clear();
   }
 
+  /**
+   * @return True if we have overflow data.
+   */
+  bool HasOverflow() {
+    return !overflow_message_data_.empty();
+  }
+
+  /**
+   * @return True if we have some partial message data.
+   */
+  bool HasPartialMessage() {
+    return !partial_message_.empty() || got_length_bytes_ != 0;
+  }
+
  private:
   /// Type we use to store the length in serialized messages.
   using MessageLengthType = uint32_t;

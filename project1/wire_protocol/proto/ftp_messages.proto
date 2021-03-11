@@ -66,10 +66,12 @@ message PwdResponse {
 /// Request to end the session.
 message QuitRequest {}
 
-/// Bidirectional message for file contents
+/// Bidirectional message for a chunk from a file.
 message FileContents {
   /// The contents of the file
   bytes contents = 1;
+  /// Whether this is the final chunk.
+  bool is_last = 2;
 }
 
 /// Request to terminate a previous command.
@@ -93,6 +95,8 @@ message Request {
     PwdRequest pwd = 7;
     QuitRequest quit = 8;
     TerminateRequest terminate = 9;
+    // This is present so we can detect spurious messages and ignore them.
+    FileContents file_contents = 10;
   }
 }
 

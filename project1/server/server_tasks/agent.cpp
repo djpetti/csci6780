@@ -4,15 +4,14 @@
 #include <unistd.h>
 
 #include <algorithm>
-#include <cstdio>
 #include <iostream>
-#include <limits>
 #include <loguru.hpp>
 #include <string>
 #include <thread>
 #include <utility>
 
-#include "stdlib.h"
+#include "../../chunked_files/chunked_file_receiver.h"
+#include "../../chunked_files/chunked_file_sender.h"
 
 namespace server {
 
@@ -59,49 +58,38 @@ bool Agent::Handle() {
   return client_state != ClientState::ERROR;
 }
 
-Agent::ClientState Agent::ReadFileContents(ftp_messages::FileContents *fc,
+Agent::ClientState Agent::ReadFileContents(std::vector<uint8_t> *file_contents,
                                            uint16_t command_id) {
-  while (!fc_parser_.HasCompleteMessage()) {
+  chunked_files::ChunkedFileReceiver receiver(client_fd_);
+
+  while (!receiver.HasCompleteFile()) {
     bool terminated = !active_commands_->Contains(command_id);
     incoming_message_buffer_.resize(kClientBufferSize);
 
     // Read 1000 bytes from the socket
-    const auto bytes_read =
-        recv(client_fd_, incoming_message_buffer_.data(), kClientBufferSize, 0);
+    const auto bytes_read = receiver.ReceiveNextChunk();
 
     if (bytes_read < 0) {
       // Failed to read anything.
-
-      LOG_F(ERROR, "Failed to read from client socket.");
-      fc_parser_.ResetParser();
       return ClientState::ERROR;
     } else if (bytes_read == 0) {
       // Client has disconnected nicely.
-      std::cout << "Detected client disconnect." << std::endl;
-      LOG_F(INFO, "Client with FD %i has disconnected.", client_fd_);
       return ClientState::DISCONNECTED;
     }
 
     // only continue if this put request is an active command
-    if (!terminated) {
-      // The parser assumes that the entire vector contains valid data, so limit
-      // the size.
-      incoming_message_buffer_.resize(bytes_read);
-
-      // Add the data to the parser.
-      fc_parser_.AddNewData(incoming_message_buffer_);
-
-    } else {
+    if (terminated) {
+      // Make sure we leave the socket in a valid state.
+      if (!receiver.CleanUp()) {
+        return ClientState::ERROR;
+      }
       LOG_F(INFO, "Command #%i successfully terminated.", command_id);
-      break;
+      return ClientState::ACTIVE;
     }
   }
+
   // Get the parsed message.
-  if (!fc_parser_.GetMessage(fc)) {
-    LOG_F(ERROR, "Failed to get the parsed message from client (%i).",
-          client_fd_);
-    return ClientState::ERROR;
-  }
+  receiver.GetFileContents(file_contents);
   return ClientState::ACTIVE;
 }
 
@@ -160,6 +148,10 @@ Agent::ClientState Agent::DispatchMessage(const Request &message) {
     return HandleRequest(message.quit());
   } else if (message.has_terminate()) {
     return HandleRequest(message.terminate());
+  } else if (message.has_file_contents()) {
+    // Spurious file_contents message. Ignore.
+    LOG_S(1) << "Ignoring spurious file_contents message.";
+    return ClientState::ACTIVE;
   }
 
   LOG_F(ERROR, "No valid message from client (%i) was recieved.", client_fd_);
@@ -182,37 +174,27 @@ bool Agent::SendResponse(const Response &response) {
   return true;
 }
 
-bool Agent::SendFileContents(const ftp_messages::FileContents &file_contents,
+bool Agent::SendFileContents(const std::vector<uint8_t> &file_contents,
                              uint16_t command_id) {
-  // Serialize the message.
-  if (!wire_protocol::Serialize(file_contents, &outgoing_message_buffer_)) {
-    LOG_F(ERROR, "Failed to serialize message.");
-    return false;
-  }
+  chunked_files::ChunkedFileSender sender(client_fd_);
+  sender.SetFileContents(file_contents);
 
   // monitor for termination request for get and put commands
   uint32_t total_bytes_sent = 0;
-  uint32_t constexpr kChunkSize = 1000;
   bool terminated = false;
 
   // continue until we've sent the entire message
-  while (total_bytes_sent < outgoing_message_buffer_.size()) {
+  while (!sender.SentCompleteFile()) {
     if (!terminated) {
-      const uint32_t kBytesToSend = std::min(
-          (int)outgoing_message_buffer_.size() - total_bytes_sent, kChunkSize);
-
-      // used for testing
-      // std::this_thread::sleep_for(std::chrono::milliseconds(10000));
-      int bytes_sent =
-          send(client_fd_, outgoing_message_buffer_.data() + total_bytes_sent,
-               kBytesToSend, 0);
+      int bytes_sent = sender.SendNextChunk();
       if (bytes_sent != -1) {
         total_bytes_sent += bytes_sent;
       } else {
-          LOG_F(ERROR, "Socket error");
+        return false;
       }
     } else {
-      LOG_F(INFO, "Command #%i for client #%i successfully terminated.",command_id, client_fd_);
+      LOG_F(INFO, "Command #%i for client #%i successfully terminated.",
+            command_id, client_fd_);
       return true;
     }
     terminated = !active_commands_->Contains(command_id);
@@ -242,10 +224,7 @@ Agent::ClientState Agent::HandleRequest(
   const auto file_data = file_handler_->Get(request.filename());
 
   // Send the FileContents.
-  //Response response;
-  ftp_messages::FileContents fc;
-  fc.set_contents(file_data.data(), file_data.size());
-  const auto kSendResult = SendFileContents(fc, id);
+  const auto kSendResult = SendFileContents(file_data, id);
 
   active_commands_->Delete(id);
   return kSendResult ? ClientState::ACTIVE : ClientState::ERROR;
@@ -268,12 +247,10 @@ Agent::ClientState Agent::HandleRequest(
   ftp_messages::FileContents fc;
 
   // Retrieve the file contents
-  ReadFileContents(&fc, id);
+  std::vector<uint8_t> file_contents;
+  ReadFileContents(&file_contents, id);
 
   // Write the file data.
-  std::vector<uint8_t> file_contents(fc.contents().begin(),
-                                     fc.contents().end());
-
   if (!file_handler_->Put(request.filename(), file_contents)) {
     std::string fn = request.filename();
     LOG_F(ERROR, "Failed to write the file (%s) for client (%i).", fn.c_str(),

@@ -222,6 +222,17 @@ void ThreadPool::WaitForCompletion() {
   });
 }
 
+void ThreadPool::WaitForCompletion(const std::shared_ptr<Task>& task) {
+  std::unique_lock<std::mutex> lock(mutex_);
+
+  if (handle_to_status_[task->GetHandle()] == Task::Status::RUNNING) {
+    // Task is not yet complete.
+    task_done_.wait(lock, [this, task]() {
+      return handle_to_status_[task->GetHandle()] != Task::Status::RUNNING;
+    });
+  }
+}
+
 uint32_t ThreadPool::NumThreads() {
   std::lock_guard<std::mutex> lock(mutex_);
   return pool_size_;

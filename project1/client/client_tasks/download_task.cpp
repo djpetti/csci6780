@@ -1,34 +1,42 @@
 #include "download_task.h"
-#include <cstdint>
-#include <thread>
+
+#include <cerrno>
+#include <loguru.hpp>
+#include <utility>
+
 namespace client_tasks {
-DownloadTask::DownloadTask(std::string filename, size_t buf_size,
-                           int client_fd) : filename_(filename), client_fd_(client_fd), buffer_size_(buf_size) {};
+
+DownloadTask::DownloadTask(std::string filename, int client_fd)
+    : filename_(std::move(filename)),
+      client_fd_(client_fd),
+      receiver_(client_fd_){};
+
 thread_pool::Task::Status DownloadTask::RunAtomic() {
-  while(!parser_.HasCompleteMessage()) {
-    incoming_file_buf_.resize(buffer_size_);
-
-    const auto bytes_read =
-        recv(client_fd_, incoming_file_buf_.data(), buffer_size_, 0);
+  if (!receiver_.HasCompleteFile()) {
+    const auto bytes_read = receiver_.ReceiveNextChunk();
     if (bytes_read < 0) {
-        perror("Connection error.");
-        return thread_pool::Task::Status::DONE;
-    } else if (bytes_read == 0){
+      if (errno == EWOULDBLOCK || errno == EAGAIN) {
+        // This is merely a timeout, and we should just spin again.
+        return thread_pool::Task::Status::RUNNING;
+      }
 
-        return thread_pool::Task::Status::DONE;
+      LOG_S(ERROR) << "Socket error: " << strerror(errno);
+      return thread_pool::Task::Status::FAILED;
+    } else if (bytes_read == 0) {
+      // Orderly shutdown from server.
+      return thread_pool::Task::Status::DONE;
     }
-    incoming_file_buf_.resize(bytes_read);
-    parser_.AddNewData(incoming_file_buf_);
+
+    return thread_pool::Task::Status::RUNNING;
+  } else {
+    // Parse the complete message.
+    std::vector<uint8_t> contents;
+    receiver_.GetFileContents(&contents);
+    client_util::SaveIncomingFile({contents.begin(), contents.end()},
+                                  filename_);
+
+    return thread_pool::Task::Status::DONE;
   }
-
-  ftp_messages::FileContents contents;
-  parser_.GetMessage(&contents);
-  client_util::SaveIncomingFile(contents.contents(), filename_);
-
-  return thread_pool::Task::Status::DONE;
 }
 
-void DownloadTask::CleanUp() {
-  incoming_file_buf_.clear();
-}
-}
+}  // namespace client_tasks

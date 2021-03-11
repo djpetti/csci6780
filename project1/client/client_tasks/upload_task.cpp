@@ -1,21 +1,40 @@
 #include "upload_task.h"
 
-#include <utility>
-#include <thread>
+#include <cerrno>
+#include <loguru.hpp>
+
 
 namespace client_tasks {
 
-UploadTask::UploadTask(int client_fd,
-                       std::vector<uint8_t> file_data)
-    : client_fd_(client_fd), outgoing_file_buf_(std::move(file_data)) {}
+UploadTask::UploadTask(int client_fd, const std::vector<uint8_t>& file_data)
+    : client_fd_(client_fd), sender_(client_fd_) {
+  sender_.SetFileContents(file_data);
+}
 
 thread_pool::Task::Status UploadTask::RunAtomic() {
-  if (send(client_fd_, outgoing_file_buf_.data(), outgoing_file_buf_.size(),
-           0) < 0) {
-    perror("Failed to send request");
-    return thread_pool::Task::Status::FAILED;
+  if (sender_.SentCompleteFile()) {
+    return thread_pool::Task::Status::DONE;
   }
-  return thread_pool::Task::Status::DONE;
+
+  const int kSendResult = sender_.SendNextChunk();
+
+  if (kSendResult < 0) {
+    if (errno == EAGAIN || errno == EWOULDBLOCK) {
+      // Time out. Give it another try.
+      return thread_pool::Task::Status::RUNNING;
+    }
+
+    LOG_S(ERROR) << "Socket error: " << strerror(errno);
+    return thread_pool::Task::Status::FAILED;
+
+  } else if (kSendResult == 0) {
+    // Orderly shutdown from server. In this case, we assume that the server
+    // side was terminated.
+    LOG_S(INFO) << "Server disconnected, assuming termination.";
+    return thread_pool::Task::Status::DONE;
+  }
+
+  return thread_pool::Task::Status::RUNNING;
 }
-void UploadTask::CleanUp() { outgoing_file_buf_.clear(); }
+
 }  // namespace client_tasks

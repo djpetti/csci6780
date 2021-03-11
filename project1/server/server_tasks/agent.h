@@ -81,10 +81,10 @@ namespace server {
 
         /**
          * @brief Reads a file contents message from the socket.
-         * @param fc The message to read into.
+         * @param file_contents The message to read into.
          * @return True if it succeeded in reading the message, false if otherwise.
          */
-        ClientState ReadFileContents(ftp_messages::FileContents *fc, uint16_t command_id);
+        ClientState ReadFileContents(std::vector<uint8_t> *file_contents, uint16_t command_id);
 
         /**
          * @brief Dispatches an incoming request to the proper handler.
@@ -128,7 +128,7 @@ namespace server {
          * @param file_contents the file contents to be sent
          * @return True on Success, False if the command was terminated
          */
-        bool SendFileContents(const ftp_messages::FileContents &file_contents, uint16_t command_id);
+        bool SendFileContents(const std::vector<uint8_t> &file_contents, uint16_t command_id);
 
         /// The FD to talk to the client on.
         int client_fd_;

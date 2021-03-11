@@ -13,45 +13,37 @@
 namespace client_util {
 
 // utility function to make an address struct based on port
-inline struct sockaddr_in MakeAddress(uint16_t port) {
-  struct sockaddr_in address {};
-  address.sin_family = AF_INET;
-  address.sin_addr.s_addr = INADDR_ANY;
-  address.sin_port = htons(port);
-
-  return address;
-}
+struct sockaddr_in MakeAddress(uint16_t port);
 
 // utility function to initialize a socket
-inline int SetUpSocket(const struct sockaddr_in &address,
-                       const std::string &hostname) {
-  int sock = 0;
-
-  if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-    perror("Socket creation error");
-    return -1;
-  }
-
-  if (inet_pton(AF_INET, hostname.c_str(),
-                (struct sockaddr *)&address.sin_addr) <= 0) {
-    perror("Invalid Address or Address not supported");
-    return -1;
-  }
-
-  if (connect(sock, (struct sockaddr *)&address, sizeof(address)) < 0) {
-    perror("Connection Failed");
-    return -1;
-  }
-
-  return sock;
-}
+int SetUpSocket(const struct sockaddr_in &address,
+                       const std::string &hostname);
 
 // utility function to write a file to the local system
-inline void SaveIncomingFile(const std::string &contents,
-                             const std::string &name) {
-  std::ofstream new_file;
-  new_file.open(name);
-  new_file << contents;
-}
-}
+void SaveIncomingFile(const std::string &contents,
+                             const std::string &name);
+
+/**
+ * @brief Performs a recv call on the socket, ignoring timeouts.
+ * @param socket The socket to receive on.
+ * @param buffer The buffer to receive into.
+ * @param length The maximum length to receive.
+ * @param flags The flags to use.
+ * @return The return value from the internal recv() call.
+ */
+int ReceiveForever(int socket, void* buffer, size_t length, int flags);
+
+/**
+ * @brief Performs a send call on the socket, ignoring timeouts, until
+ *  all data is sent or it encounters an error.
+ * @param socket The socket to send on.
+ * @param buffer The buffer to send from.
+ * @param length The maximum length to send.
+ * @param flags The flags to use.
+ * @return The return value from the internal send() call.
+ */
+int SendForever(int socket, const void* buffer, size_t length, int flags);
+
+}  // namespace client_util
+
 #endif  // PROJECT1_UTIL_H

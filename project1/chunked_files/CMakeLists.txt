@@ -1,0 +1,2 @@
+add_library(chunked_files chunked_file_receiver.cpp chunked_file_sender.cpp)
+target_link_libraries(chunked_files wire_protocol loguru)

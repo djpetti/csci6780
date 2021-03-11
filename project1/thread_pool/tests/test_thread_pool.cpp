@@ -340,4 +340,29 @@ TEST(ThreadPool, WaitEmptyPool) {
   pool.WaitForCompletion();
 }
 
+/**
+ * @test Tests that we can wait for a specific task to finish.
+ */
+TEST(ThreadPool, WaitForSpecificTask) {
+  // Arrange.
+  ThreadPool pool;
+
+  // These tasks will complete one after the other.
+  auto short_task = std::make_shared<DelayTask>(std::chrono::milliseconds(50));
+  auto long_task = std::make_shared<DelayTask>(std::chrono::milliseconds(100));
+
+  // Act.
+  pool.AddTask(short_task);
+  pool.AddTask(long_task);
+
+  // Assert.
+  // Wait for the long task first.
+  pool.WaitForCompletion(long_task);
+  EXPECT_EQ(Task::Status::DONE, pool.GetTaskStatus(long_task));
+
+  // Wait for the shorter one.
+  pool.WaitForCompletion(short_task);
+  EXPECT_EQ(Task::Status::DONE, pool.GetTaskStatus(short_task));
+}
+
 }  // namespace thread_pool::tests
