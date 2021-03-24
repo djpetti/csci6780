@@ -7,25 +7,25 @@
 #include <vector>
 
 #include "../wire_protocol.h"
-#include "ftp_messages.pb.h"
+#include "test_messages.pb.h"
 #include "gtest/gtest.h"
 
 namespace wire_protocol::tests {
 
-using ftp_messages::GetRequest;
+using test_messages::TestMessage;
 
 namespace {
 
-/// File name to use for test messages.
-const char* kTestFileName = "my_file.txt";
+/// Parameter string to use for test messages.
+const char* kTestParameterString = "a parameter string value";
 
 /**
  * @brief Creates a message to use for testing.
  * @return The message that it created.
  */
-GetRequest MakeTestMessage() {
-  GetRequest test_message;
-  test_message.set_filename(kTestFileName);
+TestMessage MakeTestMessage() {
+  TestMessage test_message;
+  test_message.set_parameter(kTestParameterString);
 
   return test_message;
 }
@@ -47,7 +47,7 @@ TEST(WireProtocol, RoundTrip) {
   const auto kTestMessage = MakeTestMessage();
 
   // Parser to deserialize with.
-  MessageParser<GetRequest> parser;
+  MessageParser<TestMessage> parser;
 
   std::vector<uint8_t> serialized;
 
@@ -62,9 +62,9 @@ TEST(WireProtocol, RoundTrip) {
   EXPECT_TRUE(parser.HasCompleteMessage());
 
   // We should read the correct message.
-  GetRequest got_message;
+  TestMessage got_message;
   EXPECT_TRUE(parser.GetMessage(&got_message));
-  EXPECT_STREQ(kTestFileName, got_message.filename().c_str());
+  EXPECT_STREQ(kTestParameterString, got_message.parameter().c_str());
 }
 
 /**
@@ -87,7 +87,7 @@ TEST_P(WireProtocolSplitMessage, RoundTripPartialMessage) {
                                          serialized.end());
 
   // Act.
-  MessageParser<GetRequest> parser;
+  MessageParser<TestMessage> parser;
   parser.AddNewData(serialized_part_1);
   const bool kHasMessageAfterFirstPart = parser.HasCompleteMessage();
   parser.AddNewData(serialized_part_2);
@@ -98,9 +98,9 @@ TEST_P(WireProtocolSplitMessage, RoundTripPartialMessage) {
   EXPECT_TRUE(parser.HasCompleteMessage());
 
   // We should read the correct message.
-  GetRequest got_message;
+  TestMessage got_message;
   EXPECT_TRUE(parser.GetMessage(&got_message));
-  EXPECT_STREQ(kTestFileName, got_message.filename().c_str());
+  EXPECT_STREQ(kTestParameterString, got_message.parameter().c_str());
 }
 
 INSTANTIATE_TEST_SUITE_P(
@@ -130,7 +130,7 @@ TEST(WireProtocol, RoundTripMultiMessage) {
             combined.begin() + serialized_1.size());
 
   // Act.
-  MessageParser<GetRequest> parser;
+  MessageParser<TestMessage> parser;
   parser.AddNewData(combined);
 
   // Assert.
@@ -138,16 +138,16 @@ TEST(WireProtocol, RoundTripMultiMessage) {
   EXPECT_TRUE(parser.HasCompleteMessage());
 
   // The first message should be intact.
-  GetRequest got_message;
+  TestMessage got_message;
   EXPECT_TRUE(parser.GetMessage(&got_message));
-  EXPECT_STREQ(kTestFileName, got_message.filename().c_str());
+  EXPECT_STREQ(kTestParameterString, got_message.parameter().c_str());
 
   // It should still have the second message.
   EXPECT_TRUE(parser.HasCompleteMessage());
 
   // The second message should be intact.
   EXPECT_TRUE(parser.GetMessage(&got_message));
-  EXPECT_STREQ(kTestFileName, got_message.filename().c_str());
+  EXPECT_STREQ(kTestParameterString, got_message.parameter().c_str());
 
   // It should have no more messages.
   EXPECT_FALSE(parser.HasCompleteMessage());

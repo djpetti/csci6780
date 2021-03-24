@@ -14,7 +14,6 @@
 #include <type_traits>
 #include <vector>
 
-#include "ftp_messages.pb.h"
 #include "google/protobuf/message.h"
 
 namespace wire_protocol {

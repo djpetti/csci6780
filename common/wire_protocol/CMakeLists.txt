@@ -1,4 +1,3 @@
-add_subdirectory(proto)
 add_subdirectory(tests)
 
 add_library(wire_protocol wire_protocol.cpp)
