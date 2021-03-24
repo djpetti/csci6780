@@ -8,7 +8,7 @@
 #include <fstream>
 
 #include "ftp_messages.pb.h"
-#include "../wire_protocol/wire_protocol.h"
+#include "wire_protocol/wire_protocol.h"
 
 namespace client_util {
 

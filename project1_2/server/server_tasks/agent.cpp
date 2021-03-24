@@ -3,15 +3,13 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-#include <algorithm>
-#include <iostream>
 #include <loguru.hpp>
 #include <string>
 #include <thread>
 #include <utility>
 
-#include "../../chunked_files/chunked_file_receiver.h"
-#include "../../chunked_files/chunked_file_sender.h"
+#include "chunked_files/chunked_file_receiver.h"
+#include "chunked_files/chunked_file_sender.h"
 
 namespace server {
 

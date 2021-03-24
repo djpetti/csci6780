@@ -5,8 +5,8 @@
 #ifndef PROJECT1_SERVER_TASK_H
 #define PROJECT1_SERVER_TASK_H
 
-#include "../../thread_pool/task.h"
-#include "../../thread_pool/thread_pool.h"
+#include "thread_pool/task.h"
+#include "thread_pool/thread_pool.h"
 #include "command_ids.h"
 #include <sys/socket.h>
 #include <cstdio>

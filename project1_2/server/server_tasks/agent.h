@@ -9,7 +9,7 @@
 #include <memory>
 #include <vector>
 
-#include "../../wire_protocol/wire_protocol.h"
+#include "wire_protocol/wire_protocol.h"
 #include "../file_handler/file_access_manager.h"
 #include "../file_handler/file_handler_interface.h"
 #include "../file_handler/thread_safe_file_handler.h"
