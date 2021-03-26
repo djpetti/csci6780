@@ -7,7 +7,7 @@
 
 #include <cstdint>
 
-#include "../thread_pool/thread_pool.h"
+#include "thread_pool/thread_pool.h"
 #include "file_handler/file_access_manager.h"
 #include "server_tasks/command_ids.h"
 #include "vector"

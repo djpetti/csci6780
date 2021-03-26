@@ -3,8 +3,8 @@
 #include <memory>
 #include <sstream>
 
-#include "../thread_pool/task.h"
-#include "../thread_pool/thread_pool.h"
+#include "thread_pool/task.h"
+#include "thread_pool/thread_pool.h"
 #include "client_tasks/download_task.h"
 #include "client_tasks/terminate_task.h"
 #include "client_tasks/upload_task.h"

@@ -5,8 +5,8 @@
 #ifndef PROJECT1_AGENT_TASK_H
 #define PROJECT1_AGENT_TASK_H
 
-#include "../../thread_pool/task.h"
-#include "../../thread_pool/thread_pool.h"
+#include "thread_pool/task.h"
+#include "thread_pool/thread_pool.h"
 #include "../file_handler/file_handler.h"
 #include "agent.h"
 #include "command_ids.h"

@@ -7,7 +7,7 @@
 #include <cstdint>
 
 #include "../server/file_handler/file_handler.h"
-#include "../wire_protocol/wire_protocol.h"
+#include "wire_protocol/wire_protocol.h"
 #include "ftp_messages.pb.h"
 #include "input_parser/input_parser.h"
 #include "client_util.h"

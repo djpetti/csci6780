@@ -5,9 +5,9 @@
 #ifndef PROJECT1_DOWNLOAD_TASK_H
 #define PROJECT1_DOWNLOAD_TASK_H
 
-#include "../../thread_pool/task.h"
+#include "chunked_files/chunked_file_receiver.h"
+#include "thread_pool/task.h"
 #include "../client_util.h"
-#include "../../chunked_files/chunked_file_receiver.h"
 
 namespace client_tasks {
 class DownloadTask : public thread_pool::Task {

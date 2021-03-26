@@ -10,7 +10,7 @@
 #include <vector>
 
 #include "../../server/file_handler/file_handler.h"
-#include "../../wire_protocol/wire_protocol.h"
+#include "wire_protocol/wire_protocol.h"
 #include "ftp_messages.pb.h"
 
 namespace client::input_parser {

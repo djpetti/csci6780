@@ -5,8 +5,8 @@
 #ifndef PROJECT1_TERMINATE_TASK_H
 #define PROJECT1_TERMINATE_TASK_H
 
-#include "../../thread_pool/task.h"
-#include "../../wire_protocol/wire_protocol.h"
+#include "thread_pool/task.h"
+#include "wire_protocol/wire_protocol.h"
 #include "ftp_messages.pb.h"
 #include "../client_util.h"
 

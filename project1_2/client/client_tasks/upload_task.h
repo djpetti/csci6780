@@ -5,9 +5,9 @@
 #ifndef PROJECT1_UPLOAD_TASK_H
 #define PROJECT1_UPLOAD_TASK_H
 
-#include "../../thread_pool/task.h"
-#include "../../wire_protocol/wire_protocol.h"
-#include "../../chunked_files/chunked_file_sender.h"
+#include "thread_pool/task.h"
+#include "wire_protocol/wire_protocol.h"
+#include "chunked_files/chunked_file_sender.h"
 #include "ftp_messages.pb.h"
 
 namespace client_tasks {
