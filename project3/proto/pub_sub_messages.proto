@@ -1,0 +1,57 @@
+syntax = "proto3";
+
+package pub_sub_messages;
+
+/// Request sent by a participant to register with the coordinator.
+message Register {
+}
+
+/// Request sent by the coordinator upon successful registration.
+message RegistrationResponse {
+  /// Indicates the ID of this participant.
+  uint32 participant_id = 1;
+}
+
+/// Message sent by a participant to deregister with the coordinator.
+message Deregister {
+}
+
+/// Message sent by a participant to indicate that it is going offline.
+message Disconnect {
+}
+
+/// Message sent by a participant to indicate that it is coming back online.
+message Reconnect {
+}
+
+/// Message sent by a participant that will be sent out to the whole group.
+message SendMulticast {
+  /// The actual message contents.
+  string message = 1;
+}
+
+/**
+ * @brief Message sent by a coordinator to participants containing the data for a
+ * multicast message that has been received.
+ */
+message ForwardMulticast {
+  /// The actual message contents.
+  string message = 1;
+  /// The ID of the participant that this message originated from.
+  uint32 origin_id = 2;
+}
+
+/**
+ * @brief Encapsulates all messages that can be received by the coordinator. This is
+ * so we can simply parse this message type from the network and worry later about
+ * the actual message type.
+ */
+message CoordinatorMessage {
+  oneof messages {
+    Register register = 1;
+    Deregister deregister = 2;
+    Disconnect disconnect = 3;
+    Reconnect reconnect = 4;
+    SendMulticast send_multicast = 5;
+  }
+}

@@ -11,3 +11,4 @@ include_directories(common)
 
 add_subdirectory(common)
 add_subdirectory(project1_2)
+add_subdirectory(project3)
