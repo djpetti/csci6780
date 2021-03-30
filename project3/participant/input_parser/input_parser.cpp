@@ -21,8 +21,6 @@ void InputParser::Parse(std::string& cmd) {
       break;
     case REG:
     case RECON:
-      iss >> multi_id_;
-      break;
     case DISCON:
     case DEREG:
       break;
