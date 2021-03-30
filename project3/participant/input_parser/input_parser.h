@@ -7,14 +7,10 @@
 
 #include <pub_sub_messages.pb.h>
 
-#include <array>
-#include <cstdint>
 #include <sstream>
 #include <string>
-#include <vector>
 
 #include "pub_sub_messages.pb.h"
-#include "wire_protocol/wire_protocol.h"
 
 namespace participant::input_parser {
 
