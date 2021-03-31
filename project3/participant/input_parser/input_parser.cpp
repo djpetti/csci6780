@@ -45,21 +45,24 @@ google::protobuf::Message* InputParser::CreateReq() {
   return nullptr;
 }
 pub_sub_messages::Register* InputParser::CreateRegMsg() {
-  return pub_sub_messages::Register().New();
+  reg_msg_ = pub_sub_messages::Register().New();
+  return reg_msg_;
 }
 pub_sub_messages::Deregister* InputParser::CreateDeregMsg() {
-  return pub_sub_messages::Deregister().New();
+  dereg_msg_ = pub_sub_messages::Deregister().New();
+  return dereg_msg_;
 }
 pub_sub_messages::Disconnect* InputParser::CreateDisconMsg() {
-  return pub_sub_messages::Disconnect().New();
+  discon_msg_ = pub_sub_messages::Disconnect().New();
+  return discon_msg_;
 }
 pub_sub_messages::Reconnect* InputParser::CreateReconMsg() {
-  return pub_sub_messages::Reconnect().New();
+  recon_msg_ = pub_sub_messages::Reconnect().New();
+  return recon_msg_;
 }
 pub_sub_messages::SendMulticast* InputParser::CreateMsendMsg() {
-  pub_sub_messages::SendMulticast* msg =
-      pub_sub_messages::SendMulticast().New();
-  msg->set_message(message_);
-  return msg;
+  msend_msg_ = pub_sub_messages::SendMulticast().New();
+  msend_msg_->set_message(message_);
+  return msend_msg_;
 }
 }  // namespace participant::input_parser
