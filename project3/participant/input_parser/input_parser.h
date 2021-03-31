@@ -46,31 +46,6 @@ class InputParser {
   google::protobuf::Message* CreateReq();
 
  private:
-  /**
-   * creates a register message
-   */
-  pub_sub_messages::Register* CreateRegMsg();
-
-  /**
-   * creates a reregister message
-   */
-  pub_sub_messages::Deregister* CreateDeregMsg();
-
-  /**
-   * creates a disconnect message
-   */
-  pub_sub_messages::Disconnect* CreateDisconMsg();
-
-  /**
-   * creates a reconnect message
-   */
-  pub_sub_messages::Reconnect* CreateReconMsg();
-
-  /**
-   * creates a multicast send message
-   */
-  pub_sub_messages::SendMulticast* CreateMsendMsg();
-
   const std::map<std::string, MsgType> commands_ = {{"register", REG},
                                                     {"deregister", DEREG},
                                                     {"disconnect", DISCON},
@@ -78,11 +53,11 @@ class InputParser {
                                                     {"msend", MSEND}};
 
   /// messages having been parsed from input
-  pub_sub_messages::Register* reg_msg_;
-  pub_sub_messages::Deregister* dereg_msg_;
-  pub_sub_messages::Disconnect* discon_msg_;
-  pub_sub_messages::Reconnect* recon_msg_;
-  pub_sub_messages::SendMulticast* msend_msg_;
+  pub_sub_messages::Register reg_msg_;
+  pub_sub_messages::Deregister dereg_msg_;
+  pub_sub_messages::Disconnect discon_msg_;
+  pub_sub_messages::Reconnect recon_msg_;
+  pub_sub_messages::SendMulticast msend_msg_;
 
   /// information to be extracted from input
   int multi_id_;

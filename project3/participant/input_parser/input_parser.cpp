@@ -3,11 +3,11 @@
 namespace participant::input_parser {
 
 InputParser::InputParser()
-    : reg_msg_{pub_sub_messages::Register().New()},
-      dereg_msg_{pub_sub_messages::Deregister().New()},
-      discon_msg_{pub_sub_messages::Disconnect().New()},
-      recon_msg_{pub_sub_messages::Reconnect().New()},
-      msend_msg_{pub_sub_messages::SendMulticast().New()},
+    : reg_msg_{pub_sub_messages::Register()},
+      dereg_msg_{pub_sub_messages::Deregister()},
+      discon_msg_{pub_sub_messages::Disconnect()},
+      recon_msg_{pub_sub_messages::Reconnect()},
+      msend_msg_{pub_sub_messages::SendMulticast()},
       multi_id_{0},
       is_valid_{true},
       req_{REG},
@@ -40,32 +40,17 @@ bool InputParser::IsValid() { return is_valid_; }
 google::protobuf::Message* InputParser::CreateReq() {
   switch (req_) {
     case REG:
-      return CreateRegMsg();
+      return &reg_msg_;
     case DEREG:
-      return CreateDeregMsg();
+      return &dereg_msg_;
     case DISCON:
-      return CreateDisconMsg();
+      return &discon_msg_;
     case RECON:
-      return CreateReconMsg();
+      return &recon_msg_;
     case MSEND:
-      return CreateMsendMsg();
+      msend_msg_.set_message(message_);
+      return &msend_msg_;
   }
   return nullptr;
-}
-pub_sub_messages::Register* InputParser::CreateRegMsg() {
-  return reg_msg_;
-}
-pub_sub_messages::Deregister* InputParser::CreateDeregMsg() {
-  return dereg_msg_;
-}
-pub_sub_messages::Disconnect* InputParser::CreateDisconMsg() {
-  return discon_msg_;
-}
-pub_sub_messages::Reconnect* InputParser::CreateReconMsg() {
-  return recon_msg_;
-}
-pub_sub_messages::SendMulticast* InputParser::CreateMsendMsg() {
-  msend_msg_->set_message(message_);
-  return msend_msg_;
 }
 }  // namespace participant::input_parser
