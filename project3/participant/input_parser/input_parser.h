@@ -53,11 +53,11 @@ class InputParser {
                                                     {"msend", MSEND}};
 
   /// messages having been parsed from input
-  pub_sub_messages::Register reg_msg_;
-  pub_sub_messages::Deregister dereg_msg_;
-  pub_sub_messages::Disconnect discon_msg_;
-  pub_sub_messages::Reconnect recon_msg_;
-  pub_sub_messages::SendMulticast msend_msg_;
+  pub_sub_messages::Register reg_msg_{};
+  pub_sub_messages::Deregister dereg_msg_{};
+  pub_sub_messages::Disconnect discon_msg_{};
+  pub_sub_messages::Reconnect recon_msg_{};
+  pub_sub_messages::SendMulticast msend_msg_{};
 
   /// information to be extracted from input
   int multi_id_;

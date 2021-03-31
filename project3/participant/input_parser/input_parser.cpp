@@ -3,11 +3,11 @@
 namespace participant::input_parser {
 
 InputParser::InputParser()
-    : reg_msg_{pub_sub_messages::Register()},
-      dereg_msg_{pub_sub_messages::Deregister()},
-      discon_msg_{pub_sub_messages::Disconnect()},
-      recon_msg_{pub_sub_messages::Reconnect()},
-      msend_msg_{pub_sub_messages::SendMulticast()},
+    : reg_msg_{},
+      dereg_msg_{},
+      discon_msg_{},
+      recon_msg_{},
+      msend_msg_{},
       multi_id_{0},
       is_valid_{true},
       req_{REG},
