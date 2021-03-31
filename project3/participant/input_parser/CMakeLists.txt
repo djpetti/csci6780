@@ -1,0 +1,2 @@
+add_library(input_parser_p3 input_parser.cpp)
+target_link_libraries(input_parser_p3 pub_sub_proto wire_protocol)
