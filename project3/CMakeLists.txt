@@ -1,2 +1,3 @@
 add_subdirectory(proto)
 add_subdirectory(participant)
+add_subdirectory(coordinator)

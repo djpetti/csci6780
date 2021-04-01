@@ -3,7 +3,7 @@ find_package(Protobuf REQUIRED)
 
 include_directories(${PROTOBUF_INCLUDE_DIR})
 PROTOBUF_GENERATE_CPP(PROTO_SRC PROTO_HEADER pub_sub_messages.proto)
-add_library(pub_sub_proto ${PROTO_HEADER} ${PROTO_SRC})
+add_library(pub_sub_proto ${PROTO_HEADER} ${PROTO_SRC} ../coordinator/messenger.h ../coordinator/registrar.h)
 # Instruct everything that links to this to also link to Protobuf.
 target_link_libraries(pub_sub_proto INTERFACE ${Protobuf_LIBRARIES})
 # Make sure everything that depends on this can find the headers.
