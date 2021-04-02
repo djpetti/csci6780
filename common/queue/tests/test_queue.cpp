@@ -93,4 +93,20 @@ TEST(Queue, PushPopTwoThreadsMaxLength) {
   }
 }
 
+/**
+ * @test Tests that `Empty` works.
+ */
+TEST(Queue, Empty) {
+  // Arrange.
+  Queue<int> queue;
+
+  // Act and assert.
+  EXPECT_TRUE(queue.Empty());
+
+  // Add something to the queue.
+  queue.Push(42);
+  // It should not be empty anymore.
+  EXPECT_FALSE(queue.Empty());
+}
+
 }  // namespace queue::tests
