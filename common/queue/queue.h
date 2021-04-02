@@ -6,6 +6,8 @@
 #include <mutex>
 #include <queue>
 
+namespace queue {
+
 /**
  * @brief Implements a thread-safe blocking queue.
  * @tparam T The type of object this queue will store.
@@ -81,5 +83,7 @@ class Queue {
   /// Condition variable indicating that the queue is not full.
   std::condition_variable queue_not_full_{};
 };
+
+}  // namespace queue
 
 #endif  // CSCI6780_QUEUE_H
