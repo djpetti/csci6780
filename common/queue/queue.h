@@ -70,6 +70,15 @@ class Queue {
     return element;
   }
 
+  /**
+   * @return True if the queue is empty.
+   */
+  bool Empty() {
+    std::lock_guard<std::mutex> lock(mutex_);
+
+    return queue_.empty();
+  }
+
  private:
   /// The maximum number of elements allowed in the queue.
   uint32_t max_length_;

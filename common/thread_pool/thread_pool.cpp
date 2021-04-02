@@ -24,8 +24,11 @@ ThreadPool::~ThreadPool() {
     should_close_ = true;
   }
   LOG_S(1) << "Joining internal threads...";
-  // Wake up the internal threads and force them to check should_close_.
-  task_pending_.notify_one();
+  // Wake up the internal threads and force them to check should_close_. We do
+  // this by notifying the condition variables and writing dummy data to the
+  // queues.
+  dispatch_queue_.Push(0);
+  joinable_queue_.Push(0);
   task_done_.notify_all();
   thread_available_.notify_one();
 
@@ -51,14 +54,10 @@ void ThreadPool::AddTask(const std::shared_ptr<Task>& task) {
     // Add the task to the bookkeeping data structures.
     handle_to_task_[kTaskHandle] = task;
     handle_to_status_[kTaskHandle] = Task::Status::RUNNING;
-
-    // Add to the queue.
-    dispatch_queue_.push(kTaskHandle);
   }
 
-  // Notify dispatcher thread. We deliberately release the lock before doing
-  // this to avoid waking up the waiting thread only to block again.
-  task_pending_.notify_one();
+  // Add to the queue.
+  dispatch_queue_.Push(kTaskHandle);
 }
 
 void ThreadPool::DispatcherThread() {
@@ -76,24 +75,21 @@ void ThreadPool::DispatcherThread() {
         });
       }
 
-      // Wait for a new pending task.
-      if (dispatch_queue_.empty() && !should_close_) {
-        LOG_S(1) << "Waiting for a new task...";
-        task_pending_.wait(
-            lock, [this] { return !dispatch_queue_.empty() || should_close_; });
-      }
+      ++pool_size_;
+      LOG_S(2) << "Pool size is now " << pool_size_ << ".";
+    }
+
+    // Create a thread for the task.
+    const auto kTaskHandle = dispatch_queue_.Pop();
+
+    {
+      std::lock_guard<std::mutex> lock(mutex_);
+
       if (should_close_) {
         // We should exit now and avoid submitting new tasks.
         LOG_S(INFO) << "Exiting dispatcher thread.";
         break;
       }
-
-      ++pool_size_;
-      LOG_S(2) << "Pool size is now " << pool_size_ << ".";
-
-      // Create a thread for the task.
-      const auto kTaskHandle = dispatch_queue_.front();
-      dispatch_queue_.pop();
       LOG_S(1) << "Got a new task: " << kTaskHandle << ".";
 
       const auto& task = handle_to_task_[kTaskHandle];
@@ -104,26 +100,20 @@ void ThreadPool::DispatcherThread() {
 }
 void ThreadPool::JoinerThread() {
   while (true) {
+    // Wait for a new done task.
+    const auto kTaskHandle = joinable_queue_.Pop();
+
     {
       std::unique_lock<std::mutex> lock(mutex_);
 
-      // Wait for a new done task.
-      if (joinable_queue_.empty() && !should_close_) {
-        LOG_S(1) << "Waiting for a task to finish...";
-        task_done_.wait(
-            lock, [this] { return !joinable_queue_.empty() || should_close_; });
-      }
       if (should_close_) {
         // We should exit now and avoid finalizing new tasks.
         LOG_S(INFO) << "Exiting joiner thread.";
         break;
       }
-
-      // Finalize the task.
-      const auto kTaskHandle = joinable_queue_.front();
-      joinable_queue_.pop();
       LOG_S(1) << "Got a finished task: " << kTaskHandle << ".";
 
+      // Finalize the task.
       auto& thread = handle_to_thread_[kTaskHandle];
       thread.join();
 
@@ -182,10 +172,9 @@ void ThreadPool::RunTask(Task* task) {
   // Notify that the task is complete.
   {
     std::lock_guard<std::mutex> lock(mutex_);
-
-    joinable_queue_.push(task->GetHandle());
     ++num_completed_tasks_;
   }
+  joinable_queue_.Push(task->GetHandle());
   task_done_.notify_all();
 }
 
@@ -208,7 +197,7 @@ void ThreadPool::CancelTask(const std::shared_ptr<Task>& task_handle) {
 void ThreadPool::WaitForCompletion() {
   std::unique_lock<std::mutex> lock(mutex_);
 
-  if (dispatch_queue_.empty() && pool_size_ == 0) {
+  if (dispatch_queue_.Empty() && pool_size_ == 0) {
     // No running or pending tasks.
     return;
   }
@@ -218,7 +207,7 @@ void ThreadPool::WaitForCompletion() {
   // Wait for a task to finish.
   task_done_.wait(lock, [this, kInitialCompletedTasks]() {
     return num_completed_tasks_ != kInitialCompletedTasks ||
-           (dispatch_queue_.empty() && pool_size_ == 0);
+           (dispatch_queue_.Empty() && pool_size_ == 0);
   });
 }
 
