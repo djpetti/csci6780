@@ -5,12 +5,12 @@
 #include <cstdint>
 #include <memory>
 #include <mutex>
-#include <queue>
 #include <thread>
 #include <unordered_map>
 #include <unordered_set>
 
 #include "thread_pool_interface.h"
+#include "../queue/queue.h"
 
 namespace thread_pool {
 
@@ -69,11 +69,6 @@ class ThreadPool : public IThreadPool {
   std::unordered_set<Task::Handle> cancelled_tasks_{};
 
   /**
-   * @brief Indicates that we have a pending task that's ready to run. Also used
-   *    to indicate that the pool is being closed.
-   */
-  std::condition_variable task_pending_;
-  /**
    * @brief Indicates that we have a completed task that needs to be finalized.
    *    Also used to indicate that the pool is being closed.
    */
@@ -82,9 +77,9 @@ class ThreadPool : public IThreadPool {
   std::condition_variable thread_available_;
 
   /// Internal queue for sending tasks to the dispatcher thread.
-  std::queue<Task::Handle> dispatch_queue_;
+  queue::Queue<Task::Handle> dispatch_queue_{};
   /// Internal queue for sending tasks to the joiner thread.
-  std::queue<Task::Handle> joinable_queue_;
+  queue::Queue<Task::Handle> joinable_queue_{};
   /// If set, indicates that we should close the thread pool.
   bool should_close_ = false;
 
