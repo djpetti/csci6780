@@ -2,8 +2,6 @@
  * @file Implementation of ConnectedParticipants class.
  */
 #include "connected_participants.h"
-
-#include <__hash_table>
 namespace coordinator::connected_participants {
 
 void ConnectedParticipants::AddParticipant(struct Participant &participant) {
