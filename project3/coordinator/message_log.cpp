@@ -1,7 +1,6 @@
 /**
  * @file Implementation of MessageLog.
  */
-
 #include "message_log.h"
 namespace coordinator::message_log {
 

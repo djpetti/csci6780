@@ -6,7 +6,6 @@
 #define PROJECT3_MESSENGER_H
 
 #include <pub_sub_messages.pb.h>
-
 #include <sstream>
 #include <string>
 
@@ -14,6 +13,7 @@
 #include "message_log.h"
 #include "pub_sub_messages.pb.h"
 #include "queue/queue.h"
+#include "wire_protocol/wire_protocol.h"
 
 namespace coordinator::messenger {
 using namespace coordinator::message_log;
@@ -22,19 +22,6 @@ using namespace coordinator::connected_participants;
  * @class Handles sending broadcasting to participants.
  */
 class Messenger {
- private:
-  /// The message queue.
-  std::shared_ptr < queue::Queue<MessageLog::Message>() msg_queue_;
-
-  /// The message log.
-  std::shared_ptr<MessageLog>() msg_log_;
-
-  /// The set of connected participants.
-  std::shared_ptr<ConnectedParticipants>() connected_participants_;
-
-  /// The protobuf message.
-  pub_sub_messages::ForwardMulticast proto_msg_;
-
  public:
   /**
    * @param msg_queue The coordinator's message queue.
@@ -42,18 +29,17 @@ class Messenger {
    * @param connected_participants The coordinator's set of connected
    * participants.
    */
-  Messenger(std::shared_ptr<queue::Queue<MessageLog::Message>()> msg_queue,
-            std::shared_ptr<MessageLog>() msg_log,
-            std::shared_ptr<ConnectedParticipants>() connected_participants);
+  Messenger(std::shared_ptr<queue::Queue<MessageLog::Message>> msg_queue,
+            std::shared_ptr<MessageLog> msg_log,
+            std::shared_ptr<ConnectedParticipants::Participant> participant,
+            std::shared_ptr<ConnectedParticipants> connected_participants);
 
   /**
    * @brief Broadcasts a given message to all active participants.
    *
-   * @param msg The message to broadcast.
-   * @param participantId The id of the participant sending the message.
    * @return true on success, false on failure
    */
-  bool BroadcastMessage(std::string msg, uint32_t participant_id);
+  bool BroadcastMessage();
 
   /**
    * @brief Sends all missed messages satisfying the time threshold to this
@@ -64,16 +50,25 @@ class Messenger {
    */
   bool SendMissedMessages(uint32_t reconnection_time);
 
- private
+ private:
+  /// The outgoing message queue.
+  std::shared_ptr < queue::Queue<MessageLog::Message>> msg_queue_;
 
-  /**
-   * @brief Creates the protobuf message
-   */
-  void CreateProtoMessage();
+  /// The message log.
+  std::shared_ptr<MessageLog> msg_log_;
 
-  void SerializeProtoMessage();
+  /// The set of connected participants.
+  std::shared_ptr<ConnectedParticipants> connected_participants_;
+
+  /// Internal buffer to use for outgoing messages.
+  std::vector<uint8_t> outgoing_message_buffer_{};
+
+  /// The protobuf message.
+  pub_sub_messages::ForwardMulticast proto_msg_;
+
+  /// The participant using this messenger.
+  std::shared_ptr<ConnectedParticipants::Participant> participant_;
 
 };  // Class
-}
-}  // namespace
+} // namespace
 #endif  // PROJECT3_MESSENGER_H

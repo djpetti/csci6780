@@ -63,7 +63,6 @@ class ConnectedParticipants {
 
   /// Mutex for implementing thread safety.
   std::mutex mutex_;
-
 };  // class
 }  // namespace coordinator::connected_participants
 

@@ -27,7 +27,6 @@ bool ConnectedParticipants::Participant::operator==(
 }
 size_t ConnectedParticipants::Hash::operator()(
     const Participant &participant) const {
-  // ensure uniqueness from this participant's id.
   return std::hash<int>()(participant.id);
 }
 

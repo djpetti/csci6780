@@ -22,12 +22,15 @@ class MessageLog {
     std::string msg;
 
     /// The time the message was sent.
-    uint32_t timestamp;
+    double timestamp;
 
     /// TODO The participant who broadcast the message.
     uint32_t participant_id;
   };
 
+  /**
+   * Structure for hash function.
+   */
   struct Hash {
     size_t operator()(const Message& obj) const;
   };
