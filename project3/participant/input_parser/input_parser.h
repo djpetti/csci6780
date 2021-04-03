@@ -60,7 +60,6 @@ class InputParser {
   pub_sub_messages::SendMulticast msend_msg_{};
 
   /// information to be extracted from input
-  int multi_id_;
   bool is_valid_;
   MsgType req_;
   std::string message_;

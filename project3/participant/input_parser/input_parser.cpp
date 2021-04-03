@@ -8,7 +8,6 @@ InputParser::InputParser()
       discon_msg_{},
       recon_msg_{},
       msend_msg_{},
-      multi_id_{0},
       is_valid_{true},
       req_{REG},
       message_{} {}

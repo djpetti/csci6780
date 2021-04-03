@@ -11,5 +11,6 @@ target_include_directories(pub_sub_proto INTERFACE ${CMAKE_CURRENT_BINARY_DIR})
 
 # For Mac Users
 if (APPLE)
-    target_include_directories(pub_sub_proto INTERFACE "/usr/local/Cellar/protobuf/3.14.0/include")
+    file(GLOB protobuf_include_dirs "/usr/local/Cellar/protobuf/*/include")
+    target_include_directories(pub_sub_proto INTERFACE ${protobuf_include_dirs})
 endif()
