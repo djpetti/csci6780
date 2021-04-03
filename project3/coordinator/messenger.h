@@ -1,7 +1,6 @@
 /**
  * @File Messenger to be utilized by the coordinator.
  */
-
 #ifndef PROJECT3_MESSENGER_H
 #define PROJECT3_MESSENGER_H
 
@@ -19,7 +18,8 @@ namespace coordinator::messenger {
 using namespace coordinator::message_log;
 using namespace coordinator::connected_participants;
 /**
- * @class Handles sending broadcasting to participants.
+ * @class Handles message broadcasting to participants.
+ *
  */
 class Messenger {
  public:
@@ -36,8 +36,11 @@ class Messenger {
 
   /**
    * @brief Broadcasts a given message to all active participants.
-   *
+   * @note Messages sent by the messenger should be pushed in the message queue before
+   *       this function is called. Guarantees that messages will be broadcast in the order
+   *       they were received.
    * @return true on success, false on failure
+   *
    */
   bool BroadcastMessage();
 
