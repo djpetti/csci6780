@@ -1,0 +1,2 @@
+add_library(coordinator message_log.h connected_participants.h messenger.h registrar.h connected_participants.cpp message_log.cpp message_queue.h)
+target_link_libraries(coordinator pub_sub_proto wire_protocol queue)
