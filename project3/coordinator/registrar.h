@@ -4,6 +4,7 @@
 #ifndef PROJECT3_REGISTRAR_H
 #define PROJECT3_REGISTRAR_H
 #include "connected_participants.h"
+#include <memory>
 
 namespace coordinator::registrar {
 using namespace connected_participants;

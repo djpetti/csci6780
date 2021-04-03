@@ -7,13 +7,13 @@
 #include <pub_sub_messages.pb.h>
 #include <sstream>
 #include <string>
+#include <memory>
 
 #include "connected_participants.h"
 #include "message_log.h"
 #include "pub_sub_messages.pb.h"
 #include "queue/queue.h"
 #include "wire_protocol/wire_protocol.h"
-
 namespace coordinator::messenger {
 using namespace coordinator::message_log;
 using namespace coordinator::connected_participants;

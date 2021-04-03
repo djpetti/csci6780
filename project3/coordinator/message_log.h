@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <mutex>
 #include <unordered_set>
+#include <memory>
 namespace coordinator::message_log {
 
 /**
