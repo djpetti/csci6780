@@ -5,9 +5,10 @@
 #define PROJECT3_MESSENGER_H
 
 #include <pub_sub_messages.pb.h>
+
+#include <memory>
 #include <sstream>
 #include <string>
-#include <memory>
 
 #include "connected_participants.h"
 #include "message_log.h"
@@ -28,23 +29,17 @@ class Messenger {
    * @param msg_log The coordinator's message log.
    * @param participant The specific participant that this Messenger
    *    communicates with.
-   * @param connected_participants The coordinator's set of connected
-   * participants.
    */
-  Messenger(std::shared_ptr<queue::Queue<MessageLog::Message>> msg_queue,
-            std::shared_ptr<MessageLog> msg_log,
-            std::shared_ptr<ConnectedParticipants::Participant> participant,
-            std::shared_ptr<ConnectedParticipants> connected_participants);
+  Messenger(std::shared_ptr<MessageLog> msg_log,
+            ConnectedParticipants::Participant participant);
 
   /**
-   * @brief Broadcasts a given message to all active participants.
-   * @note Messages sent by the messenger should be pushed in the message queue before
-   *       this function is called. Guarantees that messages will be broadcast in the order
-   *       they were received.
+   * @brief Sends a given message to this messenger's participant.
+   * @param msg The message to send.
+   * @param missed_msg if the message being sent is a missed message.
    * @return true on success, false on failure
-   *
    */
-  bool BroadcastMessage();
+  bool SendMessage(MessageLog::Message msg, bool missed_msg);
 
   /**
    * @brief Sends all missed messages satisfying the time threshold to this
@@ -53,26 +48,37 @@ class Messenger {
    * participant.
    * @return true on success, false on failure.
    */
-  bool SendMissedMessages(const MessageLog::Timestamp &reconnection_time);
+  bool SendMissedMessages(const MessageLog::Timestamp& reconnection_time);
+
+  /**
+   * @brief Getter for this messenger's participant.
+   * @return This messenger's participant.
+   */
+  ConnectedParticipants::Participant GetParticipant() const;
 
  private:
-  /// The outgoing message queue.
-  std::shared_ptr < queue::Queue<MessageLog::Message>> msg_queue_;
+  /// == operator overload.
+  bool operator==(const Messenger&) const;
 
   /// The message log.
   std::shared_ptr<MessageLog> msg_log_;
 
-  /// The set of connected participants.
-  std::shared_ptr<ConnectedParticipants> connected_participants_;
+  /// The participant using this messenger.
+  ConnectedParticipants::Participant participant_;
 
-  /// Internal buffer to use for outgoing messages.
-  std::vector<uint8_t> outgoing_message_buffer_{};
+  /// Mutex for implementing thread safety.
+  std::mutex mutex_;
 
-  /// The protobuf message.
+  // Protobuf message.
   pub_sub_messages::ForwardMulticast proto_msg_;
 
-  /// The participant using this messenger.
-  std::shared_ptr<ConnectedParticipants::Participant> participant_;
+  // Buffer for outgoing messages.
+  std::vector<uint8_t> outgoing_message_buffer_{};
+
+  /**
+   * Helper function for Serializing Messages.
+   */
+  bool SerializeMessage(MessageLog::Message msg);
 
 };  // Class
 

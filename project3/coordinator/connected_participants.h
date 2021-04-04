@@ -61,6 +61,13 @@ class ConnectedParticipants {
    */
   std::unordered_set<Participant, Hash> GetParticipants();
 
+  /**
+   * Determines if this set contains a particular participant.
+   * @param participant The participant.
+   * @return true if contains, false otherwise.
+   */
+  bool Contains(const Participant &participant);
+
  private:
   /// The connected participants
   std::unordered_set<Participant, Hash> connected_participants_;
