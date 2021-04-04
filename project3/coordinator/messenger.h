@@ -54,7 +54,7 @@ class Messenger {
    * @brief Getter for this messenger's participant.
    * @return This messenger's participant.
    */
-  ConnectedParticipants::Participant GetParticipant() const;
+  const ConnectedParticipants::Participant& GetParticipant() const;
 
  private:
 

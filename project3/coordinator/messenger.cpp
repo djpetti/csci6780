@@ -14,7 +14,7 @@ Messenger::Messenger(std::shared_ptr<MessageLog> msg_log,
                      ConnectedParticipants::Participant participant)
     : msg_log_(std::move(msg_log)), participant_(std::move(participant)) {}
 
-ConnectedParticipants::Participant Messenger::GetParticipant() const {
+const ConnectedParticipants::Participant& Messenger::GetParticipant() const {
   return participant_;
 }
 
