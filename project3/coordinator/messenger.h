@@ -57,8 +57,6 @@ class Messenger {
   ConnectedParticipants::Participant GetParticipant() const;
 
  private:
-  /// == operator overload.
-  bool operator==(const Messenger&) const;
 
   /// The message log.
   std::shared_ptr<MessageLog> msg_log_;

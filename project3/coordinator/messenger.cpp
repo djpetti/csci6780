@@ -13,9 +13,6 @@ namespace coordinator {
 Messenger::Messenger(std::shared_ptr<MessageLog> msg_log,
                      ConnectedParticipants::Participant participant)
     : msg_log_(std::move(msg_log)), participant_(std::move(participant)) {}
-bool Messenger::operator==(const Messenger& messenger) const {
-  return participant_ == messenger.participant_;
-}
 
 ConnectedParticipants::Participant Messenger::GetParticipant() const {
   return participant_;
