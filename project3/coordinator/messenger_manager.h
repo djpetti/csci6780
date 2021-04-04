@@ -8,6 +8,9 @@ namespace coordinator {
 class MessengerManager {
  public:
 
+  /**
+   * @param participants The connected participants.
+   */
   MessengerManager(std::shared_ptr<ConnectedParticipants> participants);
   /**
    * @brief Broadcasts a given message to all active participants.
