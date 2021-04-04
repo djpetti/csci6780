@@ -3,10 +3,12 @@
  */
 #ifndef PROJECT3_CONNECTED_PARTICIPANTS_H
 #define PROJECT3_CONNECTED_PARTICIPANTS_H
+
 #include <algorithm>
 #include <mutex>
 #include <unordered_set>
-namespace coordinator::connected_participants {
+
+namespace coordinator {
 
 /**
  * @class The connected Participants with thread-safety.
@@ -21,7 +23,8 @@ class ConnectedParticipants {
     /// The id.
     uint32_t id;
 
-    /// The socket file descriptor for this participant's message listening thread.
+    /// The socket file descriptor for this participant's message listening
+    /// thread.
     int sock_fd;
 
     /// The port number this participant receives messages on.
@@ -42,17 +45,18 @@ class ConnectedParticipants {
    * @brief Adds a participant to the set of connected participants.
    * @param participant The participant to add.
    */
-  void AddParticipant(struct Participant& participant);
+  void AddParticipant(const Participant& participant);
 
   /**
    * @brief Deletes a participant from the set of connected participants.
    * @param participant
    */
-  void DeleteParticipant(struct Participant& participant);
+  void DeleteParticipant(const Participant& participant);
 
   /**
    * @brief Retrieves the set of currently connected participants.
-   * @note Will return a copy of the set, meant for read only.
+   * @note Will return a copy of the set instead of a reference, in order
+   *    to preserve thread-safety.
    * @return A copy of the set of connected participants.
    */
   std::unordered_set<Participant, Hash> GetParticipants();
@@ -64,6 +68,7 @@ class ConnectedParticipants {
   /// Mutex for implementing thread safety.
   std::mutex mutex_;
 };  // class
-}  // namespace coordinator::connected_participants
+
+}  // namespace coordinator
 
 #endif  // PROJECT3_CONNECTED_PARTICIPANTS_H

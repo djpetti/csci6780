@@ -14,9 +14,9 @@
 #include "pub_sub_messages.pb.h"
 #include "queue/queue.h"
 #include "wire_protocol/wire_protocol.h"
-namespace coordinator::messenger {
-using namespace coordinator::message_log;
-using namespace coordinator::connected_participants;
+
+namespace coordinator {
+
 /**
  * @class Handles message broadcasting to participants.
  *
@@ -26,6 +26,8 @@ class Messenger {
   /**
    * @param msg_queue The coordinator's message queue.
    * @param msg_log The coordinator's message log.
+   * @param participant The specific participant that this Messenger
+   *    communicates with.
    * @param connected_participants The coordinator's set of connected
    * participants.
    */
@@ -51,7 +53,7 @@ class Messenger {
    * participant.
    * @return true on success, false on failure.
    */
-  bool SendMissedMessages(uint32_t reconnection_time);
+  bool SendMissedMessages(const MessageLog::Timestamp &reconnection_time);
 
  private:
   /// The outgoing message queue.
@@ -73,5 +75,7 @@ class Messenger {
   std::shared_ptr<ConnectedParticipants::Participant> participant_;
 
 };  // Class
-} // namespace
+
+}  // namespace coordinator
+
 #endif  // PROJECT3_MESSENGER_H

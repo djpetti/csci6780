@@ -2,14 +2,15 @@
  * @file Implementation of ConnectedParticipants class.
  */
 #include "connected_participants.h"
-namespace coordinator::connected_participants {
 
-void ConnectedParticipants::AddParticipant(struct Participant &participant) {
+namespace coordinator {
+
+void ConnectedParticipants::AddParticipant(const Participant &participant) {
   std::lock_guard<std::mutex> guard(mutex_);
   connected_participants_.insert(participant);
 }
 
-void ConnectedParticipants::DeleteParticipant(struct Participant &participant) {
+void ConnectedParticipants::DeleteParticipant(const Participant &participant) {
   std::lock_guard<std::mutex> guard(mutex_);
   connected_participants_.erase(participant);
 }
@@ -17,6 +18,7 @@ void ConnectedParticipants::DeleteParticipant(struct Participant &participant) {
 std::unordered_set<ConnectedParticipants::Participant,
                    ConnectedParticipants::Hash>
 ConnectedParticipants::GetParticipants() {
+  std::lock_guard<std::mutex> guard(mutex_);
   return connected_participants_;
 }
 bool ConnectedParticipants::Participant::operator==(
@@ -28,4 +30,4 @@ size_t ConnectedParticipants::Hash::operator()(
   return std::hash<int>()(participant.id);
 }
 
-}  // namespace coordinator::connected_participants
+}  // namespace coordinator

@@ -3,17 +3,26 @@
  */
 #ifndef PROJECT3_MESSAGE_LOG_H
 #define PROJECT3_MESSAGE_LOG_H
+
 #include <algorithm>
+#include <chrono>
+#include <cstdint>
+#include <memory>
 #include <mutex>
 #include <unordered_set>
-#include <memory>
-namespace coordinator::message_log {
+
+namespace coordinator {
 
 /**
  * @class A log of all messages broadcast by the coordinator.
  */
 class MessageLog {
  public:
+  /// Duration type to use for our timestamps.
+  using Duration = std::chrono::steady_clock::duration;
+  /// Type alias for timestamps.
+  using Timestamp = std::chrono::steady_clock::time_point;
+
   /**
    * Structure of messages stored by the coordinator.
    */
@@ -23,7 +32,7 @@ class MessageLog {
     std::string msg;
 
     /// The time the message was sent.
-    double timestamp;
+    Timestamp timestamp;
 
     /// TODO The participant who broadcast the message.
     uint32_t participant_id;
@@ -35,11 +44,18 @@ class MessageLog {
   struct Hash {
     size_t operator()(const Message& obj) const;
   };
+
+  /**
+   * @param time_threshold Any messages older than this will be dropped
+   *    when sending messages to reconnecting participants.
+   */
+  explicit MessageLog(const Duration& time_threshold);
+
   /**
    * @brief Inserts a message into the message log.
-   * @param id The id to insert.
+   * @param msg The message to insert.
    */
-  void Insert(struct Message& msg);
+  void Insert(const Message& msg);
 
   /**
    * @brief Clears the message log.
@@ -49,11 +65,12 @@ class MessageLog {
   /**
    * @brief Retrieves missed messages satisfying the reconnection time
    * threshold.
-   * @param reconnection_time
-   * @return
+   * @param reconnection_time The time at which the participant reconnected.
+   * @return All messages that were sent within the threshold before
+   *    reconnection time.
    */
   std::unordered_set<Message, Hash> GetMissedMessages(
-      uint32_t reconnection_time);
+      const Timestamp& reconnection_time);
 
  private:
   /// The message log.
@@ -63,8 +80,10 @@ class MessageLog {
   std::mutex mutex_;
 
   /// The reconnection time threshold for missed messages.
-  uint8_t td_;
+  Duration td_;
 
 };  // class
-}  // namespace coordinator::message_log
+
+}  // namespace coordinator
+
 #endif  // PROJECT3_MESSAGE_LOG_H
