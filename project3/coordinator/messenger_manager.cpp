@@ -7,12 +7,12 @@ MessengerManager::MessengerManager(
     std::shared_ptr<ConnectedParticipants> participants)
     : participants_(participants) {}
 
-void MessengerManager::AddMessenger(std::shared_ptr<Messenger> messenger) {
+void MessengerManager::AddMessenger(const std::shared_ptr<Messenger> messenger) {
   std::lock_guard<std::mutex> guard(mutex_);
   messengers_.insert(messenger);
 }
 
-void MessengerManager::DeleteMessenger(std::shared_ptr<Messenger> messenger) {
+void MessengerManager::DeleteMessenger(const std::shared_ptr<Messenger> messenger) {
   std::lock_guard<std::mutex> guard(mutex_);
   messengers_.erase(messenger);
 }
