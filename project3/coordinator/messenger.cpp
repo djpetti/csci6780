@@ -30,9 +30,9 @@ bool Messenger::SerializeMessage(MessageLog::Message msg) {
   return true;
 }
 bool Messenger::SendMessage(MessageLog::Message msg, bool missed_msg) {
-  SerializeMessage(msg);
   // mutex lock to ensure thread-safe socket sending.
   std::lock_guard<std::mutex> guard(mutex_);
+  SerializeMessage(msg);
   if (send(participant_.sock_fd, outgoing_message_buffer_.data(),
            outgoing_message_buffer_.size(), 0) < 0) {
     LOG_F(ERROR, "Failed to send message.");
