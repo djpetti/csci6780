@@ -10,11 +10,6 @@ message Register {
   uint32 participant_id = 2;
 }
 
-/// Request sent by the coordinator upon successful registration.
-message RegistrationResponse {
-
-}
-
 /// Message sent by a participant to deregister with the coordinator.
 message Deregister {
 }

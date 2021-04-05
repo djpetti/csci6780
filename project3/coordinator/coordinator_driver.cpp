@@ -12,7 +12,8 @@
 #include <memory>
 namespace coordinator {
 using Duration = std::chrono::steady_clock::duration;
-struct sockaddr_in CoordinatorDriver::MakeAddress(uint16_t port) {
+
+struct sockaddr_in CoordinatorDriver::MakeAddress(int port) {
   struct sockaddr_in address {};
   address.sin_family = AF_INET;
   address.sin_addr.s_addr = INADDR_ANY;
@@ -50,21 +51,24 @@ int CoordinatorDriver::SetUpSocket(const struct sockaddr_in &address) {
   return server_fd;
 }
 
-int CoordinatorDriver::CreateSocket(uint16_t port) {
+int CoordinatorDriver::CreateSocket(int port) {
   // Create the socket.
   const auto kAddress = MakeAddress(port);
   return SetUpSocket(kAddress);
 }
 
-[[noreturn]] void CoordinatorDriver::Start(uint16_t port) {
+[[noreturn]] void CoordinatorDriver::Start(uint16_t port, std::chrono::steady_clock::duration threshold) {
+  LOG_F(INFO, "Initializing socket...");
+  // create socket.
   int server_fd = CreateSocket(port);
+  // initialize data structures for coordinator tasks.
   participants_ = std::make_shared<coordinator::ConnectedParticipants>();
   messenger_manager_ = std::make_shared<MessengerManager>(participants_);
   registrar_ = std::make_shared<Registrar>(participants_);
-  Duration time;
-  message_log_ = std::make_shared<MessageLog>(time);
+  message_log_ = std::make_shared<MessageLog>(threshold);
+  LOG_F(INFO,"Now listening for participants on port %i.", port);
   while (true) {
-    struct sockaddr_in client_address;
+    struct sockaddr_in client_address{};
     socklen_t size = sizeof(client_address);
     // Accept a new connection.
     int client_fd =
@@ -72,9 +76,10 @@ int CoordinatorDriver::CreateSocket(uint16_t port) {
     if (client_fd < 0) {
       LOG_F(ERROR, "accept() failed");
     }
-    LOG_F(INFO, "Deploying coordinator task for client #%i.", client_fd);
+    // retrieve client hostname.
     std::string hostname(inet_ntoa(client_address.sin_addr));
 
+    LOG_F(INFO, "Deploying coordinator task for client %s.", hostname.c_str());
     auto coordinator_task = std::make_shared<coordinator::CoordinatorTask>(
         client_fd, hostname, messenger_manager_, registrar_, message_queue_,
         message_log_);

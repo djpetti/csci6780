@@ -26,13 +26,13 @@ class MessengerManager {
    * @brief Registers a messenger with the messenger manager.
    * @param messenger The messenger to register.
    */
-  void AddMessenger(const std::shared_ptr<Messenger> messenger);
+  void AddMessenger(const std::shared_ptr<Messenger>& messenger);
 
   /**
    * @brief De-registers a messenger from the messenger manager.
    * @param messenger
    */
-  void DeleteMessenger(const std::shared_ptr<Messenger> messenger);
+  void DeleteMessenger(const std::shared_ptr<Messenger>& messenger);
  private:
 
   /// The Messengers
