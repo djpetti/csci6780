@@ -39,7 +39,7 @@ class MessengerManager {
    * @return The set of messengers.
    * @note for read only.
    */
-  const std::unordered_set<std::shared_ptr<Messenger>> GetMessengers();
+  std::unordered_set<std::shared_ptr<Messenger>> GetMessengers();
  private:
 
   /// The Messengers

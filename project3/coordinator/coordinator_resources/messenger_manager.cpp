@@ -22,8 +22,9 @@ void MessengerManager::DeleteMessenger(
   messengers_.erase(messenger);
 }
 
-const std::unordered_set<std::shared_ptr<Messenger>> MessengerManager::GetMessengers() {
-  return messengers_;
+std::unordered_set<std::shared_ptr<Messenger>> MessengerManager::GetMessengers() {
+  auto messengers = messengers_;
+  return messengers;
 }
 
 bool MessengerManager::BroadcastMessage(MessageLog::Message *msg) {
