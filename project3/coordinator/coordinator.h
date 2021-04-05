@@ -50,6 +50,9 @@ class Coordinator {
   /// The messenger manager.
   std::shared_ptr<MessengerManager> msg_mgr_;
 
+  /// Internal buffer to use for outgoing messages.
+  std::vector<uint8_t> outgoing_message_buffer_{};
+
   /// The registrar.
   std::shared_ptr<Registrar> registrar_;
 
@@ -83,6 +86,8 @@ class Coordinator {
 
 
   uint32_t GenerateID();
+  bool SendRegistrationResponse(
+      pub_sub_messages::RegistrationResponse &response);
 };
 }  // namespace coordinator
 #endif  // CSCI6780_COORDINATOR_H

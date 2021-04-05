@@ -5,4 +5,4 @@ add_library(coordinator coordinator.cpp coordinator.cpp
 target_link_libraries(coordinator coordinator_resources pub_sub_proto wire_protocol loguru thread_pool)
 
 add_executable(coordinator_main coordinator_main.cpp)
-target_link_libraries(coordinator_main coordinator_resources coordinator loguru)
+target_link_libraries(coordinator_main coordinator loguru)
