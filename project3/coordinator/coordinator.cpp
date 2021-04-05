@@ -6,6 +6,10 @@
 #include <chrono>
 #include <loguru.hpp>
 #include <utility>
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
+#include <unistd.h>
 namespace coordinator {
 using coordinator::ConnectedParticipants;
 using pub_sub_messages::CoordinatorMessage;
@@ -136,6 +140,7 @@ Coordinator::ClientState Coordinator::HandleRequest(
 
   pub_sub_messages::RegistrationResponse response;
   SendRegistrationResponse(response, participant);
+  close(client_fd_);
   return ClientState::ACTIVE;
 }
 Coordinator::ClientState Coordinator::HandleRequest(
@@ -148,6 +153,7 @@ Coordinator::ClientState Coordinator::HandleRequest(
   auto messenger = DetermineMessenger(request.participant_id());
   registrar_->DeregisterParticipant(participant);
   messenger_mgr_->DeleteMessenger(messenger);
+  close(client_fd_);
   return ClientState::ACTIVE;
 }
 
@@ -158,6 +164,7 @@ Coordinator::ClientState Coordinator::HandleRequest(
         request.participant_id());
   auto participant = DetermineParticipant(request.participant_id());
   registrar_->DisconnectParticipant(participant);
+  close(client_fd_);
   return ClientState::ACTIVE;
 }
 
@@ -174,6 +181,7 @@ Coordinator::ClientState Coordinator::HandleRequest(
   // send any missed messages satisfying the time threshold.
   Timestamp timestamp = std::chrono::steady_clock::now();
   messenger->SendMissedMessages(timestamp);
+  close(client_fd_);
   return ClientState::ACTIVE;
 }
 
@@ -196,6 +204,7 @@ Coordinator::ClientState Coordinator::HandleRequest(
     LOG_F(ERROR, "Error broadcasting this message from participant (%i)",
           participant.id);
   }
+  close(client_fd_);
   return ClientState::ACTIVE;
 }
 uint32_t Coordinator::GenerateID() {
