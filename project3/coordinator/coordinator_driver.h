@@ -4,14 +4,14 @@
 #ifndef CSCI6780_COORDINATOR_DRIVER_H
 #define CSCI6780_COORDINATOR_DRIVER_H
 
+#include "coordinator_resources/connected_participants.h"
+#include "coordinator_resources/message_log.h"
+#include "coordinator_resources/messenger_manager.h"
+#include "coordinator_resources/registrar.h"
 #include "coordinator_task.h"
+#include "queue/queue.h"
 #include "thread_pool/task.h"
 #include "thread_pool/thread_pool.h"
-#include "messenger_manager.h"
-#include "registrar.h"
-#include "message_log.h"
-#include "queue/queue.h"
-#include "connected_participants.h"
 
 namespace coordinator {
 using coordinator::MessengerManager;

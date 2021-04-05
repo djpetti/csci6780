@@ -2,6 +2,7 @@
  * @file Implementation of MessengerManager class.
  */
 #include "messenger_manager.h"
+
 #include <loguru.hpp>
 #include <utility>
 namespace coordinator {
