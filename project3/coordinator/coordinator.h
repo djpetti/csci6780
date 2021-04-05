@@ -20,6 +20,7 @@ class Coordinator {
   bool Coordinate();
 
  private:
+
   /// The messenger
   std::shared_ptr<Messenger> messenger_;
   /// The message queue
@@ -57,8 +58,6 @@ class Coordinator {
 
   /// Internal buffer to use for incoming messages.
   std::vector<uint8_t> incoming_message_buffer_{};
-  /// Internal buffer to use for outgoing messages.
-  std::vector<uint8_t> outgoing_message_buffer_{};
 
   /// ID counter.
   static uint32_t id_;
@@ -82,7 +81,6 @@ class Coordinator {
 
   ClientState HandleRequest(const pub_sub_messages::SendMulticast &request);
 
-  bool SendRegistrationResponse(const pub_sub_messages::RegistrationResponse &response);
 
   uint32_t GenerateID();
 };

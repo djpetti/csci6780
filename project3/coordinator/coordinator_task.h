@@ -10,6 +10,15 @@
 namespace coordinator {
 class CoordinatorTask : public thread_pool::Task {
  public:
+  /**
+   *
+   * @param participant_fd The socket
+   * @param hostname
+   * @param msg_mgr
+   * @param registrar
+   * @param msg_queue
+   * @param msg_log
+   */
   CoordinatorTask(int participant_fd, std::string hostname,
               std::shared_ptr<MessengerManager> msg_mgr,
               std::shared_ptr<Registrar> registrar,
@@ -27,6 +36,7 @@ class CoordinatorTask : public thread_pool::Task {
   /// This CoordinatorTask's client
   int participant_fd_;
 
+  /// The participant's machine name.
   std::string hostname_;
 
   /// The Messenger Manager

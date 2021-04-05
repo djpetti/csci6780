@@ -36,18 +36,9 @@ class Messenger {
   /**
    * @brief Sends a given message to this messenger's participant.
    * @param msg The message to send.
-   * @param missed_msg if the message being sent is a missed message.
    * @return true on success, false on failure
    */
-  bool SendMessage(const MessageLog::Message &msg);
-
-  /**
-   * @brief Registers a previously sent message into the message log.
-   * @param msg The message to register.
-   * @note Should be called immediately after SendMessage() for normal messages.
-   *       Do not call after sending missed messages.
-   */
-   void LogMessage(MessageLog::Message &msg);
+  bool SendMessage(MessageLog::Message msg);
 
   /**
    * @brief Sends all missed messages satisfying the time threshold to this
@@ -57,6 +48,12 @@ class Messenger {
    * @return true on success, false on failure.
    */
   bool SendMissedMessages(const MessageLog::Timestamp& reconnection_time);
+
+  /**
+   * @brief Updates message timestamp and registers message with log.
+   * @param msg The message.
+   */
+  void LogMessage(MessageLog::Message &msg);
 
   /**
    * @brief Getter for this messenger's participant.

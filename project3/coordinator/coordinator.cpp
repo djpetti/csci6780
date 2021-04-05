@@ -8,7 +8,6 @@
 namespace coordinator {
 using coordinator::ConnectedParticipants;
 using pub_sub_messages::CoordinatorMessage;
-/// Type alias for timestamps.
 using Timestamp = std::chrono::steady_clock::time_point;
 
 uint32_t Coordinator::id_ = 0;
@@ -83,14 +82,19 @@ Coordinator::ClientState Coordinator::ReadNextMessage(
 Coordinator::ClientState Coordinator::DispatchMessage(
     const pub_sub_messages::CoordinatorMessage &message) {
   if (message.has_register_()) {
+    LOG_F(INFO, "Handling a register command from Participant %i.",participant_.id);
     return HandleRequest(message.register_());
   } else if (message.has_deregister()) {
+    LOG_F(INFO, "Handling a reregister command from Participant %i.",participant_.id);
     return HandleRequest(message.deregister());
   } else if (message.has_disconnect()) {
+    LOG_F(INFO, "Handling a disconnect command from Participant %i.",participant_.id);
     return HandleRequest(message.disconnect());
   } else if (message.has_reconnect()) {
+    LOG_F(INFO, "Handling a reconnect command from Participant %i.",participant_.id);
     return HandleRequest(message.reconnect());
   } else if (message.has_send_multicast()) {
+    LOG_F(INFO, "Handling a msend command from Participant %i.",participant_.id);
     return HandleRequest(message.send_multicast());
   }
   LOG_F(ERROR, "No valid message from client (%i) was recieved.", client_fd_);
@@ -103,6 +107,7 @@ Coordinator::ClientState Coordinator::HandleRequest(
   participant_.id = request.participant_id();
   participant_.hostname = hostname_;
   participant_.port = request.port_number();
+
   registrar_->RegisterParticipant(participant_);
   // initialize this participant's Messenger and register it with the messenger manager.
   messenger_ = std::make_shared<Messenger>(msg_log_,participant_);
@@ -114,6 +119,7 @@ Coordinator::ClientState Coordinator::HandleRequest(
 Coordinator::ClientState Coordinator::HandleRequest(
     const pub_sub_messages::Deregister &request) {
   registrar_->DeregisterParticipant(participant_);
+  msg_mgr_->DeleteMessenger(messenger_);
   return ClientState::ACTIVE;
 }
 
@@ -128,7 +134,7 @@ Coordinator::ClientState Coordinator::HandleRequest(
   // reconnect this participant via registrar.
   registrar_->ConnectParticipant(participant_);
   // send any missed messages satisfying the time threshold.
-  Timestamp timestamp;
+  Timestamp timestamp = std::chrono::steady_clock::now();
   messenger_->SendMissedMessages(timestamp);
   return ClientState::ACTIVE;
 }
@@ -147,21 +153,5 @@ Coordinator::ClientState Coordinator::HandleRequest(const pub_sub_messages::Send
   return ClientState::ACTIVE;
 }
 
-bool Coordinator::SendRegistrationResponse(
-    const pub_sub_messages::RegistrationResponse &response) {
-  // Serialize the message.
-  if (!wire_protocol::Serialize(response, &outgoing_message_buffer_)) {
-    LOG_F(ERROR, "Failed to serialize message.");
-    return false;
-  }
-
-  // Send the message.
-  if (send(client_fd_, outgoing_message_buffer_.data(),
-           outgoing_message_buffer_.size(), 0) < 0) {
-    LOG_F(ERROR, "Failed to send message.");
-    return false;
-  }
-  return true;
-}
 
 }  // namespace coordinator
