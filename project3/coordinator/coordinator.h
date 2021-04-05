@@ -51,7 +51,7 @@ class Coordinator {
   std::string hostname_;
 
   /// The messenger manager.
-  std::shared_ptr<MessengerManager> msg_mgr_;
+  std::shared_ptr<MessengerManager> messenger_mgr_;
 
   /// Internal buffer to use for outgoing messages.
   std::vector<uint8_t> outgoing_message_buffer_{};
@@ -86,6 +86,14 @@ class Coordinator {
   ClientState HandleRequest(const pub_sub_messages::Reconnect &request);
 
   ClientState HandleRequest(const pub_sub_messages::SendMulticast &request);
+
+  /**
+   * @brief Maps the hostname of connected client to existing Participant
+   * and Messenger objects.
+   * @note Used for non-registration commands.
+   */
+  void DetermineParticipant();
+  void DetermineMessenger();
 
 
   uint32_t GenerateID();

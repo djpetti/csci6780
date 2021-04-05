@@ -33,6 +33,13 @@ class MessengerManager {
    * @param messenger
    */
   void DeleteMessenger(const std::shared_ptr<Messenger>& messenger);
+
+  /**
+   * @brief Getter for the set of Messengers.
+   * @return The set of messengers.
+   * @note for read only.
+   */
+  const std::unordered_set<std::shared_ptr<Messenger>> GetMessengers();
  private:
 
   /// The Messengers
