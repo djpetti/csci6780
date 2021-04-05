@@ -19,7 +19,7 @@ class ConsoleTask : public thread_pool::Task {
   /**
    * @param prompt the prompt to be displayed for this console
    */
-  explicit ConsoleTask(std::string prompt);
+  explicit ConsoleTask(const std::string& prompt);
 
   Status SetUp() override;
 

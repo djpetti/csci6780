@@ -5,7 +5,7 @@
 
 namespace participant_tasks {
 
-ConsoleTask::ConsoleTask(std::string prompt) : prompt_(std::move(prompt)) {}
+ConsoleTask::ConsoleTask(const std::string& prompt) : prompt_(prompt) {}
 
 thread_pool::Task::Status ConsoleTask::SetUp() {
   std::cout << prompt_ << std::flush;
