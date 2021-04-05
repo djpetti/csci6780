@@ -2,6 +2,8 @@
 
 #include <iostream>
 
+#include <loguru.hpp>
+
 namespace participant {
 Participant::Participant(const std::string& config_loc)
     : console_task_(
@@ -80,7 +82,7 @@ bool Participant::OneOff(const google::protobuf::Message& msg) {
   wire_protocol::Serialize(msg, &outgoing_buf);
   if (participant_util::SendForever(participant_fd, outgoing_buf.data(),
                                     outgoing_buf.size(), 0) < 0) {
-    perror("Failed to send request");
+    LOG_S(0) << "Failed to send request";
     return false;
   }
   close(participant_fd);
