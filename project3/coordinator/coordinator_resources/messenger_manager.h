@@ -20,7 +20,7 @@ class MessengerManager {
    * @return true on success, false on failure
    *
    */
-  bool BroadcastMessage(const MessageLog::Message message);
+  bool BroadcastMessage(MessageLog::Message *message);
 
   /**
    * @brief Registers a messenger with the messenger manager.

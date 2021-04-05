@@ -26,23 +26,23 @@ const std::unordered_set<std::shared_ptr<Messenger>> MessengerManager::GetMessen
   return messengers_;
 }
 
-bool MessengerManager::BroadcastMessage(const MessageLog::Message msg) {
+bool MessengerManager::BroadcastMessage(MessageLog::Message *msg) {
   bool is_logged = false;
   for (auto& messenger : messengers_) {
     // only send message to connected participants.
     if (participants_->Contains(messenger->GetParticipant())) {
-      messenger->SendMessage(msg);
+      messenger->SendMessage(*msg);
       LOG_F(INFO, "Sending message from Participant #%i to Participant #%i.",
-            msg.participant_id, messenger->GetParticipant().id);
+            msg->participant_id, messenger->GetParticipant().id);
       // only log message once.
       // message will have timestamp of the first message sent.
       if (!is_logged) {
-        messenger->LogMessage(const_cast<MessageLog::Message*>(&msg));
+        messenger->LogMessage(msg);
         is_logged = true;
       }
     }
   }
-  LOG_F(INFO, "Message from Participant #%i successfully broadcast.", msg.participant_id);
+  LOG_F(INFO, "Message from Participant #%i successfully broadcast.", msg->participant_id);
   return true;
 }
 }  // namespace coordinator

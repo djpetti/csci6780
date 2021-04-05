@@ -18,10 +18,10 @@ const ConnectedParticipants::Participant& Messenger::GetParticipant() const {
   return participant_;
 }
 
-bool Messenger::SerializeMessage(MessageLog::Message msg) {
+bool Messenger::SerializeMessage(MessageLog::Message *msg) {
   // Populate protobuf message.
-  proto_msg_.set_message(msg.msg);
-  proto_msg_.set_origin_id(msg.participant_id);
+  proto_msg_.set_message(msg->msg);
+  proto_msg_.set_origin_id(msg->participant_id);
 
   // Serialize
   if (!wire_protocol::Serialize(proto_msg_, &outgoing_message_buffer_)) {
@@ -29,10 +29,10 @@ bool Messenger::SerializeMessage(MessageLog::Message msg) {
   }
   return true;
 }
-bool Messenger::SendMessage(const MessageLog::Message msg) {
+bool Messenger::SendMessage(MessageLog::Message &msg) {
   // mutex lock to ensure thread-safe socket sending.
   std::lock_guard<std::mutex> guard(mutex_);
-  SerializeMessage(msg);
+  SerializeMessage(&msg);
   if (send(participant_.sock_fd, outgoing_message_buffer_.data(),
            outgoing_message_buffer_.size(), 0) < 0) {
     LOG_F(ERROR, "Failed to send message.");
@@ -50,7 +50,7 @@ void Messenger::LogMessage(MessageLog::Message *msg) {
 bool Messenger::SendMissedMessages(
     const MessageLog::Timestamp& reconnection_time) {
   int msg_count = 0;
-  for (const MessageLog::Message& msg :
+  for (MessageLog::Message msg :
        msg_log_->GetMissedMessages(reconnection_time)) {
     if (!SendMessage(msg)) {
       return false;

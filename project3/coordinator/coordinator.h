@@ -15,23 +15,19 @@ namespace coordinator {
 class Coordinator {
  public:
   Coordinator(int participant_fd, std::string hostname,
-                           std::shared_ptr<MessengerManager> msg_mgr,
-                           std::shared_ptr<Registrar> registrar,
+              std::shared_ptr<MessengerManager> msg_mgr,
+              std::shared_ptr<Registrar> registrar,
               std::shared_ptr<queue::Queue<MessageLog::Message>> msg_queue,
               std::shared_ptr<MessageLog> msg_log);
 
   bool Coordinate();
 
  private:
-
-  /// The messenger
-  std::shared_ptr<Messenger> messenger_;
   /// The message queue
   std::shared_ptr<queue::Queue<MessageLog::Message>> msg_queue_;
   /// The message log
   std::shared_ptr<MessageLog> msg_log_;
-  /// The participant being coordinated.
-  ConnectedParticipants::Participant participant_;
+
   /// Enumerates state of connected client.
   enum class ClientState {
     /// We expect more messages from the client.
@@ -75,7 +71,8 @@ class Coordinator {
    */
   ClientState ReadNextMessage(pub_sub_messages::CoordinatorMessage *message);
 
-  ClientState DispatchMessage(const pub_sub_messages::CoordinatorMessage &message);
+  ClientState DispatchMessage(
+      const pub_sub_messages::CoordinatorMessage &message);
 
   ClientState HandleRequest(const pub_sub_messages::Register &request);
 
@@ -92,13 +89,13 @@ class Coordinator {
    * and Messenger objects.
    * @note Used for non-registration commands.
    */
-  void DetermineParticipant();
-  void DetermineMessenger();
-
+  ConnectedParticipants::Participant DetermineParticipant(uint32_t id);
+  std::shared_ptr<Messenger> DetermineMessenger(uint32_t id);
 
   uint32_t GenerateID();
   bool SendRegistrationResponse(
-      pub_sub_messages::RegistrationResponse &response);
+      pub_sub_messages::RegistrationResponse &response,
+      const ConnectedParticipants::Participant& participant);
 };
 }  // namespace coordinator
 #endif  // CSCI6780_COORDINATOR_H

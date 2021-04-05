@@ -38,7 +38,7 @@ class Messenger {
    * @param msg The message to send.
    * @return true on success, false on failure
    */
-  bool SendMessage(const MessageLog::Message msg);
+  bool SendMessage(MessageLog::Message &msg);
 
   /**
    * @brief Sends all missed messages satisfying the time threshold to this
@@ -81,7 +81,7 @@ class Messenger {
   /**
    * Helper function for Serializing Messages.
    */
-  bool SerializeMessage(MessageLog::Message msg);
+  bool SerializeMessage(MessageLog::Message *msg);
 
 };  // Class
 
