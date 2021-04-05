@@ -27,7 +27,7 @@ message Disconnect {
 
 /// Message sent by a participant to indicate that it is coming back online.
 message Reconnect {
-  /// Port number to indicate the mutlicast receiever thread.
+  /// Port number to indicate the multicast receiver thread.
   uint32 port_number = 1;
   /// Denotes the ID of this participant.
   uint32 participant_id = 2;
