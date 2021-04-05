@@ -6,8 +6,6 @@ package pub_sub_messages;
 message Register {
   /// Port number to indicate the mutlicast receiever thread.
   uint32 port_number = 1;
-
-
 }
 
 message RegistrationResponse {
@@ -17,22 +15,30 @@ message RegistrationResponse {
 
 /// Message sent by a participant to deregister with the coordinator.
 message Deregister {
+  /// Denotes the ID of this participant.
+  uint32 participant_id = 1;
 }
 
 /// Message sent by a participant to indicate that it is going offline.
 message Disconnect {
+  /// Denotes the ID of this participant.
+  uint32 participant_id = 1;
 }
 
 /// Message sent by a participant to indicate that it is coming back online.
 message Reconnect {
   /// Port number to indicate the mutlicast receiever thread.
   uint32 port_number = 1;
+  /// Denotes the ID of this participant.
+  uint32 participant_id = 2;
 }
 
 /// Message sent by a participant that will be sent out to the whole group.
 message SendMulticast {
   /// The actual message contents.
   string message = 1;
+  /// Denotes the ID of this participant.
+  uint32 participant_id = 2;
 }
 
 /**
