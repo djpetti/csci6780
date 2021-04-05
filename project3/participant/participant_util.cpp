@@ -65,13 +65,6 @@ int SetUpSocket(const sockaddr_in &address, const std::string &hostname) {
     return -1;
   }
 
-  // Set a timeout.
-  struct timeval timeout {};
-  timeout.tv_sec = kSocketTimeout;
-  timeout.tv_usec = 0;
-  setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (const char *)&timeout,
-             sizeof(timeout));
-
   if (connect(sock, (struct sockaddr *)&address, sizeof(address)) < 0) {
     LOG_S(FATAL) << "Connection Failed";
     return -1;
