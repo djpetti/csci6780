@@ -20,19 +20,26 @@ class MessengerManager {
    * @return true on success, false on failure
    *
    */
-  bool BroadcastMessage(MessageLog::Message& message);
+  bool BroadcastMessage(MessageLog::Message *message);
 
   /**
    * @brief Registers a messenger with the messenger manager.
    * @param messenger The messenger to register.
    */
-  void AddMessenger(const std::shared_ptr<Messenger> messenger);
+  void AddMessenger(const std::shared_ptr<Messenger>& messenger);
 
   /**
    * @brief De-registers a messenger from the messenger manager.
    * @param messenger
    */
-  void DeleteMessenger(const std::shared_ptr<Messenger> messenger);
+  void DeleteMessenger(const std::shared_ptr<Messenger>& messenger);
+
+  /**
+   * @brief Getter for the set of Messengers.
+   * @return The set of messengers.
+   * @note for read only.
+   */
+  std::unordered_set<std::shared_ptr<Messenger>> GetMessengers();
  private:
 
   /// The Messengers

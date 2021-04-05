@@ -3,6 +3,7 @@
  */
 #include "connected_participants.h"
 
+#include <loguru.hpp>
 namespace coordinator {
 
 void ConnectedParticipants::AddParticipant(const Participant &participant) {

@@ -49,7 +49,7 @@ class MessageLog {
    * @param time_threshold Any messages older than this will be dropped
    *    when sending messages to reconnecting participants.
    */
-  explicit MessageLog(const Duration& time_threshold);
+  MessageLog(const Duration& time_threshold);
 
   /**
    * @brief Inserts a message into the message log.

@@ -1,7 +1,6 @@
 /**
  * @file Implementation of Registrar class.
  */
-
 #include "registrar.h"
 
 #include <arpa/inet.h>
@@ -75,6 +74,7 @@ void Registrar::RegisterParticipant(
   // set up socket connection for sending messages to this participant.
   int sock = SetUpSocket(MakeAddress(participant.port), participant.hostname);
   if (sock > 0) {
+    LOG_F(INFO,"Participant #%i has been registered.", participant.id);
     participant.sock_fd = sock;
     ConnectParticipant(participant);
   } else {
@@ -85,8 +85,14 @@ void Registrar::RegisterParticipant(
 void Registrar::DeregisterParticipant(
     struct ConnectedParticipants::Participant &participant) {
   // disconnect participant and close the socket.
+  LOG_F(INFO,"Participant #%i has been deregistered.", participant.id);
   DisconnectParticipant(participant);
   close(participant.sock_fd);
+}
+
+ConnectedParticipants* Registrar::GetConnectedParticipants() {
+  ConnectedParticipants *p = connected_participants_.get();
+  return p;
 }
 
 }  // namespace coordinator
