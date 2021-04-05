@@ -3,8 +3,9 @@
  */
 #include "coordinator.h"
 
-#include <loguru.hpp>
 #include <chrono>
+#include <loguru.hpp>
+#include <utility>
 namespace coordinator {
 using coordinator::ConnectedParticipants;
 using pub_sub_messages::CoordinatorMessage;
@@ -18,28 +19,44 @@ Coordinator::Coordinator(
     std::shared_ptr<Registrar> registrar,
     std::shared_ptr<queue::Queue<MessageLog::Message>> msg_queue,
     std::shared_ptr<MessageLog> msg_log)
-    : msg_queue_(msg_queue),
-      msg_log_(msg_log),
+    : msg_queue_(std::move(msg_queue)),
+      msg_log_(std::move(msg_log)),
       client_fd_(participant_fd),
-      hostname_(hostname),
-      msg_mgr_(msg_mgr),
-      registrar_(registrar){}
+      hostname_(std::move(hostname)),
+      messenger_mgr_(std::move(msg_mgr)),
+      registrar_(std::move(registrar)) {}
 
 bool Coordinator::Coordinate() {
   ClientState client_state = ClientState::ACTIVE;
 
-  while (client_state == ClientState::ACTIVE) {
-    // Get the next message from the socket.
-    CoordinatorMessage message;
-    client_state = ReadNextMessage(&message);
+  // Get the message from the socket.
+  CoordinatorMessage message;
+  client_state = ReadNextMessage(&message);
 
-    if (client_state == ClientState::ACTIVE) {
-      // Handle the message.
-      client_state = DispatchMessage(message);
-    }
+  if (client_state == ClientState::ACTIVE) {
+    // Handle the message.
+    client_state = DispatchMessage(message);
   }
 
   return client_state != ClientState::ERROR;
+}
+
+void Coordinator::DetermineParticipant() {
+  // determine the participant.
+  for (auto participant :
+      registrar_->GetConnectedParticipants()->GetParticipants()) {
+    if (participant.hostname == hostname_) {
+      participant_ = participant;
+    }
+  }
+}
+void Coordinator::DetermineMessenger() {
+  // determine this participant's messenger.
+  for (auto messenger : messenger_mgr_->GetMessengers()) {
+    if (messenger->GetParticipant().hostname == hostname_) {
+      messenger_ = messenger;
+    }
+  }
 }
 
 Coordinator::ClientState Coordinator::ReadNextMessage(
@@ -82,19 +99,30 @@ Coordinator::ClientState Coordinator::ReadNextMessage(
 Coordinator::ClientState Coordinator::DispatchMessage(
     const pub_sub_messages::CoordinatorMessage &message) {
   if (message.has_register_()) {
-    LOG_F(INFO, "Handling a register command from Participant %i.",participant_.id);
+    LOG_F(INFO, "Handling a register command from Participant %i.",
+          participant_.id);
     return HandleRequest(message.register_());
   } else if (message.has_deregister()) {
-    LOG_F(INFO, "Handling a deregister command from Participant %i.",participant_.id);
+    DetermineParticipant();
+    DetermineMessenger();
+    LOG_F(INFO, "Handling a deregister command from Participant %i.",
+          participant_.id);
     return HandleRequest(message.deregister());
   } else if (message.has_disconnect()) {
-    LOG_F(INFO, "Handling a disconnect command from Participant %i.",participant_.id);
+    DetermineParticipant();
+    LOG_F(INFO, "Handling a disconnect command from Participant %i.",
+          participant_.id);
     return HandleRequest(message.disconnect());
   } else if (message.has_reconnect()) {
-    LOG_F(INFO, "Handling a reconnect command from Participant %i.",participant_.id);
+    DetermineParticipant();
+    DetermineMessenger();
+    LOG_F(INFO, "Handling a reconnect command from Participant %i.",
+          participant_.id);
     return HandleRequest(message.reconnect());
   } else if (message.has_send_multicast()) {
-    LOG_F(INFO, "Handling a msend command from Participant %i.",participant_.id);
+    DetermineParticipant();
+    LOG_F(INFO, "Handling a msend command from Participant %i.",
+          participant_.id);
     return HandleRequest(message.send_multicast());
   }
   LOG_F(ERROR, "No valid message from client (%i) was recieved.", client_fd_);
@@ -109,9 +137,11 @@ Coordinator::ClientState Coordinator::HandleRequest(
   participant_.port = request.port_number();
 
   registrar_->RegisterParticipant(participant_);
-  // initialize this participant's Messenger and register it with the messenger manager.
-  messenger_ = std::make_shared<Messenger>(msg_log_,participant_);
-  msg_mgr_->AddMessenger(messenger_);
+  // initialize this participant's Messenger and register it with the messenger
+  // manager.
+  messenger_ = std::make_shared<Messenger>(msg_log_, participant_);
+  messenger_mgr_->AddMessenger(messenger_);
+
   pub_sub_messages::RegistrationResponse response;
   SendRegistrationResponse(response);
   return ClientState::ACTIVE;
@@ -119,7 +149,7 @@ Coordinator::ClientState Coordinator::HandleRequest(
 Coordinator::ClientState Coordinator::HandleRequest(
     const pub_sub_messages::Deregister &request) {
   registrar_->DeregisterParticipant(participant_);
-  msg_mgr_->DeleteMessenger(messenger_);
+  messenger_mgr_->DeleteMessenger(messenger_);
   return ClientState::ACTIVE;
 }
 
@@ -139,17 +169,19 @@ Coordinator::ClientState Coordinator::HandleRequest(
   return ClientState::ACTIVE;
 }
 
-Coordinator::ClientState Coordinator::HandleRequest(const pub_sub_messages::SendMulticast &request) {
-  MessageLog::Message message;
+Coordinator::ClientState Coordinator::HandleRequest(
+    const pub_sub_messages::SendMulticast &request) {
   // create and broadcast the message.
+  MessageLog::Message message;
   Timestamp timestamp;
   message.timestamp = timestamp;
   message.msg = request.message();
   message.participant_id = participant_.id;
-  // ensures that messages get sent in the order they were recieved.
+  // ensures that messages get sent in the order they were received.
   msg_queue_->Push(message);
-  if (!msg_mgr_->BroadcastMessage(msg_queue_->Pop())){
-    LOG_F(ERROR, "Error broadcasting this message from participant (%i)",participant_.id);
+  if (!messenger_mgr_->BroadcastMessage(msg_queue_->Pop())) {
+    LOG_F(ERROR, "Error broadcasting this message from participant (%i)",
+          participant_.id);
   }
   return ClientState::ACTIVE;
 }
@@ -158,7 +190,8 @@ uint32_t Coordinator::GenerateID() {
   do {
     id_++;
     // ensure this ID is not already taken.
-    for (auto participant : registrar_->GetConnectedParticipants()->GetParticipants()) {
+    for (auto participant :
+         registrar_->GetConnectedParticipants()->GetParticipants()) {
       if (participant.id == id_) {
         duplicate = true;
         break;
