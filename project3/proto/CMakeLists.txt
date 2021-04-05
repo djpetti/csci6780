@@ -9,6 +9,11 @@ target_link_libraries(pub_sub_proto INTERFACE ${Protobuf_LIBRARIES})
 # Make sure everything that depends on this can find the headers.
 target_include_directories(pub_sub_proto INTERFACE ${CMAKE_CURRENT_BINARY_DIR})
 
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    # Ignore warnings on some versions of GCC.
+    target_compile_options(pub_sub_proto PRIVATE -Wno-array-bounds)
+endif()
+
 # For Mac Users
 if (APPLE)
     file(GLOB protobuf_include_dirs "/usr/local/Cellar/protobuf/*/include")
