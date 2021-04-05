@@ -17,19 +17,7 @@ thread_pool::Task::Status MulticastReceiver::SetUp() {
 }
 
 thread_pool::Task::Status MulticastReceiver::RunAtomic() {
-  parser_.ResetParser();
-  while (!parser_.HasCompleteMessage()) {
-    incoming_msg_buf_.resize(kBufferSize);
-    const auto bytes_read = participant_util::ReceiveForever(
-        messenger_fd_, incoming_msg_buf_.data(), kBufferSize, 0);
-    if (bytes_read <= 0) {
-      break;
-    }
-    incoming_msg_buf_.resize(bytes_read);
-    parser_.AddNewData(incoming_msg_buf_);
-  }
-  // empty buffer
-  incoming_msg_buf_.clear();
+  // If parser_ has a completed message ready
   if (parser_.HasCompleteMessage()) {
     pub_sub_messages::ForwardMulticast msg;
     parser_.GetMessage(&msg);
@@ -37,6 +25,20 @@ thread_pool::Task::Status MulticastReceiver::RunAtomic() {
         "[" + std::to_string(msg.origin_id()) + "] " + msg.message();
     LOG_S(0) << to_out;
     console_task_->SendConsole(to_out);
+    parser_.ResetParser();
+    incoming_msg_buf_.clear();
+  // Else, attempt to parse_ anything new
+  } else {
+    incoming_msg_buf_.resize(kBufferSize);
+    const auto bytes_read = participant_util::ReceiveForever(
+        messenger_fd_, incoming_msg_buf_.data(), kBufferSize, 0);
+    if (bytes_read < 0) {
+      return thread_pool::Task::Status::FAILED;
+    } else if (bytes_read == 0) {
+      return thread_pool::Task::Status::RUNNING;
+    }
+    incoming_msg_buf_.resize(bytes_read);
+    parser_.AddNewData(incoming_msg_buf_);
   }
   return thread_pool::Task::Status::RUNNING;
 }
