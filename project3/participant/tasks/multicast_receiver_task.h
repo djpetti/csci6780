@@ -19,6 +19,10 @@
 #include "thread_pool/task.h"
 
 namespace participant_tasks {
+
+/**
+ * @class The persistent multicast receiver
+ */
 class MulticastReceiver : public thread_pool::Task {
  public:
   /**

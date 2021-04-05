@@ -14,6 +14,10 @@
 #include "thread_pool/task.h"
 
 namespace participant_tasks {
+
+/**
+ * @class The coordinator of all participant console output
+ */
 class ConsoleTask : public thread_pool::Task {
  public:
   /**

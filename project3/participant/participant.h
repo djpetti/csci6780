@@ -14,6 +14,10 @@
 #include "tasks/multicast_receiver_task.h"
 
 namespace participant {
+
+/**
+ * @class Handles participant thread and input coordination
+ */
 class Participant {
  public:
   /**

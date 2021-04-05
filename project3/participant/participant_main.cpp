@@ -1,5 +1,5 @@
 /**
- * @brief Entry point for the Multicast Participant.
+ * @file Entry point for the Multicast Participant.
  */
 
 #include <loguru.hpp>

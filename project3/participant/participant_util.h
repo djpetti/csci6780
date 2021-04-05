@@ -14,7 +14,7 @@ namespace participant_util {
 
 /**
  * @param port the port of the address
- * @return
+ * @return an Internet socket struct
  */
 struct sockaddr_in MakeAddress(uint16_t port);
 
@@ -38,7 +38,7 @@ int SetUpListenerSocket(const struct sockaddr_in &address);
  * @param buffer The buffer to receive into.
  * @param length The maximum length to receive.
  * @param flags The flags to use.
- * @return The return value from the internal recv() call.
+ * @return The return value from the internal recv() call. -1 for Failure
  */
 int ReceiveForever(int socket, void* buffer, size_t length, int flags);
 
@@ -49,7 +49,7 @@ int ReceiveForever(int socket, void* buffer, size_t length, int flags);
  * @param buffer The buffer to send from.
  * @param length The maximum length to send.
  * @param flags The flags to use.
- * @return The return value from the internal send() call.
+ * @return The return value from the internal send() call. -1 for Failure
  */
 int SendForever(int socket, const void* buffer, size_t length, int flags);
 
