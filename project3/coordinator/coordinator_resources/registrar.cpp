@@ -90,4 +90,9 @@ void Registrar::DeregisterParticipant(
   close(participant.sock_fd);
 }
 
+ConnectedParticipants* Registrar::GetConnectedParticipants() {
+  ConnectedParticipants *p = connected_participants_.get();
+  return p;
+}
+
 }  // namespace coordinator

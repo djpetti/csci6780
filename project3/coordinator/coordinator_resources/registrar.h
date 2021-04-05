@@ -49,6 +49,13 @@ class Registrar {
   void DisconnectParticipant(
       const ConnectedParticipants::Participant &participant);
 
+  /**
+   * @brief Returns the set of connected participants.
+   * @return The set of participants.
+   * @note Used for read-only.
+   */
+  ConnectedParticipants* GetConnectedParticipants();
+
  private:
   /// The connected participants.
   std::shared_ptr<ConnectedParticipants> connected_participants_;

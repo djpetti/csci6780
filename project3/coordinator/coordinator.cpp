@@ -85,7 +85,7 @@ Coordinator::ClientState Coordinator::DispatchMessage(
     LOG_F(INFO, "Handling a register command from Participant %i.",participant_.id);
     return HandleRequest(message.register_());
   } else if (message.has_deregister()) {
-    LOG_F(INFO, "Handling a reregister command from Participant %i.",participant_.id);
+    LOG_F(INFO, "Handling a deregister command from Participant %i.",participant_.id);
     return HandleRequest(message.deregister());
   } else if (message.has_disconnect()) {
     LOG_F(INFO, "Handling a disconnect command from Participant %i.",participant_.id);
@@ -104,7 +104,7 @@ Coordinator::ClientState Coordinator::DispatchMessage(
 Coordinator::ClientState Coordinator::HandleRequest(
     const pub_sub_messages::Register &request) {
   // create this participant and register with the registrar.
-  participant_.id = request.participant_id();
+  participant_.id = GenerateID();
   participant_.hostname = hostname_;
   participant_.port = request.port_number();
 
@@ -112,8 +112,8 @@ Coordinator::ClientState Coordinator::HandleRequest(
   // initialize this participant's Messenger and register it with the messenger manager.
   messenger_ = std::make_shared<Messenger>(msg_log_,participant_);
   msg_mgr_->AddMessenger(messenger_);
-  //pub_sub_messages::RegistrationResponse response;
-  //SendRegistrationResponse(response);
+  pub_sub_messages::RegistrationResponse response;
+  SendRegistrationResponse(response);
   return ClientState::ACTIVE;
 }
 Coordinator::ClientState Coordinator::HandleRequest(
@@ -146,12 +146,46 @@ Coordinator::ClientState Coordinator::HandleRequest(const pub_sub_messages::Send
   message.timestamp = timestamp;
   message.msg = request.message();
   message.participant_id = participant_.id;
+  // ensures that messages get sent in the order they were recieved.
   msg_queue_->Push(message);
   if (!msg_mgr_->BroadcastMessage(msg_queue_->Pop())){
     LOG_F(ERROR, "Error broadcasting this message from participant (%i)",participant_.id);
   }
   return ClientState::ACTIVE;
 }
+uint32_t Coordinator::GenerateID() {
+  bool duplicate = false;
+  do {
+    id_++;
+    // ensure this ID is not already taken.
+    for (auto participant : registrar_->GetConnectedParticipants()->GetParticipants()) {
+      if (participant.id == id_) {
+        duplicate = true;
+        break;
+      } else {
+        duplicate = false;
+      }
+    }
+  } while (duplicate);
 
+  return id_;
+}
+bool Coordinator::SendRegistrationResponse(
+    pub_sub_messages::RegistrationResponse &response) {
+  response.set_participant_id(participant_.id);
+  // Serialize the message.
+  if (!wire_protocol::Serialize(response, &outgoing_message_buffer_)) {
+    LOG_F(ERROR, "Failed to serialize message.");
+    return false;
+  }
+
+  // Send the message.
+  if (send(client_fd_, outgoing_message_buffer_.data(),
+           outgoing_message_buffer_.size(), 0) < 0) {
+    LOG_F(ERROR, "Failed to send message.");
+    return false;
+  }
+  return true;
+}
 
 }  // namespace coordinator
