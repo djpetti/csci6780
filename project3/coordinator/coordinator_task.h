@@ -8,16 +8,19 @@
 #include "thread_pool/thread_pool.h"
 #include "coordinator.h"
 namespace coordinator {
+/**
+ * @class Task implementation of coordinator.
+ */
 class CoordinatorTask : public thread_pool::Task {
  public:
   /**
    *
    * @param participant_fd The socket
-   * @param hostname
-   * @param msg_mgr
-   * @param registrar
-   * @param msg_queue
-   * @param msg_log
+   * @param hostname The hostname.
+   * @param msg_mgr The message manager.
+   * @param registrar The registrar.
+   * @param msg_queue The message queue.
+   * @param msg_log The message log.
    */
   CoordinatorTask(int participant_fd, std::string hostname,
               std::shared_ptr<MessengerManager> msg_mgr,

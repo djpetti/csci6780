@@ -22,9 +22,9 @@ void MessengerManager::DeleteMessenger(
   messengers_.erase(messenger);
 }
 
-bool MessengerManager::BroadcastMessage(MessageLog::Message msg) {
+bool MessengerManager::BroadcastMessage(const MessageLog::Message msg) {
   bool is_logged = false;
-  for (const auto& messenger : messengers_) {
+  for (auto& messenger : messengers_) {
     // only send message to connected participants.
     if (participants_->Contains(messenger->GetParticipant())) {
       messenger->SendMessage(msg);
@@ -33,7 +33,7 @@ bool MessengerManager::BroadcastMessage(MessageLog::Message msg) {
       // only log message once.
       // message will have timestamp of the first message sent.
       if (!is_logged) {
-        messenger->LogMessage(msg);
+        messenger->LogMessage(const_cast<MessageLog::Message*>(&msg));
         is_logged = true;
       }
     }
