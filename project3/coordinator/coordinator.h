@@ -4,9 +4,9 @@
 
 #ifndef CSCI6780_COORDINATOR_H
 #define CSCI6780_COORDINATOR_H
-#include "messenger.h"
-#include "messenger_manager.h"
-#include "registrar.h"
+#include "coordinator_resources/messenger.h"
+#include "coordinator_resources/messenger_manager.h"
+#include "coordinator_resources/registrar.h"
 
 namespace coordinator {
 class Coordinator {
