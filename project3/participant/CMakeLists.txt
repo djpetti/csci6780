@@ -1,1 +1,7 @@
 add_subdirectory(input_parser)
+add_subdirectory(tasks)
+
+add_library(participant_lib participant.cpp participant_util.cpp)
+target_link_libraries(participant_lib pub_sub_proto input_parser_p3 wire_protocol participant_tasks_lib thread_pool loguru)
+add_executable(participant participant_main.cpp)
+target_link_libraries(participant participant_lib)
