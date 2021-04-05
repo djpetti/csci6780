@@ -9,6 +9,9 @@
 #include "coordinator_resources/registrar.h"
 
 namespace coordinator {
+/**
+ * @class Handles Participant Commands.
+ */
 class Coordinator {
  public:
   Coordinator(int participant_fd, std::string hostname,

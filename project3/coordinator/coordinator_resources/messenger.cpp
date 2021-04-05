@@ -29,7 +29,7 @@ bool Messenger::SerializeMessage(MessageLog::Message msg) {
   }
   return true;
 }
-bool Messenger::SendMessage(MessageLog::Message msg) {
+bool Messenger::SendMessage(const MessageLog::Message msg) {
   // mutex lock to ensure thread-safe socket sending.
   std::lock_guard<std::mutex> guard(mutex_);
   SerializeMessage(msg);
@@ -40,12 +40,12 @@ bool Messenger::SendMessage(MessageLog::Message msg) {
   }
   return true;
 }
-void Messenger::LogMessage(MessageLog::Message& msg) {
+void Messenger::LogMessage(MessageLog::Message *msg) {
   // Update this messages' timestamp.
   const auto timestamp = std::chrono::steady_clock::now();
-  msg.timestamp = timestamp;
+  msg->timestamp = timestamp;
   // Add this message to the message log.
-  msg_log_->Insert(msg);
+  msg_log_->Insert(*msg);
 }
 bool Messenger::SendMissedMessages(
     const MessageLog::Timestamp& reconnection_time) {
