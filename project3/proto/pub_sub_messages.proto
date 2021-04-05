@@ -6,12 +6,13 @@ package pub_sub_messages;
 message Register {
   /// Port number to indicate the mutlicast receiever thread.
   uint32 port_number = 1;
+
+  uint32 participant_id = 2;
 }
 
 /// Request sent by the coordinator upon successful registration.
 message RegistrationResponse {
-  /// Indicates the ID of this participant.
-  uint32 participant_id = 1;
+
 }
 
 /// Message sent by a participant to deregister with the coordinator.

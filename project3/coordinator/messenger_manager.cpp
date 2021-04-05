@@ -17,7 +17,7 @@ void MessengerManager::DeleteMessenger(const std::shared_ptr<Messenger> messenge
   messengers_.erase(messenger);
 }
 
-bool MessengerManager::BroadcastMessage(MessageLog::Message& msg) {
+bool MessengerManager::BroadcastMessage(MessageLog::Message msg) {
   for (auto messenger : messengers_) {
     // only send message to connected participants.
     if (participants_->Contains(messenger->GetParticipant())){

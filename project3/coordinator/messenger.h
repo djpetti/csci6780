@@ -31,7 +31,7 @@ class Messenger {
    *    communicates with.
    */
   Messenger(std::shared_ptr<MessageLog> msg_log,
-            ConnectedParticipants::Participant participant);
+            ConnectedParticipants::Participant &participant);
 
   /**
    * @brief Sends a given message to this messenger's participant.
@@ -67,10 +67,10 @@ class Messenger {
   /// Mutex for implementing thread safety.
   std::mutex mutex_;
 
-  // Protobuf message.
+  /// Protobuf message.
   pub_sub_messages::ForwardMulticast proto_msg_;
 
-  // Buffer for outgoing messages.
+  /// Buffer for outgoing messages.
   std::vector<uint8_t> outgoing_message_buffer_{};
 
   /**
