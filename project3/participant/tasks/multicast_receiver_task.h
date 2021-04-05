@@ -50,7 +50,7 @@ class MulticastReceiver : public thread_pool::Task {
   std::vector<uint8_t> incoming_msg_buf_{};
 
   /// parser for handling messages
-  wire_protocol::MessageParser<google::protobuf::Message> parser_;
+  wire_protocol::MessageParser<pub_sub_messages::ForwardMulticast> parser_;
 };
 }  // namespace participant_tasks
 #endif  // PROJECT3_MULTICAST_RECEIVER_H
