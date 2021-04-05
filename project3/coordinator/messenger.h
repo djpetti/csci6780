@@ -39,7 +39,15 @@ class Messenger {
    * @param missed_msg if the message being sent is a missed message.
    * @return true on success, false on failure
    */
-  bool SendMessage(MessageLog::Message msg, bool missed_msg);
+  bool SendMessage(const MessageLog::Message msg);
+
+  /**
+   * @brief Registers a previously sent message into the message log.
+   * @param msg The message to register.
+   * @note Should be called immediately after SendMessage() for normal messages.
+   *       Do not call after sending missed messages.
+   */
+   void LogMessage(MessageLog::Message msg);
 
   /**
    * @brief Sends all missed messages satisfying the time threshold to this

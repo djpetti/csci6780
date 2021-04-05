@@ -18,10 +18,17 @@ void MessengerManager::DeleteMessenger(const std::shared_ptr<Messenger> messenge
 }
 
 bool MessengerManager::BroadcastMessage(MessageLog::Message& msg) {
+  bool is_logged = false;
   for (auto messenger : messengers_) {
     // only send message to connected participants.
     if (participants_->Contains(messenger->GetParticipant())){
-      messenger->SendMessage(msg, false);
+      messenger->SendMessage(msg);
+
+      //make sure to only log the message once.
+      if (!is_logged) {
+        messenger->LogMessage(msg);
+        is_logged = true;
+      }
     }
   }
   return true;
