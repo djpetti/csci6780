@@ -4,7 +4,7 @@ package pub_sub_messages;
 
 /// Request sent by a participant to register with the coordinator.
 message Register {
-  /// Port number to indicate the mutlicast receiver thread.
+  /// Port number to indicate the mutlicast receiever thread.
   uint32 port_number = 1;
 }
 
