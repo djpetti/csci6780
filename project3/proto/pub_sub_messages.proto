@@ -8,6 +8,7 @@ message Register {
   uint32 port_number = 1;
 }
 
+/// Request sent by the coordinator upon successful registration.
 message RegistrationResponse {
   /// Denotes the ID of this participant.
   uint32 participant_id = 1;

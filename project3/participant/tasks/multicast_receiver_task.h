@@ -13,6 +13,7 @@
 #include <cstdint>
 #include <memory>
 #include <string>
+#include <filesystem>
 
 #include "../participant_util.h"
 #include "console_task.h"
@@ -31,7 +32,7 @@ class MulticastReceiver : public thread_pool::Task {
    * @param port the port this receiver will listen on
    */
   MulticastReceiver(const std::shared_ptr<ConsoleTask>& console_task,
-                    std::string log_location, int port);
+                    std::filesystem::path log_location, int port);
 
   Status SetUp() override;
   Status RunAtomic() override;
@@ -40,7 +41,8 @@ class MulticastReceiver : public thread_pool::Task {
  private:
   int messenger_fd_;
   int port_;
-  std::string log_location_;
+  std::filesystem::path log_location_;
+  std::ofstream log_file_;
   std::shared_ptr<ConsoleTask> console_task_;
 
   /// buffer size for client.
