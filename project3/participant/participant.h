@@ -40,7 +40,7 @@ class Participant {
    * @param msg the message to send to the coordinator
    * @return successfully sent
    */
-  bool OneOff(const google::protobuf::Message& msg);
+  bool ConnectAndSend(const google::protobuf::Message& msg);
 
   /// Pool and tasks
   thread_pool::ThreadPool pool_;

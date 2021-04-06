@@ -28,7 +28,7 @@ void Participant::Start() {
       running_ = false;
     }
     // Else, send the request
-    if (!OneOff(*input_parser_.CreateReq())) {
+    if (!ConnectAndSend(*input_parser_.CreateReq())) {
       std::cout << "Couldn't instantiate a connection with coordinator."
                 << std::endl;
       running_ = false;
@@ -75,7 +75,7 @@ void Participant::Start() {
   }
 }
 
-bool Participant::OneOff(const google::protobuf::Message& msg) {
+bool Participant::ConnectAndSend(const google::protobuf::Message& msg) {
   int participant_fd = participant_util::SetUpSocket(
       participant_util::MakeAddress(coordinator_port_), coordinator_ip_);
   std::vector<uint8_t> outgoing_buf;
