@@ -24,7 +24,10 @@ void Participant::Start() {
     }
     // If user requested to quit, exit participant peacefully
     if (input_parser_.req_ == input_parser::InputParser::QUIT) {
-      std::cout << "Bye!" << std::endl;
+      // The console task waits on the queue, so cancel it before writing
+      // something to the queue to make sure it exits.
+      pool_.CancelTask(console_task_);
+      console_task_->SendConsole("Bye!");
       running_ = false;
       continue;
     }
