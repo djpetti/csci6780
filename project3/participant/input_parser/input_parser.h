@@ -21,7 +21,7 @@ namespace participant::input_parser {
  */
 class InputParser {
  public:
-  enum MsgType { REG, DEREG, DISCON, RECON, MSEND };
+  enum MsgType { REG, DEREG, DISCON, RECON, MSEND, QUIT };
 
   /**
    * @brief Initializes relevant info about this input command
@@ -45,12 +45,19 @@ class InputParser {
    */
   google::protobuf::Message* CreateReq();
 
+  /// request type
+  MsgType req_{REG};
+
+  /// request port, if provided
+  int port_;
+
+  /// participant identifier
+  int participant_id_;
+
  private:
-  const std::map<std::string, MsgType> commands_ = {{"register", REG},
-                                                    {"deregister", DEREG},
-                                                    {"disconnect", DISCON},
-                                                    {"reconnect", RECON},
-                                                    {"msend", MSEND}};
+  const std::map<std::string, MsgType> commands_ = {
+      {"register", REG},    {"deregister", DEREG}, {"disconnect", DISCON},
+      {"reconnect", RECON}, {"msend", MSEND},      {"quit", QUIT}};
 
   /// messages having been parsed from input
   pub_sub_messages::Register reg_msg_{};
@@ -60,8 +67,7 @@ class InputParser {
   pub_sub_messages::SendMulticast msend_msg_{};
 
   /// information to be extracted from input
-  bool is_valid_;
-  MsgType req_;
+  bool is_valid_{true};
   std::string message_;
 };
 }  // namespace participant::input_parser
