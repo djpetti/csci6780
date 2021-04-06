@@ -66,12 +66,19 @@ TEST(MessageLog, TestMissedMessages) {
   log.Insert(old_message);
 
   // Act.
-  auto missed_messages = log.GetMissedMessages(kTestMessage.timestamp);
+  auto missed_messages =
+      log.GetMissedMessages(old_message.timestamp, kTestMessage.timestamp);
+  // However, it should give us nothing if the disconnect time is too recent.
+  auto missed_messages_fast_reconnect =
+      log.GetMissedMessages(kTestMessage.timestamp, kTestMessage.timestamp);
 
   // Assert.
   // It should have gotten the new message but not the old one.
   EXPECT_EQ(1U, missed_messages.size());
   EXPECT_NE(missed_messages.find(kTestMessage), missed_messages.end());
+
+  // For the instance reconnect case, it should have given us nothing.
+  EXPECT_TRUE(missed_messages_fast_reconnect.empty());
 }
 
 }  // namespace coordinator::tests

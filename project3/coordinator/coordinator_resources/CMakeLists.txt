@@ -1,3 +1,5 @@
+add_subdirectory(tests)
+
 add_library(coordinator_resources participant_manager.cpp
         message_log.cpp registrar.cpp
         messenger.cpp messenger_manager.cpp)

@@ -1,4 +1,5 @@
 add_subdirectory(coordinator_resources)
+
 add_library(coordinator coordinator.cpp coordinator.cpp
         coordinator_task.cpp coordinator_main.cpp
         coordinator_driver.cpp)
