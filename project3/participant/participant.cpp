@@ -124,6 +124,9 @@ void Participant::LoadConfig(const std::filesystem::path& config_loc) {
   std::ifstream conf_file(config_loc);
   if (conf_file.is_open()) {
     std::string line;
+    // One extra getline here so that it works with config files that specify
+    // a participant ID. This ID will then be ignored.
+    std::getline(conf_file, line);
     std::getline(conf_file, line);
     log_location_ = line;
     std::getline(conf_file, line);

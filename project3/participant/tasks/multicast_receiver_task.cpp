@@ -15,10 +15,12 @@ constexpr uint32_t kSocketTimeout = 1;
 
 }  // namespace
 
-MulticastReceiver::MulticastReceiver(
-    const std::shared_ptr<ConsoleTask>& console_task,
-    std::filesystem::path log_location, int port)
-    : port_(port), log_location_(log_location), console_task_(console_task) {}
+MulticastReceiver::MulticastReceiver(std::shared_ptr<ConsoleTask> console_task,
+                                     std::filesystem::path log_location,
+                                     int port)
+    : port_(port),
+      log_location_(std::move(log_location)),
+      console_task_(std::move(console_task)) {}
 
 thread_pool::Task::Status MulticastReceiver::SetUp() {
   struct sockaddr_in address = participant_util::MakeAddress(port_);
