@@ -5,7 +5,7 @@
 #include <loguru.hpp>
 
 namespace participant {
-Participant::Participant(const std::string& config_loc)
+Participant::Participant(const std::filesystem::path& config_loc)
     : console_task_(
           std::make_shared<participant_tasks::ConsoleTask>("participant=> ")) {
   LoadConfig(config_loc);
@@ -89,7 +89,7 @@ bool Participant::ConnectAndSend(const google::protobuf::Message& msg) {
   return true;
 }
 
-void Participant::LoadConfig(const std::string& config_loc) {
+void Participant::LoadConfig(const std::filesystem::path& config_loc) {
   std::ifstream conf_file(config_loc);
   if (conf_file.is_open()) {
     std::string line;

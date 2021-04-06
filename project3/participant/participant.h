@@ -5,6 +5,7 @@
 #define PROJECT3_PARTICIPANT_H
 
 #include <cstdint>
+#include <filesystem>
 
 #include "../../common/thread_pool/task.h"
 #include "../../common/thread_pool/thread_pool.h"
@@ -23,7 +24,7 @@ class Participant {
   /**
    * @param config_loc the location of the config file
    */
-  explicit Participant(const std::string& config_loc);
+  explicit Participant(const std::filesystem::path& config_loc);
 
   /**
    * Start the participant
@@ -34,7 +35,7 @@ class Participant {
   /**
    * @param config_loc the config file location
    */
-  void LoadConfig(const std::string& config_loc);
+  void LoadConfig(const std::filesystem::path& config_loc);
 
   /**
    * @param msg the message to send to the coordinator
