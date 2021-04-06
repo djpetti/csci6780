@@ -15,17 +15,15 @@ constexpr uint32_t kSocketTimeout = 1;
 
 }  // namespace
 
-MulticastReceiver::MulticastReceiver(std::shared_ptr<ConsoleTask> console_task,
-                                     std::string log_location, int port)
-    : port_(port),
-      log_location_(std::move(log_location)),
-      console_task_(std::move(console_task)) {}
+MulticastReceiver::MulticastReceiver(
+    const std::shared_ptr<ConsoleTask>& console_task,
+    std::filesystem::path log_location, int port)
+    : port_(port), log_location_(log_location), console_task_(console_task) {}
 
 thread_pool::Task::Status MulticastReceiver::SetUp() {
   struct sockaddr_in address = participant_util::MakeAddress(port_);
   server_fd_ = participant_util::SetUpListenerSocket(address);
-  loguru::add_file(log_location_.c_str(), loguru::FileMode::Truncate,
-                   loguru::Verbosity_0);
+  log_file_.open(log_location_, std::ios_base::app);
 
   // Wait for and accept the connection from the coordinator.
   messenger_fd_ = accept(server_fd_, nullptr, nullptr);
@@ -53,7 +51,7 @@ thread_pool::Task::Status MulticastReceiver::RunAtomic() {
     parser_.GetMessage(&msg);
     std::string to_out =
         "[" + std::to_string(msg.origin_id()) + "] " + msg.message();
-    LOG_S(0) << to_out;
+    log_file_ << to_out << std::endl;
     console_task_->SendConsole(to_out);
     incoming_msg_buf_.clear();
     // Else, attempt to parse anything new
