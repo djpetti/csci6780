@@ -51,6 +51,9 @@ class InputParser {
   /// request port, if provided
   int port_;
 
+  /// participant identifier
+  int participant_id_;
+
  private:
   const std::map<std::string, MsgType> commands_ = {
       {"register", REG},    {"deregister", DEREG}, {"disconnect", DISCON},

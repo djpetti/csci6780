@@ -41,7 +41,12 @@ class Participant {
    * @param msg the message to send to the coordinator
    * @return successfully sent
    */
-  bool ConnectAndSend(const google::protobuf::Message& msg);
+  int ConnectAndSend(const google::protobuf::Message& msg);
+
+  /**
+   *
+   */
+   void WaitForMessage(int fd_);
 
   /// Pool and tasks
   thread_pool::ThreadPool pool_;
@@ -55,6 +60,9 @@ class Participant {
 
   /// The command parser
   input_parser::InputParser input_parser_;
+
+  /// Registration response parser
+  wire_protocol::MessageParser<pub_sub_messages::RegistrationResponse> parser_;
 
   /// Whether or not to continue running
   bool running_{true};

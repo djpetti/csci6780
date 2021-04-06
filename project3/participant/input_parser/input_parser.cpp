@@ -45,13 +45,17 @@ google::protobuf::Message* InputParser::CreateReq() {
       reg_msg_.set_port_number(port_);
       return &reg_msg_;
     case DEREG:
+      dereg_msg_.set_participant_id(participant_id_);
       return &dereg_msg_;
     case DISCON:
+      discon_msg_.set_participant_id(participant_id_);
       return &discon_msg_;
     case RECON:
-      reg_msg_.set_port_number(port_);
+      recon_msg_.set_participant_id(participant_id_);
+      recon_msg_.set_port_number(port_);
       return &recon_msg_;
     case MSEND:
+      msend_msg_.set_participant_id(participant_id_);
       msend_msg_.set_message(message_);
       return &msend_msg_;
     case QUIT:
