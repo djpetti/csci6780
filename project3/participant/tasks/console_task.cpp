@@ -13,24 +13,22 @@ thread_pool::Task::Status ConsoleTask::SetUp() {
 }
 
 thread_pool::Task::Status ConsoleTask::RunAtomic() {
-  if (console_msg_buf_.empty()) {
+  if (console_msg_buf_.Empty()) {
     return thread_pool::Task::Status::RUNNING;
   }
   // Clear prompt line in expectation of incoming console statement
   ClearLine();
-  for (const std::string& msg : console_msg_buf_) {
+  while (!console_msg_buf_.Empty()) {
     // Make sure each oncoming console statement is printed
-    std::cout << msg << std::endl;
+    std::cout << console_msg_buf_.Pop() << std::endl;
   }
-  // Clear console output buffer
-  console_msg_buf_.erase(console_msg_buf_.begin(), console_msg_buf_.end());
   // Display prompt for end-user
   std::cout << prompt_ << std::flush;
   return thread_pool::Task::Status::RUNNING;
 }
 
 void ConsoleTask::SendConsole(const std::string& message) {
-  console_msg_buf_.push_back(message);
+  console_msg_buf_.Push(message);
 }
 
 void ConsoleTask::ClearLine() { std::cout << "\033[A\33[2K\r"; }

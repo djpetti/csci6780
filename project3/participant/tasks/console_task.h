@@ -10,6 +10,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include "../../../common/queue/queue.h"
 
 #include "thread_pool/task.h"
 
@@ -40,7 +41,7 @@ class ConsoleTask : public thread_pool::Task {
    */
   void ClearLine();
 
-  std::vector<std::string> console_msg_buf_{};
+  queue::Queue<std::string> console_msg_buf_{};
   std::string prompt_;
 };
 }  // namespace participant_tasks
