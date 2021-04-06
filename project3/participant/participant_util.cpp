@@ -7,8 +7,6 @@
 namespace participant_util {
 namespace {
 
-/// Timeout in seconds for socket operations.
-constexpr uint32_t kSocketTimeout = 1;
 constexpr uint8_t kMaxListenerSize = 5;
 
 }  // namespace
