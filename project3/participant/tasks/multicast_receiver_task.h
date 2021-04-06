@@ -39,15 +39,10 @@ class MulticastReceiver : public thread_pool::Task {
   void CleanUp() override;
 
  private:
-
-  /**
-   * @param message the message to append to the log file
-   */
-  void WriteLineToLog(const std::string& message);
-
   int messenger_fd_;
   int port_;
   std::filesystem::path log_location_;
+  std::ofstream log_file_;
   std::shared_ptr<ConsoleTask> console_task_;
 
   /// buffer size for client.
