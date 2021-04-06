@@ -9,6 +9,8 @@
 #include <unordered_map>
 #include <unordered_set>
 
+#include "message_log.h"
+
 namespace coordinator {
 
 /**
@@ -34,6 +36,8 @@ class ParticipantManager {
 
     /// True if the participant is currently connected.
     bool connected;
+    /// Time at which the participant last disconnected.
+    MessageLog::Timestamp disconnect_time;
   };
 
   /**

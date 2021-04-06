@@ -69,6 +69,7 @@ void Participant::Start() {
           break;
         }
         pool_.CancelTask(multicast_receiver_);
+        pool_.WaitForCompletion(multicast_receiver_);
         connected_ = false;
         std::string statement =
             input_parser_.req_ == input_parser::InputParser::DEREG

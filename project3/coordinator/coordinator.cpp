@@ -123,6 +123,7 @@ Coordinator::ClientState Coordinator::HandleRequest(
   participant.hostname = hostname_;
   participant.port = request.port_number();
   participant.connected = true;
+  participant.disconnect_time = std::chrono::steady_clock::now();
   LOG_F(INFO, "Handling a register command from Participant %i.",
         participant.id);
 
@@ -157,7 +158,7 @@ Coordinator::ClientState Coordinator::HandleRequest(
         request.participant_id());
   auto participant = DetermineParticipant(request.participant_id());
   auto messenger = DetermineMessenger(request.participant_id());
-  registrar_->DisconnectParticipant(participant);
+  registrar_->DisconnectParticipant(&participant);
   messenger_mgr_->DeleteMessenger(messenger);
   close(client_fd_);
   return ClientState::ACTIVE;

@@ -14,7 +14,7 @@ Messenger::Messenger(std::shared_ptr<MessageLog> msg_log,
                      ParticipantManager::Participant participant)
     : msg_log_(std::move(msg_log)), participant_(std::move(participant)) {}
 
-const ParticipantManager::Participant& Messenger::GetParticipant() const {
+const ParticipantManager::Participant &Messenger::GetParticipant() const {
   return participant_;
 }
 
@@ -48,10 +48,10 @@ void Messenger::LogMessage(MessageLog::Message *msg) {
   msg_log_->Insert(*msg);
 }
 bool Messenger::SendMissedMessages(
-    const MessageLog::Timestamp& reconnection_time) {
+    const MessageLog::Timestamp &reconnection_time) {
   int msg_count = 0;
-  for (MessageLog::Message msg :
-       msg_log_->GetMissedMessages(reconnection_time)) {
+  for (const MessageLog::Message& msg : msg_log_->GetMissedMessages(
+           participant_.disconnect_time, reconnection_time)) {
     if (!SendMessage(msg)) {
       return false;
     }

@@ -97,7 +97,7 @@ bool ConnectToParticipant(ParticipantManager::Participant *participant) {
   int sock = SetUpSocketRetry(MakeAddress(participant->port),
                               participant->hostname, kMaxRetryTimes);
   if (sock > 0) {
-    LOG_F(INFO, "Participant #%i has been registered.", participant->id);
+    LOG_S(INFO) << "Connected to participant " << participant->id << ".";
     participant->sock_fd = sock;
     return true;
   } else {
@@ -121,10 +121,9 @@ void Registrar::ReconnectParticipant(
 }
 
 void Registrar::DisconnectParticipant(
-    const ParticipantManager::Participant &participant) {
-  LOG_S(INFO) << "Participant " << participant.id << " disconnected.";
-
-  participants_->DisconnectParticipant(participant);
+    ParticipantManager::Participant *participant) {
+  LOG_S(INFO) << "Participant " << participant->id << " disconnected.";
+  participants_->DisconnectParticipant(*participant);
 }
 
 void Registrar::RegisterParticipant(

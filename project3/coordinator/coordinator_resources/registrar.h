@@ -44,8 +44,7 @@ class Registrar {
    * @brief Removes a participant from the connected participants list.
    * @param participant The participant to remove.
    */
-  void DisconnectParticipant(
-      const ParticipantManager::Participant &participant);
+  void DisconnectParticipant(ParticipantManager::Participant *participant);
 
   /**
    * @brief Returns the set of connected participants.

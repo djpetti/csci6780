@@ -3,6 +3,8 @@
  */
 #include "participant_manager.h"
 
+#include <chrono>
+
 #include <loguru.hpp>
 namespace coordinator {
 
@@ -44,6 +46,9 @@ bool ParticipantManager::DisconnectParticipant(
 
   // Mark participant as disconnected.
   id_to_participant_[participant.id].connected = false;
+  // Modify the disconnect time.
+  id_to_participant_[participant.id].disconnect_time =
+      std::chrono::steady_clock::now();
   // Remove from connected set.
   connected_participants_.erase(participant_iter);
 

@@ -60,8 +60,8 @@ thread_pool::Task::Status MulticastReceiver::RunAtomic() {
   } else {
     incoming_msg_buf_.resize(kBufferSize);
 
-    const auto bytes_read = participant_util::ReceiveForever(
-        messenger_fd_, incoming_msg_buf_.data(), kBufferSize, 0);
+    const auto bytes_read =
+        recv(messenger_fd_, incoming_msg_buf_.data(), kBufferSize, 0);
     if (bytes_read < 0) {
       if (errno == EWOULDBLOCK || errno == EAGAIN) {
         // This is merely a timeout, and we should just spin again.

@@ -4,6 +4,8 @@
 
 #include "message_log.h"
 
+#include <algorithm>
+
 namespace coordinator {
 
 bool MessageLog::Message::operator==(const Message &message) const {
@@ -28,12 +30,14 @@ void MessageLog::Clear() {
 }
 
 std::unordered_set<MessageLog::Message, MessageLog::Hash>
-MessageLog::GetMissedMessages(const Timestamp &reconnection_time) {
+MessageLog::GetMissedMessages(const Timestamp &disconnection_time,
+                              const Timestamp &reconnection_time) {
   std::lock_guard<std::mutex> guard(mutex_);
 
   std::unordered_set<MessageLog::Message, MessageLog::Hash> missed_messages;
   for (const MessageLog::Message &msg : coordinator_messages_) {
-    if ((reconnection_time - msg.timestamp) <= td_) {
+    if (msg.timestamp > disconnection_time &&
+        (reconnection_time - msg.timestamp) <= td_) {
       missed_messages.insert(msg);
     }
   }
