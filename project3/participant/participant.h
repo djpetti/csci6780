@@ -54,7 +54,7 @@ class Participant {
   std::shared_ptr<participant_tasks::MulticastReceiver> multicast_receiver_;
 
   /// Config options
-  std::string log_location_;
+  std::filesystem::path log_location_;
   std::string coordinator_ip_;
   int coordinator_port_;
 

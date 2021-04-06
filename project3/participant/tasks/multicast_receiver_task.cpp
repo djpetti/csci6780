@@ -4,15 +4,13 @@
 
 namespace participant_tasks {
 MulticastReceiver::MulticastReceiver(
-    const std::shared_ptr<ConsoleTask>& console_task, std::string log_location,
-    int port)
+    const std::shared_ptr<ConsoleTask>& console_task,
+    std::filesystem::path log_location, int port)
     : port_(port), log_location_(log_location), console_task_(console_task) {}
 
 thread_pool::Task::Status MulticastReceiver::SetUp() {
   struct sockaddr_in address = participant_util::MakeAddress(port_);
   messenger_fd_ = participant_util::SetUpListenerSocket(address);
-  loguru::add_file(log_location_.c_str(), loguru::FileMode::Truncate,
-                   loguru::Verbosity_0);
   return thread_pool::Task::Status::RUNNING;
 }
 
@@ -23,7 +21,7 @@ thread_pool::Task::Status MulticastReceiver::RunAtomic() {
     parser_.GetMessage(&msg);
     std::string to_out =
         "[" + std::to_string(msg.origin_id()) + "] " + msg.message();
-    LOG_S(0) << to_out;
+    WriteLineToLog(to_out);
     console_task_->SendConsole(to_out);
     incoming_msg_buf_.clear();
   // Else, attempt to parse anything new
@@ -45,5 +43,11 @@ thread_pool::Task::Status MulticastReceiver::RunAtomic() {
 }
 
 void MulticastReceiver::CleanUp() { close(messenger_fd_); }
+
+void MulticastReceiver::WriteLineToLog(const std::string& message) {
+  std::ofstream log_file;
+  log_file.open(log_location_, std::ios_base::app);
+  log_file << message << std::endl;
+}
 
 }  // namespace participant_tasks
