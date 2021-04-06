@@ -25,17 +25,18 @@ thread_pool::Task::Status MulticastReceiver::RunAtomic() {
         "[" + std::to_string(msg.origin_id()) + "] " + msg.message();
     LOG_S(0) << to_out;
     console_task_->SendConsole(to_out);
-    parser_.ResetParser();
     incoming_msg_buf_.clear();
-  // Else, attempt to parse_ anything new
+  // Else, attempt to parse anything new
   } else {
     incoming_msg_buf_.resize(kBufferSize);
     const auto bytes_read = participant_util::ReceiveForever(
         messenger_fd_, incoming_msg_buf_.data(), kBufferSize, 0);
     if (bytes_read < 0) {
+      LOG_S(0) << "Reading from socket failed.";
       return thread_pool::Task::Status::FAILED;
     } else if (bytes_read == 0) {
-      return thread_pool::Task::Status::RUNNING;
+      LOG_S(0) << "Socket closed.";
+      return thread_pool::Task::Status::DONE;
     }
     incoming_msg_buf_.resize(bytes_read);
     parser_.AddNewData(incoming_msg_buf_);

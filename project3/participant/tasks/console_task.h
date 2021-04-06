@@ -41,7 +41,7 @@ class ConsoleTask : public thread_pool::Task {
    */
   void ClearLine();
 
-  queue::Queue<std::string> console_msg_buf_{};
+  queue::Queue<std::string> console_message_queue_{};
   std::string prompt_;
 };
 }  // namespace participant_tasks

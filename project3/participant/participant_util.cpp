@@ -24,7 +24,7 @@ int SetUpListenerSocket(const struct sockaddr_in &address) {
   // Open a TCP socket.
   const int server_fd = socket(AF_INET, SOCK_STREAM, 0);
   if (server_fd == 0) {
-    LOG_S(FATAL) << "Failed to create server socket";
+    LOG_S(ERROR) << "Failed to create server socket";
     return -1;
   }
 
@@ -32,17 +32,17 @@ int SetUpListenerSocket(const struct sockaddr_in &address) {
   const int option = 1;
   if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &option,
                  sizeof(option))) {
-    LOG_S(FATAL) << "Failed to set socket options";
+    LOG_S(ERROR) << "Failed to set socket options";
     // This is not a fatal error.
   }
 
   // Bind to the port.
   if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0) {
-    LOG_S(FATAL) << "bind() failed on server socket";
+    LOG_S(ERROR) << "bind() failed on server socket";
     return -1;
   }
   if (listen(server_fd, kMaxListenerSize) < 0) {
-    LOG_S(FATAL) << "listen() failed on server socket";
+    LOG_S(ERROR) << "listen() failed on server socket";
     return -1;
   }
 
@@ -53,18 +53,18 @@ int SetUpSocket(const sockaddr_in &address, const std::string &hostname) {
   int sock = 0;
 
   if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-    LOG_S(FATAL) << "Socket creation error";
+    LOG_S(ERROR) << "Socket creation error";
     return -1;
   }
 
   if (inet_pton(AF_INET, hostname.c_str(),
                 (struct sockaddr *)&address.sin_addr) <= 0) {
-    LOG_S(FATAL) << "Invalid Address or Address not supported";
+    LOG_S(ERROR) << "Invalid Address or Address not supported";
     return -1;
   }
 
   if (connect(sock, (struct sockaddr *)&address, sizeof(address)) < 0) {
-    LOG_S(FATAL) << "Connection Failed";
+    LOG_S(ERROR) << "Connection Failed";
     return -1;
   }
 
