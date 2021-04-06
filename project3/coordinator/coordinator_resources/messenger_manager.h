@@ -11,7 +11,7 @@ class MessengerManager {
   /**
    * @param participants The connected participants.
    */
-  MessengerManager(std::shared_ptr<ConnectedParticipants> participants);
+  explicit MessengerManager(std::shared_ptr<ParticipantManager> participants);
   /**
    * @brief Broadcasts a given message to all active participants.
    * @note Messages sent by the messenger should be pushed in the message queue before
@@ -49,7 +49,7 @@ class MessengerManager {
   std::mutex mutex_;
 
   /// The connected participants.
-  std::shared_ptr<ConnectedParticipants> participants_;
+  std::shared_ptr<ParticipantManager> participants_;
 
 };  // class
 }  // namespace coordinator

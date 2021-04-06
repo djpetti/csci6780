@@ -4,9 +4,9 @@
 #ifndef CSCI6780_COORDINATOR_DRIVER_H
 #define CSCI6780_COORDINATOR_DRIVER_H
 
-#include "coordinator_resources/connected_participants.h"
 #include "coordinator_resources/message_log.h"
 #include "coordinator_resources/messenger_manager.h"
+#include "coordinator_resources/participant_manager.h"
 #include "coordinator_resources/registrar.h"
 #include "coordinator_task.h"
 #include "queue/queue.h"
@@ -25,6 +25,8 @@ using Duration = std::chrono::steady_clock::duration;
  */
 class CoordinatorDriver {
  public:
+  CoordinatorDriver();
+
   /**
    * @brief Listens for participant connections.
    * @param port The port to listen on.
@@ -33,7 +35,7 @@ class CoordinatorDriver {
   [[noreturn]] void Start(uint16_t port, Duration threshold);
  private:
   /// The data structures shared by coordinators.
-  std::shared_ptr<ConnectedParticipants> participants_;
+  std::shared_ptr<ParticipantManager> participants_;
   std::shared_ptr<MessageLog> message_log_;
   std::shared_ptr<MessengerManager> messenger_manager_;
   std::shared_ptr<Registrar> registrar_;

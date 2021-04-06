@@ -11,7 +11,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 namespace coordinator {
-using coordinator::ConnectedParticipants;
+using coordinator::ParticipantManager;
 using pub_sub_messages::CoordinatorMessage;
 using Timestamp = std::chrono::steady_clock::time_point;
 
@@ -31,11 +31,9 @@ Coordinator::Coordinator(
       registrar_(std::move(registrar)) {}
 
 bool Coordinator::Coordinate() {
-  ClientState client_state = ClientState::ACTIVE;
-
   // Get the message from the socket.
   CoordinatorMessage message;
-  client_state = ReadNextMessage(&message);
+  ClientState client_state = ReadNextMessage(&message);
 
   if (client_state == ClientState::ACTIVE) {
     // Handle the message.
@@ -45,18 +43,6 @@ bool Coordinator::Coordinate() {
   return client_state != ClientState::ERROR;
 }
 
-ConnectedParticipants::Participant Coordinator::DetermineParticipant(
-    uint32_t id) {
-  // determine the participant.
-  for (auto participant :
-       registrar_->GetConnectedParticipants()->GetParticipants()) {
-    if (participant.id == id) {
-      return participant;
-    }
-  }
-  LOG_F(ERROR, "Error determining participant for client.");
-  return ConnectedParticipants::Participant();
-}
 std::shared_ptr<Messenger> Coordinator::DetermineMessenger(uint32_t id) {
   // determine this participant's messenger.
   for (auto messenger : messenger_mgr_->GetMessengers()) {
@@ -66,6 +52,13 @@ std::shared_ptr<Messenger> Coordinator::DetermineMessenger(uint32_t id) {
   }
   LOG_F(ERROR, "Error determining messenger for client.");
   return std::shared_ptr<Messenger>();
+}
+
+ParticipantManager::Participant Coordinator::DetermineParticipant(uint32_t id) {
+  ParticipantManager::Participant participant{};
+
+  registrar_->GetParticipants()->GetParticipant(id, &participant);
+  return participant;
 }
 
 Coordinator::ClientState Coordinator::ReadNextMessage(
@@ -125,28 +118,29 @@ Coordinator::ClientState Coordinator::DispatchMessage(
 Coordinator::ClientState Coordinator::HandleRequest(
     const pub_sub_messages::Register &request) {
   // create this participant and register with the registrar.
-  ConnectedParticipants::Participant participant;
+  ParticipantManager::Participant participant;
   participant.id = GenerateID();
   participant.hostname = hostname_;
   participant.port = request.port_number();
+  participant.connected = true;
   LOG_F(INFO, "Handling a register command from Participant %i.",
         participant.id);
 
-  registrar_->RegisterParticipant(participant);
+  // Respond immediately.
+  pub_sub_messages::RegistrationResponse response;
+  SendRegistrationResponse(response, participant);
+  close(client_fd_);
+
+  registrar_->RegisterParticipant(&participant);
   // initialize this participant's Messenger and register it with the messenger
   // manager.
   auto messenger = std::make_shared<Messenger>(msg_log_, participant);
   messenger_mgr_->AddMessenger(messenger);
 
-  pub_sub_messages::RegistrationResponse response;
-  SendRegistrationResponse(response, participant);
-  close(client_fd_);
   return ClientState::ACTIVE;
 }
 Coordinator::ClientState Coordinator::HandleRequest(
     const pub_sub_messages::Deregister &request) {
-  DetermineParticipant(request.participant_id());
-  DetermineMessenger(request.participant_id());
   LOG_F(INFO, "Handling a deregister command from Participant %i.",
         request.participant_id());
   auto participant = DetermineParticipant(request.participant_id());
@@ -159,25 +153,28 @@ Coordinator::ClientState Coordinator::HandleRequest(
 
 Coordinator::ClientState Coordinator::HandleRequest(
     const pub_sub_messages::Disconnect &request) {
-  DetermineParticipant(request.participant_id());
   LOG_F(INFO, "Handling a disconnect command from Participant %i.",
         request.participant_id());
   auto participant = DetermineParticipant(request.participant_id());
+  auto messenger = DetermineMessenger(request.participant_id());
   registrar_->DisconnectParticipant(participant);
+  messenger_mgr_->DeleteMessenger(messenger);
   close(client_fd_);
   return ClientState::ACTIVE;
 }
 
 Coordinator::ClientState Coordinator::HandleRequest(
     const pub_sub_messages::Reconnect &request) {
-  DetermineParticipant(request.participant_id());
-  DetermineMessenger(request.participant_id());
   LOG_F(INFO, "Handling a reconnect command from Participant %i.",
         request.participant_id());
   auto participant = DetermineParticipant(request.participant_id());
-  auto messenger = DetermineMessenger(request.participant_id());
+
   // reconnect this participant via registrar.
-  registrar_->ConnectParticipant(participant);
+  registrar_->ReconnectParticipant(&participant);
+  // Create a new messenger for it.
+  auto messenger = std::make_shared<Messenger>(msg_log_, participant);
+  messenger_mgr_->AddMessenger(messenger);
+
   // send any missed messages satisfying the time threshold.
   Timestamp timestamp = std::chrono::steady_clock::now();
   messenger->SendMissedMessages(timestamp);
@@ -213,7 +210,7 @@ uint32_t Coordinator::GenerateID() {
     id_++;
     // ensure this ID is not already taken.
     for (const auto& participant :
-         registrar_->GetConnectedParticipants()->GetParticipants()) {
+         registrar_->GetParticipants()->GetAllConnected()) {
       if (participant.id == id_) {
         duplicate = true;
         break;
@@ -227,7 +224,7 @@ uint32_t Coordinator::GenerateID() {
 }
 bool Coordinator::SendRegistrationResponse(
     pub_sub_messages::RegistrationResponse &response,
-    const ConnectedParticipants::Participant& participant) {
+    const ParticipantManager::Participant& participant) {
   response.set_participant_id(participant.id);
   // Serialize the message.
   if (!wire_protocol::Serialize(response, &outgoing_message_buffer_)) {

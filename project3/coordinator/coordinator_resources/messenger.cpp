@@ -11,10 +11,10 @@
 namespace coordinator {
 
 Messenger::Messenger(std::shared_ptr<MessageLog> msg_log,
-                     ConnectedParticipants::Participant& participant)
+                     ParticipantManager::Participant participant)
     : msg_log_(std::move(msg_log)), participant_(std::move(participant)) {}
 
-const ConnectedParticipants::Participant& Messenger::GetParticipant() const {
+const ParticipantManager::Participant& Messenger::GetParticipant() const {
   return participant_;
 }
 

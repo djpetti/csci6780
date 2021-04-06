@@ -30,7 +30,7 @@ class MulticastReceiver : public thread_pool::Task {
    * @param log_location the location of the log file to log messages
    * @param port the port this receiver will listen on
    */
-  MulticastReceiver(const std::shared_ptr<ConsoleTask>& console_task,
+  MulticastReceiver(std::shared_ptr<ConsoleTask>  console_task,
                     std::string log_location, int port);
 
   Status SetUp() override;
@@ -38,7 +38,11 @@ class MulticastReceiver : public thread_pool::Task {
   void CleanUp() override;
 
  private:
-  int messenger_fd_;
+  /// Socket FD to listen on.
+  int server_fd_ = -1;
+  /// Socket FD to receive messages on.
+  int messenger_fd_ = -1;
+
   int port_;
   std::string log_location_;
   std::shared_ptr<ConsoleTask> console_task_;

@@ -13,15 +13,16 @@ thread_pool::Task::Status ConsoleTask::SetUp() {
 }
 
 thread_pool::Task::Status ConsoleTask::RunAtomic() {
-  if (console_message_queue_.Empty()) {
-    return thread_pool::Task::Status::RUNNING;
-  }
+  const auto first_message = console_message_queue_.Pop();
   // Clear prompt line in expectation of incoming console statement
   ClearLine();
+
+  std::cout << first_message << std::endl;
+  // Print any additional lines consecutively.
   while (!console_message_queue_.Empty()) {
-    // Make sure each oncoming console statement is printed
     std::cout << console_message_queue_.Pop() << std::endl;
   }
+
   // Display prompt for end-user
   std::cout << prompt_ << std::flush;
   return thread_pool::Task::Status::RUNNING;

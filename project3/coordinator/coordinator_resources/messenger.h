@@ -10,8 +10,8 @@
 #include <sstream>
 #include <string>
 
-#include "connected_participants.h"
 #include "message_log.h"
+#include "participant_manager.h"
 #include "pub_sub_messages.pb.h"
 #include "queue/queue.h"
 #include "wire_protocol/wire_protocol.h"
@@ -31,7 +31,7 @@ class Messenger {
    *    communicates with.
    */
   Messenger(std::shared_ptr<MessageLog> msg_log,
-            ConnectedParticipants::Participant &participant);
+            ParticipantManager::Participant participant);
 
   /**
    * @brief Sends a given message to this messenger's participant.
@@ -59,7 +59,7 @@ class Messenger {
    * @brief Getter for this messenger's participant.
    * @return This messenger's participant.
    */
-  const ConnectedParticipants::Participant& GetParticipant() const;
+  const ParticipantManager::Participant& GetParticipant() const;
 
  private:
 
@@ -67,7 +67,7 @@ class Messenger {
   std::shared_ptr<MessageLog> msg_log_;
 
   /// The participant using this messenger.
-  ConnectedParticipants::Participant participant_;
+  ParticipantManager::Participant participant_;
 
   /// Mutex for implementing thread safety.
   std::mutex mutex_;

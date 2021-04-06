@@ -15,7 +15,7 @@
 namespace client {
 
 /**
- * @brief FTP Client. Contains logic for connecting to server, sending requests,
+ * @brief FTP Client. IsConnected logic for connecting to server, sending requests,
  * outputting responses, and shell continuity.
  *
  */

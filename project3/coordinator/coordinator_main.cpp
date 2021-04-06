@@ -1,6 +1,7 @@
 /**
  * @file Main executable for the Coordinator.
  */
+#include <chrono>
 #include <string>
 #include <fstream>
 #include <loguru.hpp>
@@ -21,7 +22,7 @@ void LoadConfig(const std::string& config_loc) {
     int time = std::stoi(line);
 
     auto driver = std::make_shared<coordinator::CoordinatorDriver>();
-    driver->Start(port, coordinator::Duration ((long) time));
+    driver->Start(port, std::chrono::seconds(time));
   } else {
     LOG_F(INFO,"Config file not found");
   }

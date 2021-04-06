@@ -26,7 +26,9 @@ void Participant::Start() {
     if (input_parser_.req_ == input_parser::InputParser::QUIT) {
       std::cout << "Bye!" << std::endl;
       running_ = false;
+      continue;
     }
+
     // Else, open connection and send the request
     int participant_fd = ConnectAndSend(*input_parser_.CreateReq());
     if (participant_fd == -1) {
@@ -35,6 +37,7 @@ void Participant::Start() {
       running_ = false;
       continue;
     }
+
     switch (input_parser_.req_) {
       case input_parser::InputParser::REG: {
         WaitForMessage(participant_fd);
