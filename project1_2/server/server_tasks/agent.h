@@ -19,7 +19,7 @@
 namespace server {
 
 /**
- * @brief Contains logic for handling individual connections to the server.
+ * @brief IsConnected logic for handling individual connections to the server.
  */
     class Agent {
     public:

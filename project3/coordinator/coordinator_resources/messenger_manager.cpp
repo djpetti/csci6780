@@ -7,7 +7,7 @@
 #include <utility>
 namespace coordinator {
 MessengerManager::MessengerManager(
-    std::shared_ptr<ConnectedParticipants> participants)
+    std::shared_ptr<ParticipantManager> participants)
     : participants_(std::move(participants)) {}
 
 void MessengerManager::AddMessenger(
@@ -23,15 +23,14 @@ void MessengerManager::DeleteMessenger(
 }
 
 std::unordered_set<std::shared_ptr<Messenger>> MessengerManager::GetMessengers() {
-  auto messengers = messengers_;
-  return messengers;
+  return messengers_;
 }
 
 bool MessengerManager::BroadcastMessage(MessageLog::Message *msg) {
   bool is_logged = false;
   for (auto& messenger : messengers_) {
     // only send message to connected participants.
-    if (participants_->Contains(messenger->GetParticipant())) {
+    if (participants_->IsConnected(messenger->GetParticipant())) {
       messenger->SendMessage(*msg);
       LOG_F(INFO, "Sending message from Participant #%i to Participant #%i.",
             msg->participant_id, messenger->GetParticipant().id);

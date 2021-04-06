@@ -24,9 +24,14 @@ void Participant::Start() {
     }
     // If user requested to quit, exit participant peacefully
     if (input_parser_.req_ == input_parser::InputParser::QUIT) {
-      std::cout << "Bye!" << std::endl;
+      // The console task waits on the queue, so cancel it before writing
+      // something to the queue to make sure it exits.
+      pool_.CancelTask(console_task_);
+      console_task_->SendConsole("Bye!");
       running_ = false;
+      continue;
     }
+
     // Else, open connection and send the request
     int participant_fd = ConnectAndSend(*input_parser_.CreateReq());
     if (participant_fd == -1) {
@@ -35,6 +40,7 @@ void Participant::Start() {
       running_ = false;
       continue;
     }
+
     switch (input_parser_.req_) {
       case input_parser::InputParser::REG: {
         WaitForMessage(participant_fd);
@@ -66,6 +72,7 @@ void Participant::Start() {
           break;
         }
         pool_.CancelTask(multicast_receiver_);
+        pool_.WaitForCompletion(multicast_receiver_);
         connected_ = false;
         std::string statement =
             input_parser_.req_ == input_parser::InputParser::DEREG
@@ -117,6 +124,9 @@ void Participant::LoadConfig(const std::filesystem::path& config_loc) {
   std::ifstream conf_file(config_loc);
   if (conf_file.is_open()) {
     std::string line;
+    // One extra getline here so that it works with config files that specify
+    // a participant ID. This ID will then be ignored.
+    std::getline(conf_file, line);
     std::getline(conf_file, line);
     log_location_ = line;
     std::getline(conf_file, line);

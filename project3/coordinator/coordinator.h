@@ -89,13 +89,13 @@ class Coordinator {
    * and Messenger objects.
    * @note Used for non-registration commands.
    */
-  ConnectedParticipants::Participant DetermineParticipant(uint32_t id);
+  ParticipantManager::Participant DetermineParticipant(uint32_t id);
   std::shared_ptr<Messenger> DetermineMessenger(uint32_t id);
 
   uint32_t GenerateID();
   bool SendRegistrationResponse(
       pub_sub_messages::RegistrationResponse &response,
-      const ConnectedParticipants::Participant& participant);
+      const ParticipantManager::Participant& participant);
 };
 }  // namespace coordinator
 #endif  // CSCI6780_COORDINATOR_H

@@ -4,11 +4,6 @@ namespace participant::input_parser {
 
 InputParser::InputParser()
     : req_{},
-      reg_msg_{},
-      dereg_msg_{},
-      discon_msg_{},
-      recon_msg_{},
-      msend_msg_{},
       is_valid_{},
       message_{} {}
 
@@ -37,30 +32,32 @@ void InputParser::Parse(std::string& cmd) {
   }
 }
 
-bool InputParser::IsValid() { return is_valid_; }
+bool InputParser::IsValid() const { return is_valid_; }
 
-google::protobuf::Message* InputParser::CreateReq() {
+const pub_sub_messages::CoordinatorMessage* InputParser::CreateReq() {
+  coordinator_msg_.Clear();
+
   switch (req_) {
     case REG:
-      reg_msg_.set_port_number(port_);
-      return &reg_msg_;
+      coordinator_msg_.mutable_register_()->set_port_number(port_);
+      break;
     case DEREG:
-      dereg_msg_.set_participant_id(participant_id_);
-      return &dereg_msg_;
+      coordinator_msg_.mutable_deregister()->set_participant_id(participant_id_);
+      break;
     case DISCON:
-      discon_msg_.set_participant_id(participant_id_);
-      return &discon_msg_;
+      coordinator_msg_.mutable_disconnect()->set_participant_id(participant_id_);
+      break;
     case RECON:
-      recon_msg_.set_participant_id(participant_id_);
-      recon_msg_.set_port_number(port_);
-      return &recon_msg_;
+      coordinator_msg_.mutable_reconnect()->set_participant_id(participant_id_);
+      coordinator_msg_.mutable_reconnect()->set_port_number(port_);
+      break;
     case MSEND:
-      msend_msg_.set_participant_id(participant_id_);
-      msend_msg_.set_message(message_);
-      return &msend_msg_;
+      coordinator_msg_.mutable_send_multicast()->set_participant_id(participant_id_);
+      coordinator_msg_.mutable_send_multicast()->set_message(message_);
+      break;
     case QUIT:
       return nullptr;
   }
-  return nullptr;
+  return &coordinator_msg_;
 }
 }  // namespace participant::input_parser

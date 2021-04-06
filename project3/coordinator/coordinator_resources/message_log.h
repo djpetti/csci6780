@@ -65,12 +65,13 @@ class MessageLog {
   /**
    * @brief Retrieves missed messages satisfying the reconnection time
    * threshold.
+   * @param disconnection_time The time at which the participant disconnected.
    * @param reconnection_time The time at which the participant reconnected.
    * @return All messages that were sent within the threshold before
    *    reconnection time.
    */
-  std::unordered_set<Message, Hash> GetMissedMessages(
-      const Timestamp& reconnection_time);
+  std::unordered_set<MessageLog::Message, MessageLog::Hash> GetMissedMessages(
+      const Timestamp& disconnection_time, const Timestamp& reconnection_time);
 
  private:
   /// The message log.

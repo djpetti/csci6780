@@ -13,6 +13,9 @@
 namespace coordinator {
 using Duration = std::chrono::steady_clock::duration;
 
+CoordinatorDriver::CoordinatorDriver()
+    : message_queue_(std::make_shared<queue::Queue<MessageLog::Message>>()) {}
+
 struct sockaddr_in CoordinatorDriver::MakeAddress(int port) {
   struct sockaddr_in address {};
   address.sin_family = AF_INET;
@@ -57,18 +60,19 @@ int CoordinatorDriver::CreateSocket(int port) {
   return SetUpSocket(kAddress);
 }
 
-[[noreturn]] void CoordinatorDriver::Start(uint16_t port, std::chrono::steady_clock::duration threshold) {
+[[noreturn]] void CoordinatorDriver::Start(
+    uint16_t port, std::chrono::steady_clock::duration threshold) {
   LOG_F(INFO, "Initializing socket...");
   // create socket.
   int server_fd = CreateSocket(port);
   // initialize data structures for coordinator tasks.
-  participants_ = std::make_shared<coordinator::ConnectedParticipants>();
+  participants_ = std::make_shared<coordinator::ParticipantManager>();
   messenger_manager_ = std::make_shared<MessengerManager>(participants_);
   registrar_ = std::make_shared<Registrar>(participants_);
   message_log_ = std::make_shared<MessageLog>(threshold);
-  LOG_F(INFO,"Now listening for participants on port %i.", port);
+  LOG_F(INFO, "Now listening for participants on port %i.", port);
   while (true) {
-    struct sockaddr_in client_address{};
+    struct sockaddr_in client_address {};
     socklen_t size = sizeof(client_address);
     // Accept a new connection.
     int client_fd =
@@ -86,4 +90,5 @@ int CoordinatorDriver::CreateSocket(int port) {
     pool_.AddTask(coordinator_task);
   }
 }
+
 }  // namespace coordinator

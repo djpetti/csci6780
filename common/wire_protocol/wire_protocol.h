@@ -1,5 +1,5 @@
 /**
- * @file Contains utilities for dealing with data sent over the network.
+ * @file IsConnected utilities for dealing with data sent over the network.
  */
 
 #ifndef PROJECT1_WIRE_PROTOCOL_H
