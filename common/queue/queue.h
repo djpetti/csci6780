@@ -1,10 +1,13 @@
 #ifndef CSCI6780_QUEUE_H
 #define CSCI6780_QUEUE_H
 
+#include <chrono>
 #include <condition_variable>
 #include <cstdint>
 #include <mutex>
 #include <queue>
+
+#include <loguru.hpp>
 
 namespace queue {
 
@@ -50,24 +53,45 @@ class Queue {
    */
   T Pop() {
     T element;
-    {
-      std::unique_lock<std::mutex> lock(mutex_);
+    while (!PopTimed(std::chrono::hours(1), &element))
+      ;
 
-      // Check that the queue is not empty.
-      if (queue_.empty()) {
-        // Wait for the queue not to be empty.
-        queue_not_empty_.wait(lock, [this] { return !queue_.empty(); });
+    return element;
+  }
+
+  /**
+   * @brief Same as `Pop()`, but blocks for a maximum amount of time before
+   *    failing.
+   * @tparam Rep The underlying numeric type for the duration.
+   * @tparam Period The underlying period for the duration.
+   * @param timeout The timeout.
+   * @param element[out] The output element will be written here.
+   * @return True if it successfully popped from the queue, false if the
+   *    operation timed out.
+   */
+  template <class Rep, class Period>
+  bool PopTimed(const std::chrono::duration<Rep, Period>& timeout, T* element) {
+    std::unique_lock<std::mutex> lock(mutex_);
+
+    // Check that the queue is not empty.
+    if (queue_.empty()) {
+      // Wait for the queue not to be empty.
+      if (!queue_not_empty_.wait_for<Rep, Period>(
+          lock, timeout, [this] { return !queue_.empty(); })) {
+        // Timeout expired.
+        LOG_S(1) << "Queue pop timeout expired.";
+        return false;
       }
-
-      // Pop from the queue.
-      element = queue_.front();
-      queue_.pop();
     }
+
+    // Pop from the queue.
+    *element = queue_.front();
+    queue_.pop();
 
     // Notify that the queue is no longer full.
     queue_not_full_.notify_one();
 
-    return element;
+    return true;
   }
 
   /**

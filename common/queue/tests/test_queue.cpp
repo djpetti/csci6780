@@ -109,4 +109,25 @@ TEST(Queue, Empty) {
   EXPECT_FALSE(queue.Empty());
 }
 
+/**
+ * @test Tests that `PopTimed` works.
+ */
+TEST(Queue, PopTimeout) {
+  // Arrange.
+  Queue<int> queue;
+
+  const auto kTimeout = std::chrono::milliseconds(100);
+
+  // Act.
+  int got_element;
+  queue.Push(42);
+  EXPECT_TRUE(queue.PopTimed(kTimeout, &got_element));
+
+  // Next pop should time out.
+  EXPECT_FALSE(queue.PopTimed(kTimeout, &got_element));
+
+  // Assert.
+  EXPECT_EQ(42, got_element);
+}
+
 }  // namespace queue::tests
