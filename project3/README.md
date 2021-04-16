@@ -1,4 +1,4 @@
-# Building the Code
+m# Building the Code
 
 Project 3 code can be built on most Linux machines. See the repository README for general instructions on setting up
 the build environment.
