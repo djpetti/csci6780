@@ -2,7 +2,6 @@ syntax = "proto3";
 
 package pub_sub_messages;
 
-
 /// look up result to be rippled through the name servers
 message LookUpResult {
   /// the key of the value to retrieve
@@ -10,12 +9,12 @@ message LookUpResult {
   /// the value associated with the key
   string value = 2;
   /// the id's of each contacted server
-  string server_ids = 3;
+  repeated uint32 server_ids = 3;
   /// the id of the server storing the value
   uint32 id = 4;
 }
 
-/// insert result to be rippled through the name server
+/// insert result to be rippled through the name servers
 message InsertResult {
   /// the key of the value to insert
   uint32 key = 1;
@@ -24,7 +23,7 @@ message InsertResult {
   /// the id of the name server the key/val pair was inserted into
   uint32 id = 3;
   /// the id's of each contacted server
-  string server_ids = 4;
+  repeated uint32 server_ids = 4;
 }
 
 /// delete result to be rippled through the name servers
@@ -34,7 +33,7 @@ message DeleteResult {
   /// true if the key was successfully deleted, false if key was not found
   bool delete_success = 2;
   /// the id's of each contacted server
-  string server_ids = 3;
+  repeated uint32 server_ids = 3;
 }
 
 /// entrance request sent by the entering name server to the bootstrap name server.
@@ -74,13 +73,13 @@ message UpdatePredecessorRequest {
 /// exit information sent by the exiting name server to it's successor
 message ExitInformation {
   /// the lower bounds of the exiting name server's key range.
-  uint32 lowerRange = 1;
+  uint32 lower_bounds = 1;
   /// the upper bounds of the exiting name server's key range.
-  uint32 upperRange = 2;
+  uint32 upper_bounds = 2;
   /// the currently stored keys.
-  string keys = 3;
+  repeated uint32 keys = 3;
   /// the values associated with the currently stored keys.
-  string values = 4;
+  repeated string values = 4;
   /// the id of the successor's new predecessor
   uint32 id = 5;
   /// the ip of the successor's new predecessor
@@ -93,13 +92,13 @@ message ExitInformation {
 /// sent by the entering name server's successor to the entering name server.
 message UpdatePredecessorResponse {
   /// the lower bounds of the entering name server's key range.
-  uint32 lowerRange = 1;
+  uint32 lower_bounds = 1;
   /// the upper bounds of the entering name server's key range.
-  uint32 upperRange = 2;
+  uint32 upper_bounds = 2;
   /// the currently stored keys.
-  string keys = 3;
+  repeated uint32 keys = 3;
   /// the values associated with the currently stored keys.
-  string values = 4;
+  repeated string values = 4;
 
 }
 /// request to update successor info.
@@ -115,19 +114,27 @@ message UpdateSuccessorRequest {
 }
 /// encapsulates all messages that can be received by the bootstrap name server
 message BootstrapMessage {
-  LookUpResult look_up_result = 1;
-  InsertResult insert_result = 2;
-  DeleteResult delete_result = 3;
-  EntranceRequest entrance_request = 4;
+  oneof BootstrapMessages {
+    LookUpResult look_up_result = 1;
+    InsertResult insert_result = 2;
+    DeleteResult delete_result = 3;
+    EntranceRequest entrance_request = 4;
+    UpdatePredecessorRequest update_pred_req = 5;
+    UpdateSuccessorRequest update_succ_req = 6;
+    UpdatePredecessorResponse update_pred_res = 7;
+  }
 }
 /// encapsulates all messages that can be received by a name server
 message NameServerMessage {
-  EntranceInformation entrance_info = 1;
-  ExitInformation exit_info = 2;
-  UpdatePredecessorRequest update_pred_req = 3;
-  UpdateSuccessorRequest update_succ_req = 4;
-  UpdatePredecessorResponse update_pred_res = 5;
-  LookUpResult look_up_result = 6;
-  InsertResult insert_result = 7;
-  DeleteResult delete_result = 8;
+  oneof NameServerMessages {
+    EntranceInformation entrance_info = 1;
+    ExitInformation exit_info = 2;
+    UpdatePredecessorRequest update_pred_req = 3;
+    UpdateSuccessorRequest update_succ_req = 4;
+    UpdatePredecessorResponse update_pred_res = 5;
+    LookUpResult look_up_result = 6;
+    InsertResult insert_result = 7;
+    DeleteResult delete_result = 8;
+  }
+
 }
