@@ -3,18 +3,11 @@
 #include <sys/socket.h>
 
 #include <cerrno>
-#include <chrono>
 #include <cstring>
 #include <loguru.hpp>
 #include <utility>
 
 namespace message_passing {
-namespace {
-
-/// Timeout to use when reading queue messages.
-const auto kQueueTimeout = std::chrono::seconds(1);
-
-}  // namespace
 
 using thread_pool::Task;
 
