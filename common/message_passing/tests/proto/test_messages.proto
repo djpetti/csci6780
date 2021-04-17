@@ -6,3 +6,8 @@ package test_messages;
 message TestMessage {
   string parameter = 1;
 }
+
+/// Test response message.
+message TestResponse {
+  string parameter = 1;
+}
