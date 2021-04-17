@@ -1,6 +1,5 @@
 #include "participant_util.h"
 
-#include <algorithm>
 #include <cerrno>
 #include <loguru.hpp>
 
