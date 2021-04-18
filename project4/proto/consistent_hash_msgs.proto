@@ -1,7 +1,16 @@
 syntax = "proto3";
 
-package pub_sub_messages;
+package consistent_hash_msgs;
 
+/// basic server information
+message ServerInfo {
+  /// the id of the name server's new predecessor
+  uint32 id = 1;
+  /// the ip of the name server's new predecessor
+  string ip = 2;
+  /// the port the name server's new predecessor is listening on
+  uint32 port = 3;
+}
 /// look up result to be rippled through the name servers
 message LookUpResult {
   /// the key of the value to retrieve
@@ -46,28 +55,16 @@ message EntranceRequest {
 message EntranceInformation {
   /// the id of the entering name server
   uint32 id = 1;
-  /// the id of the successor of the entering name server
-  uint32 successor_id = 2;
-  /// the machine name of the entering name server's successor
-  string successor_ip = 3;
-  /// the port number the entering name server's successor is listening on
-  uint32 successor_port = 4;
-  /// the id of the predecessor of the entering name server
-  uint32 predecessor_id = 5;
-  /// the machine name of the entering name server's predecessor
-  string predecessor_ip = 6;
-  /// the port number the entering name server's predecessor is listening on
-  uint32 predecessor_port = 7;
+  /// the server info for entering server's successor.
+  ServerInfo successor_info = 2;
+  /// the server info for entering server's predecessor.
+  ServerInfo predecessor_info = 3;
 }
 
 /// request to update predecessor to be sent by the entering name server to it's to-be successor.
 message UpdatePredecessorRequest {
-  /// the id of the name server's new predecessor
-  uint32 id = 1;
-  /// the ip of the name server's new predecessor
-  string ip = 2;
-  /// the port the name server's new predecessor is listening on
-  uint32 port = 3;
+  /// the successor's new predecessor's server info
+  ServerInfo predecessor_info = 1;
 }
 
 /// exit information sent by the exiting name server to it's successor
@@ -80,12 +77,8 @@ message ExitInformation {
   repeated uint32 keys = 3;
   /// the values associated with the currently stored keys.
   repeated string values = 4;
-  /// the id of the successor's new predecessor
-  uint32 id = 5;
-  /// the ip of the successor's new predecessor
-  string ip = 6;
-  /// the port the successor's new predecessor listens on.
-  uint32 port = 7;
+  /// the successor's new predecessor's server info
+  ServerInfo predecessor_info = 5;
 }
 
 /// response for updating predecessor.
@@ -105,23 +98,14 @@ message UpdatePredecessorResponse {
 /// sent by an entering name server to its to-be predecessor.
 /// or sent by an exiting name server to it's predecessor.
 message UpdateSuccessorRequest {
-  /// the id of the predecessor's new successor.
-  uint32 id = 1;
-  /// the ip of the predecessor's new successor.
-  string ip = 2;
-  /// the port the predecessor's new successor is listening on.
-  uint32 port = 3;
+  /// the server info of the to-be successor
+  ServerInfo successor_info = 1;
 }
 /// encapsulates all messages that can be received by the bootstrap name server
 message BootstrapMessage {
-  oneof BootstrapMessages {
-    LookUpResult look_up_result = 1;
-    InsertResult insert_result = 2;
-    DeleteResult delete_result = 3;
-    EntranceRequest entrance_request = 4;
-    UpdatePredecessorRequest update_pred_req = 5;
-    UpdateSuccessorRequest update_succ_req = 6;
-    UpdatePredecessorResponse update_pred_res = 7;
+  oneof Messages {
+    NameServerMessage name_server_message = 1;
+    EntranceRequest entrance_request = 2;
   }
 }
 /// encapsulates all messages that can be received by a name server
