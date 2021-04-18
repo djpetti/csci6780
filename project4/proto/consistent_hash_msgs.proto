@@ -4,11 +4,11 @@ package consistent_hash_msgs;
 
 /// basic server information
 message ServerInfo {
-  /// the id of the name server's new predecessor
+  /// the id of the server
   uint32 id = 1;
-  /// the ip of the name server's new predecessor
+  /// the ip of the server
   string ip = 2;
-  /// the port the name server's new predecessor is listening on
+  /// the port the server
   uint32 port = 3;
 }
 /// look up result to be rippled through the name servers
