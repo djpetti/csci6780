@@ -1,0 +1,124 @@
+syntax = "proto3";
+
+package consistent_hash_msgs;
+
+/// basic server information
+message ServerInfo {
+  /// the id of the server
+  uint32 id = 1;
+  /// the ip of the server
+  string ip = 2;
+  /// the port the server
+  uint32 port = 3;
+}
+/// look up result to be rippled through the name servers
+message LookUpResult {
+  /// the key of the value to retrieve
+  uint32 key = 1;
+  /// the value associated with the key
+  string value = 2;
+  /// the id's of each contacted server
+  repeated uint32 server_ids = 3;
+  /// the id of the server storing the value
+  uint32 id = 4;
+}
+
+/// insert result to be rippled through the name servers
+message InsertResult {
+  /// the key of the value to insert
+  uint32 key = 1;
+  /// the value to insert
+  string value = 2;
+  /// the id of the name server the key/val pair was inserted into
+  uint32 id = 3;
+  /// the id's of each contacted server
+  repeated uint32 server_ids = 4;
+}
+
+/// delete result to be rippled through the name servers
+message DeleteResult {
+  /// the key of the key/val pair to delete
+  uint32 key = 1;
+  /// true if the key was successfully deleted, false if key was not found
+  bool delete_success = 2;
+  /// the id's of each contacted server
+  repeated uint32 server_ids = 3;
+}
+
+/// entrance request sent by the entering name server to the bootstrap name server.
+message EntranceRequest {
+  /// the id of the entering name server
+  uint32 id = 1;
+}
+
+/// entrance information to be rippled through the name servers.
+message EntranceInformation {
+  /// the id of the entering name server
+  uint32 id = 1;
+  /// the server info for entering server's successor.
+  ServerInfo successor_info = 2;
+  /// the server info for entering server's predecessor.
+  ServerInfo predecessor_info = 3;
+}
+
+/// request to update predecessor to be sent by the entering name server to it's to-be successor.
+message UpdatePredecessorRequest {
+  /// the successor's new predecessor's server info
+  ServerInfo predecessor_info = 1;
+}
+
+/// exit information sent by the exiting name server to it's successor
+message ExitInformation {
+  /// the lower bounds of the exiting name server's key range.
+  uint32 lower_bounds = 1;
+  /// the upper bounds of the exiting name server's key range.
+  uint32 upper_bounds = 2;
+  /// the currently stored keys.
+  repeated uint32 keys = 3;
+  /// the values associated with the currently stored keys.
+  repeated string values = 4;
+  /// the successor's new predecessor's server info
+  ServerInfo predecessor_info = 5;
+}
+
+/// response for updating predecessor.
+/// sent by the entering name server's successor to the entering name server.
+message UpdatePredecessorResponse {
+  /// the lower bounds of the entering name server's key range.
+  uint32 lower_bounds = 1;
+  /// the upper bounds of the entering name server's key range.
+  uint32 upper_bounds = 2;
+  /// the currently stored keys.
+  repeated uint32 keys = 3;
+  /// the values associated with the currently stored keys.
+  repeated string values = 4;
+
+}
+/// request to update successor info.
+/// sent by an entering name server to its to-be predecessor.
+/// or sent by an exiting name server to it's predecessor.
+message UpdateSuccessorRequest {
+  /// the server info of the to-be successor
+  ServerInfo successor_info = 1;
+}
+/// encapsulates all messages that can be received by the bootstrap name server
+message BootstrapMessage {
+  oneof Messages {
+    NameServerMessage name_server_message = 1;
+    EntranceRequest entrance_request = 2;
+  }
+}
+/// encapsulates all messages that can be received by a name server
+message NameServerMessage {
+  oneof NameServerMessages {
+    EntranceInformation entrance_info = 1;
+    ExitInformation exit_info = 2;
+    UpdatePredecessorRequest update_pred_req = 3;
+    UpdateSuccessorRequest update_succ_req = 4;
+    UpdatePredecessorResponse update_pred_res = 5;
+    LookUpResult look_up_result = 6;
+    InsertResult insert_result = 7;
+    DeleteResult delete_result = 8;
+  }
+
+}
