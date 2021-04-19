@@ -161,6 +161,29 @@ void RunServer(int server_socket, bool send_response,
 }
 
 /**
+ * @brief Main function for a server that sends a set of messages and then
+ * exits.
+ * @param server_socket The server socket to listen on.
+ * @param messages The messages to send.
+ */
+void SendMessages(int server_socket,
+                  const std::vector<TestResponse> &messages) {
+  // Accept a client connection.
+  int client_fd = accept(server_socket, nullptr, nullptr);
+
+  std::vector<uint8_t> serialized;
+  for (const auto &message : messages) {
+    wire_protocol::Serialize(message, &serialized);
+    if (send(client_fd, serialized.data(), serialized.size(), 0) < 0) {
+      LOG_S(ERROR) << "Failed to send message: " << std::strerror(errno);
+    }
+  }
+
+  close(client_fd);
+  close(server_socket);
+}
+
+/**
  * @brief This class listens on a port, accepts one connection, reads
  * a single message from the client, and then terminates the server.
  */
@@ -173,6 +196,11 @@ class SingleShotServer {
    */
   explicit SingleShotServer(uint16_t port, bool send_response = false)
       : port_(port), send_response_(send_response) {}
+  ~SingleShotServer() {
+    if (server_thread_.joinable()) {
+      server_thread_.join();
+    }
+  }
 
   /**
    * @brief Begins running the server in a separate thread.
@@ -214,6 +242,55 @@ class SingleShotServer {
 };
 
 /**
+ * @brief This class listens on a port, accepts a single connection,
+ *  and sends a bunch of messages to it before disconnecting.
+ */
+class MessageSendingServer {
+ public:
+  /**
+   * @param port The port to listen on.
+   * @param messages The messages to send.
+   */
+  MessageSendingServer(uint16_t port, std::vector<TestResponse> messages)
+      : port_(port), messages_(std::move(messages)) {}
+  ~MessageSendingServer() {
+    if (server_thread_.joinable()) {
+      server_thread_.join();
+    }
+  }
+
+  /**
+   * @brief Begins running the server in a separate thread.
+   * @return True if it successfully started the server.
+   */
+  bool Begin() {
+    // Open the server socket.
+    const auto kAddress = MakeAddress(port_);
+    const int kServerFd = SetUpListenerSocket(kAddress);
+    if (kServerFd < 0) {
+      return false;
+    }
+
+    server_thread_ = std::thread(SendMessages, kServerFd, messages_);
+
+    return true;
+  }
+
+  /**
+   * @brief Waits for the server to complete.
+   */
+  void Join() { server_thread_.join(); }
+
+ private:
+  /// The port to listen on.
+  uint16_t port_;
+  /// The messages to send.
+  std::vector<TestResponse> messages_;
+  /// Thread that runs the server.
+  std::thread server_thread_{};
+};
+
+/**
  * @brief Encapsulates standard configuration for tests.
  */
 struct ConfigForTests {
@@ -229,8 +306,7 @@ struct ConfigForTests {
  */
 ConfigForTests MakeConfig() {
   auto thread_pool = std::make_shared<ThreadPool>();
-  auto message_sender =
-      std::make_unique<Client>(thread_pool, kTestEndpoint);
+  auto message_sender = std::make_unique<Client>(thread_pool, kTestEndpoint);
 
   return {thread_pool, std::move(message_sender)};
 }
@@ -340,6 +416,39 @@ TEST(Client, RequestResponse) {
 
   // It should have received the expected response.
   EXPECT_EQ(kTestParameterString, response.parameter());
+}
+
+/**
+ * @test Tests that it handles it correctly when we receive two messages
+ *  back-to-back.
+ */
+TEST(Client, ReceiveBackToBack) {
+  // Arrange.
+  auto config = MakeConfig();
+
+  // Create a server to fire off some messages.
+  auto message1 = MakeTestResponse();
+  auto message2 = MakeTestResponse();
+  MessageSendingServer server(kTestEndpoint.port, {message1, message2});
+  server.Begin();
+
+  // Act.
+  // Do a send, which will force a connection and cause the messages to be
+  // received back-to-back.
+  config.message_sender->SendAsync(MakeTestMessage());
+
+  // Wait for the messages to be sent.
+  server.Join();
+
+  // Now receive the two messages.
+  TestResponse got_message_1, got_message_2;
+  ASSERT_TRUE(config.message_sender->Receive(&got_message_1));
+  ASSERT_TRUE(config.message_sender->Receive(&got_message_2));
+
+  // Assert.
+  // It should have read the correct messages.
+  EXPECT_EQ(message1.parameter(), got_message_1.parameter());
+  EXPECT_EQ(message2.parameter(), got_message_2.parameter());
 }
 
 }  // namespace

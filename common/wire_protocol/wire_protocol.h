@@ -104,6 +104,15 @@ class MessageParser {
   }
 
   /**
+   * @return All data currently in the overflow buffer for this parser. This
+   *    is data that belongs to the next message, and can be used to
+   *    initialize a new parser.
+   */
+  [[nodiscard]] const std::vector<uint8_t>& GetOverflow() const {
+    return overflow_message_data_;
+  }
+
+  /**
    * @return True if we have some partial message data.
    */
   bool HasPartialMessage() {

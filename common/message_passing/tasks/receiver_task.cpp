@@ -23,7 +23,7 @@ Task::Status message_passing::ReceiverTask::RunAtomic() {
   received_message_buffer_.resize(kReceiveChunkSize);
   const ssize_t kReceiveResult =
       recv(receive_fd_, received_message_buffer_.data(), kReceiveChunkSize, 0);
-  if (kReceiveResult <= 0) {
+  if (kReceiveResult < 0) {
     if (errno == EAGAIN || errno == EWOULDBLOCK) {
       // This is merely a timeout. We can try again later.
       return Task::Status::RUNNING;
@@ -31,6 +31,8 @@ Task::Status message_passing::ReceiverTask::RunAtomic() {
 
     // General failure to receive.
     LOG_S(ERROR) << "Socket error: " << std::strerror(errno);
+  } else if (kReceiveResult == 0) {
+    LOG_S(WARNING) << "Remote end disconnected, exiting receive task.";
   } else {
     // Resize the buffer to the actual amount of content received so we can
     // tell where the actual data ends.
@@ -44,7 +46,7 @@ Task::Status message_passing::ReceiverTask::RunAtomic() {
 
   // If the receive fails, we fail the task, because otherwise we'll probably
   // just get stuck in an infinite loop.
-  return kReceiveResult >= 0 ? Task::Status::RUNNING : Task::Status::FAILED;
+  return kReceiveResult > 0 ? Task::Status::RUNNING : Task::Status::FAILED;
 }
 
 }  // namespace message_passing

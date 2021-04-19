@@ -33,7 +33,7 @@ class Client {
    * @param destination The destination node that we will send messages to.
    */
   Client(std::shared_ptr<thread_pool::ThreadPool> thread_pool,
-                Endpoint destination);
+         Endpoint destination);
   ~Client();
 
   /**
@@ -67,6 +67,10 @@ class Client {
 
     // Create the parser for the response.
     wire_protocol::MessageParser<MessageType> parser;
+    // Add any overflow data from the previous call.
+    LOG_S(2) << "Adding " << partial_received_messages_.size()
+             << " bytes of overflow data to parser.";
+    parser.AddNewData(partial_received_messages_);
 
     // Receive the response.
     while (!parser.HasCompleteMessage()) {
@@ -79,6 +83,8 @@ class Client {
       parser.AddNewData(kResponse.message);
     }
 
+    // Save any overflow data to use for the next message.
+    partial_received_messages_ = parser.GetOverflow();
     return parser.GetMessage(message);
   }
 
@@ -147,6 +153,9 @@ class Client {
 
   /// The file descriptor for the client socket.
   int client_fd_ = -1;
+
+  /// Stores partially-received data that hasn't been processed yet.
+  std::vector<uint8_t> partial_received_messages_{};
 };
 
 }  // namespace message_passing
