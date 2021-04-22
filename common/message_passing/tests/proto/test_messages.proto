@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package test_messages;
+
+/// Test message.
+message TestMessage {
+  string parameter = 1;
+}
+
+/// Test response message.
+message TestResponse {
+  string parameter = 1;
+}
