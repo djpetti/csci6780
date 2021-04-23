@@ -72,24 +72,18 @@ int SetUpSocket(const sockaddr_in& address, const std::string& hostname) {
 
 using wire_protocol::Serialize;
 
-Client::Client(
-    std::shared_ptr<thread_pool::ThreadPool> thread_pool, Endpoint destination)
-    : thread_pool_(std::move(thread_pool)),
+Client::Client(std::shared_ptr<thread_pool::ThreadPool> thread_pool,
+               Endpoint destination)
+    : Node(std::move(thread_pool)),
       endpoint_(std::move(destination)),
       send_queue_(
-          std::make_shared<queue::Queue<SenderTask::SendQueueMessage>>()),
-      receive_queue_(
-          std::make_shared<queue::Queue<ReceiverTask::ReceiveQueueMessage>>()) {
-}
+          std::make_shared<queue::Queue<SenderTask::SendQueueMessage>>()) {}
 
 Client::~Client() {
   // Cancel the tasks we added to the thread pool.
   LOG_S(1) << "Cancelling sender and receiver tasks...";
   if (sender_task_ != nullptr) {
-    thread_pool_->CancelTask(sender_task_);
-  }
-  if (receiver_task_ != nullptr) {
-    thread_pool_->CancelTask(receiver_task_);
+    thread_pool()->CancelTask(sender_task_);
   }
 
   // Close the socket.
@@ -125,8 +119,8 @@ bool Client::SendAsync(const google::protobuf::Message& message) {
   return DispatchSend(message, true, nullptr);
 }
 
-bool Client::DispatchSend(const google::protobuf::Message& message,
-                                 bool async, MessageId* id) {
+bool Client::DispatchSend(const google::protobuf::Message& message, bool async,
+                          MessageId* id) {
   // Make sure we are connected.
   if (!EnsureConnected()) {
     return false;
@@ -169,11 +163,10 @@ bool Client::EnsureConnected() {
           // Notify everyone waiting on this.
           send_results_updated_.notify_all();
         });
-    thread_pool_->AddTask(sender_task_);
+    thread_pool()->AddTask(sender_task_);
 
     // Create the task for receiving messages.
-    receiver_task_ = std::make_shared<ReceiverTask>(client_fd_, receive_queue_);
-    thread_pool_->AddTask(receiver_task_);
+    StartReceiverTask(client_fd_, endpoint_);
   }
 
   return client_fd_;

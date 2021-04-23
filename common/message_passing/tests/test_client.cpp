@@ -297,7 +297,7 @@ struct ConfigForTests {
   /// The thread pool to use internally.
   std::shared_ptr<ThreadPool> thread_pool;
   /// The actual Client under test.
-  std::unique_ptr<Client> message_sender;
+  std::unique_ptr<Client> client;
 };
 
 /**
@@ -314,7 +314,7 @@ ConfigForTests MakeConfig() {
 /**
  * @test Tests that we can send a single message asynchronously.
  */
-TEST(Client, SingleMessageAsync) {
+TEST(Client, SendSingleMessageAsync) {
   // Arrange.
   auto config = MakeConfig();
 
@@ -324,7 +324,7 @@ TEST(Client, SingleMessageAsync) {
 
   // Act.
   // Send the message.
-  config.message_sender->SendAsync(MakeTestMessage());
+  config.client->SendAsync(MakeTestMessage());
 
   // Assert.
   // Wait for the message to arrive.
@@ -336,7 +336,7 @@ TEST(Client, SingleMessageAsync) {
 /**
  * @test Tests that we can send a single message synchronously.
  */
-TEST(Client, SingleMessageSync) {
+TEST(Client, SendSingleMessageSync) {
   // Arrange.
   auto config = MakeConfig();
 
@@ -346,7 +346,7 @@ TEST(Client, SingleMessageSync) {
 
   // Act.
   // Send the message.
-  const int kSendResult = config.message_sender->Send(MakeTestMessage());
+  const int kSendResult = config.client->Send(MakeTestMessage());
 
   // Assert.
   // The send should have succeeded.
@@ -366,7 +366,7 @@ TEST(Client, SendConnectionFailure) {
 
   // Act.
   // Try to send a message.
-  const int kSendResult = config.message_sender->Send(MakeTestMessage());
+  const int kSendResult = config.client->Send(MakeTestMessage());
 
   // Assert.
   // The send should have failed.
@@ -383,7 +383,8 @@ TEST(Client, ReceiveConnectionFailure) {
   // Act.
   // Try to receive a message.
   TestResponse response;
-  const bool kReceiveResult = config.message_sender->Receive(&response);
+  const bool kReceiveResult =
+      config.client->Receive(&response, nullptr);
 
   // Assert.
   // The receive should have failed.
@@ -404,7 +405,7 @@ TEST(Client, RequestResponse) {
   // Act.
   TestResponse response;
   const bool kResult =
-      config.message_sender->SendRequest(MakeTestMessage(), &response);
+      config.client->SendRequest(MakeTestMessage(), &response);
 
   // Assert.
   // It should have succeeded.
@@ -419,6 +420,33 @@ TEST(Client, RequestResponse) {
 }
 
 /**
+ * @test Tests that receiving with a timeout works.
+ */
+TEST(Client, ReceiveTimeout) {
+  auto config = MakeConfig();
+
+  // Create a server that will wait for us to send it a message. It
+  // will be blocked until we do this.
+  SingleShotServer server(kTestEndpoint.port);
+  ASSERT_TRUE(server.Begin());
+
+  // Act.
+  // Try receiving with a timeout.
+  TestResponse response;
+  const bool kResult = config.client->Receive(
+      std::chrono::milliseconds(100), &response, nullptr);
+
+  // Clean up the server.
+  // Send a message to it exits.
+  config.client->SendAsync(MakeTestMessage());
+  server.GetMessage();
+
+  // Assert.
+  // It should have timed out.
+  EXPECT_FALSE(kResult);
+}
+
+/**
  * @test Tests that it handles it correctly when we receive two messages
  *  back-to-back.
  */
@@ -430,25 +458,30 @@ TEST(Client, ReceiveBackToBack) {
   auto message1 = MakeTestResponse();
   auto message2 = MakeTestResponse();
   MessageSendingServer server(kTestEndpoint.port, {message1, message2});
-  server.Begin();
+  ASSERT_TRUE(server.Begin());
 
   // Act.
   // Do a send, which will force a connection and cause the messages to be
   // received back-to-back.
-  config.message_sender->SendAsync(MakeTestMessage());
+  config.client->SendAsync(MakeTestMessage());
 
   // Wait for the messages to be sent.
   server.Join();
 
   // Now receive the two messages.
   TestResponse got_message_1, got_message_2;
-  ASSERT_TRUE(config.message_sender->Receive(&got_message_1));
-  ASSERT_TRUE(config.message_sender->Receive(&got_message_2));
+  Endpoint source1, source2;
+  ASSERT_TRUE(config.client->Receive(&got_message_1, &source1));
+  ASSERT_TRUE(config.client->Receive(&got_message_2, &source2));
 
   // Assert.
   // It should have read the correct messages.
   EXPECT_EQ(message1.parameter(), got_message_1.parameter());
   EXPECT_EQ(message2.parameter(), got_message_2.parameter());
+
+  // The sources should have been set correctly.
+  EXPECT_EQ(kTestEndpoint, source1);
+  EXPECT_EQ(kTestEndpoint, source2);
 }
 
 }  // namespace

@@ -13,11 +13,14 @@ using thread_pool::Task;
 
 ReceiverTask::ReceiverTask(
     int receive_fd,
-    std::shared_ptr<queue::Queue<ReceiveQueueMessage>> receive_queue)
-    : receive_fd_(receive_fd), receive_queue_(std::move(receive_queue)) {}
+    std::shared_ptr<queue::Queue<ReceiveQueueMessage>> receive_queue,
+    Endpoint  endpoint)
+    : receive_fd_(receive_fd),
+      endpoint_(std::move(endpoint)),
+      receive_queue_(std::move(receive_queue)) {}
 
 Task::Status message_passing::ReceiverTask::RunAtomic() {
-  ReceiveQueueMessage message;
+  ReceiveQueueMessage message = {{}, endpoint_, -1};
 
   // Receive the next message.
   received_message_buffer_.resize(kReceiveChunkSize);

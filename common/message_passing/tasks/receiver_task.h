@@ -22,6 +22,8 @@ class ReceiverTask : public thread_pool::Task {
     /// The serialized message.
     std::vector<uint8_t> message;
 
+    /// The endpoint that this message was received from.
+    Endpoint endpoint;
     /// recv() call status associated with this message.
     int status;
   };
@@ -29,11 +31,12 @@ class ReceiverTask : public thread_pool::Task {
   /**
    * @param receive_fd The file descriptor to send on.
    * @param receive_queue The queue that messages to send will be received on.
-   * @param send_callback Callback function to call with the message ID and the
-   *    result of `send()` every time a message is sent.
+   * @param endpoint The endpoint that this task is receiving messages from.
+   *    This will be set in all queue messages from this task.
    */
   ReceiverTask(int receive_fd,
-      std::shared_ptr<queue::Queue<ReceiveQueueMessage>> receive_queue);
+               std::shared_ptr<queue::Queue<ReceiveQueueMessage>> receive_queue,
+               Endpoint endpoint);
 
   Status RunAtomic() final;
 
@@ -43,6 +46,8 @@ class ReceiverTask : public thread_pool::Task {
 
   /// File descriptor to receive messages on.
   int receive_fd_;
+  /// Endpoint we are receiving from.
+  Endpoint endpoint_;
   /// Buffer to use for partial received messages.
   std::vector<uint8_t> received_message_buffer_{};
 
