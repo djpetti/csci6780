@@ -5,6 +5,7 @@
 #define PROJECT4_NAMESERVER_H
 
 #include <consistent_hash_msgs.pb.h>
+#include "../../common/message_passing/types.h"
 
 #include <map>
 #include <string>
@@ -55,20 +56,17 @@ class Nameserver {
   /// The key-value pairs in this nameserver
   std::map<int, std::string> pairs;
 
-  /// Predecessor nameserver
-  std::map<std::string, int> predecessor;
-
-  /// Successor nameserver
-  std::map<std::string, int> successor;
-
   /// Key bounds
   std::pair<int, int> bounds;
 
-  /// Bootstrap server IP
-  std::string bootstrap_ip;
+  /// Predecessor nameserver
+  message_passing::Endpoint predecessor;
 
-  /// Bootstrap server port
-  int bootstrap_port;
+  /// Successor nameserver
+  message_passing::Endpoint successor;
+
+  /// Bootstrap endpoint
+  message_passing::Endpoint bootstrap_;
 
   /// Port of this name server
   int port;
