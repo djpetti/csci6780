@@ -1,8 +1,8 @@
 /**
  * @file Bootstrap class
  */
-#ifndef PROJECT4_NAME_SERVER_BOOTSTRAP_H_
-#define PROJECT4_NAME_SERVER_BOOTSTRAP_H_
+#ifndef PROJECT4_BOOTSTRAP_H
+#define PROJECT4_BOOTSTRAP_H
 
 #include "nameserver.h"
 
@@ -16,15 +16,18 @@ class Bootstrap : public Nameserver {
   /**
    * @param the config file of this bootstrap
    */
-  Bootstrap(char* config);
+  explicit Bootstrap(const std::string& config_file);
 
- private:
-  /// Command Types
-  enum Commands { LOOKUP, INSERT, DELETE };
+  /**
+   * @param Generic BootstrapMessage request
+   */
+  void HandleRequest(const consistent_hash_msgs::BootstrapMessage &request);
 
-  /// Commands
-  const std::map<std::string, Commands> commands_ = {
-      {"lookup", LOOKUP}, {"insert", INSERT}, {"delete", DELETE}};
+  /**
+   * @param A BootstrapMessage request
+   */
+  void HandleRequest(const consistent_hash_msgs::EntranceRequest &request);
+
 };
 }  // namespace nameserver
-#endif  // PROJECT4_NAME_SERVER_BOOTSTRAP_H_
+#endif  // PROJECT4_BOOTSTRAP_H

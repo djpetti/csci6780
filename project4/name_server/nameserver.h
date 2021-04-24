@@ -1,8 +1,10 @@
 /**
  * @file Name Server Class
  */
-#ifndef PROJECT4_NAME_SERVER_NAMESERVER_H_
-#define PROJECT4_NAME_SERVER_NAMESERVER_H_
+#ifndef PROJECT4_NAMESERVER_H
+#define PROJECT4_NAMESERVER_H
+
+#include <consistent_hash_msgs.pb.h>
 
 #include <map>
 #include <string>
@@ -17,33 +19,56 @@ class Nameserver {
   /**
    * @param the config file of this name server
    */
-  Nameserver(char* config);
+  explicit Nameserver(const std::string& config_file);
 
   /**
-   * Start the name server
+   * @param Generic NameServerMessage request
    */
-  void start();
+  void HandleRequest(const consistent_hash_msgs::NameServerMessage &request);
 
- private:
-  /// Bootstrap server IP
-  std::string bootstrap_ip_;
+  /**
+   * @param A NameServerMessage request
+   */
+  void HandleRequest(const consistent_hash_msgs::EntranceInformation &request);
 
-  /// Bootstrap server port
-  int bootstrap_port_;
+  void HandleRequest(const consistent_hash_msgs::ExitInformation &request);
 
-  /// Command Types
-  enum Commands { ENTER, EXIT };
+  void HandleRequest(const consistent_hash_msgs::UpdatePredecessorRequest &request);
 
-  /// Commands
-  const std::map<std::string, Commands> commands_ = {{"enter", ENTER},
-                                                     {"exit", EXIT}};
+  void HandleRequest(const consistent_hash_msgs::UpdateSuccessorRequest &request);
+
+  void HandleRequest(const consistent_hash_msgs::UpdatePredecessorResponse &request);
+
+  void HandleRequest(const consistent_hash_msgs::LookUpResult &request);
+
+  void HandleRequest(const consistent_hash_msgs::InsertResult &request);
+
+  void HandleRequest(const consistent_hash_msgs::DeleteResult &request);
+
+  /**
+   * @param predecessor Predecessor if true, else successor
+   * @param request The request to forward
+   */
+  void ForwardRequest(bool to_predecessor, const consistent_hash_msgs::NameServerMessage &request);
 
  protected:
   /// The key-value pairs in this nameserver
   std::map<int, std::string> pairs;
 
+  /// Predecessor nameserver
+  std::map<std::string, int> predecessor;
+
+  /// Successor nameserver
+  std::map<std::string, int> successor;
+
   /// Key bounds
   std::pair<int, int> bounds;
+
+  /// Bootstrap server IP
+  std::string bootstrap_ip;
+
+  /// Bootstrap server port
+  int bootstrap_port;
 
   /// Port of this name server
   int port;
@@ -53,4 +78,4 @@ class Nameserver {
 };
 }  // namespace nameserver
 
-#endif  // PROJECT4_NAME_SERVER_NAMESERVER_H_
+#endif  // PROJECT4_NAMESERVER_H

@@ -1,2 +1,6 @@
-add_executable(nameserver name_server_main.cpp)
-target_link_libraries(nameserver loguru)
+add_subdirectory(tasks)
+
+add_library(nameserver_lib nameserver.cpp bootstrap.cpp nameserver_driver.cpp bootstrap_driver.cpp)
+target_link_libraries(nameserver_lib name_server_tasks_lib consistent_hash_msgs loguru thread_pool)
+add_executable(nameserver nameserver_main.cpp)
+target_link_libraries(nameserver nameserver_lib consistent_hash_msgs loguru)

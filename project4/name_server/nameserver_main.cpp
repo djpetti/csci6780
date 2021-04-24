@@ -6,12 +6,17 @@
 
 #include <iostream>
 
-void start_nameserver(char* string) {
+#include "nameserver_driver.h"
+#include "bootstrap_driver.h"
 
+void start_nameserver(char* config) {
+  auto namespace_driver = nameserver::NameserverDriver(config);
+  namespace_driver.Start();
 }
 
-void start_bootstrap(char* string) {
-
+void start_bootstrap(char* config) {
+  auto bootstrap_driver = nameserver::BootstrapDriver(config);
+  bootstrap_driver.Start();
 }
 
 int main(int argc, char **argv) {
@@ -31,10 +36,8 @@ int main(int argc, char **argv) {
   }
 
   if (argv[1] == std::string("simple")) {
-    std::cout << "\nStarting name server...";
     start_nameserver(argv[2]);
   } else if (argv[1] == std::string("bootstrap")) {
-    std::cout << "\nStarting bootstrap...";
     start_bootstrap(argv[2]);
   } else {
     std::cout << "\nInvalid name server type. Available types are: simple, bootstrap";
