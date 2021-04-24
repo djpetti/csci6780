@@ -8,8 +8,8 @@ BootstrapDriver::BootstrapDriver(const std::string& config_file)
       bootstrap_task_(std::make_shared<nameserver_tasks::BootstrapTask>(config_file)) {}
 
 [[noreturn]] void BootstrapDriver::Start() {
-  pool_.AddTask(console_task_);
-  pool_.AddTask(bootstrap_task_);
+  pool_->AddTask(console_task_);
+  pool_->AddTask(bootstrap_task_);
 
   while (true) {
     std::string input;
@@ -20,15 +20,15 @@ BootstrapDriver::BootstrapDriver(const std::string& config_file)
       continue;
     }
     switch (itr->second) {
-      case LOOKUP:
+      case BootstrapCommand::LOOKUP:
         console_task_->SendConsole("lookup!...");
         /// TODO Pass to bootstrap_task the lookup with extra
         break;
-      case INSERT:
+      case BootstrapCommand::INSERT:
         console_task_->SendConsole("insert!...");
         /// TODO Pass to bootstrap_task the insert with extra
         break;
-      case DELETE:
+      case BootstrapCommand::DELETE:
         console_task_->SendConsole("delete!...");
         /// TODO Pass to bootstrap_task the delete with extra
         break;

@@ -4,7 +4,7 @@
 
 namespace nameserver {
 
-NameserverDriver::NameserverDriver(std::string config_file)
+NameserverDriver::NameserverDriver(std::filesystem::path config_file)
     : console_task_(
           std::make_shared<nameserver_tasks::ConsoleTask>("nameserver=> ")),
       config_file_(std::move(config_file)) {}
@@ -21,11 +21,11 @@ NameserverDriver::NameserverDriver(std::string config_file)
       continue;
     }
     switch (itr->second) {
-      case ENTER:
+      case NameserverCommand::ENTER:
         console_task_->SendConsole("joining...");
         /// TODO Set up nameserver task
         break;
-      case EXIT:
+      case NameserverCommand::EXIT:
         console_task_->SendConsole("leaving!...");
         /// TODO Close down nameserver task
         break;

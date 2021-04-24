@@ -4,9 +4,10 @@
 #ifndef PROJECT4_NAMESERVER_DRIVER_H
 #define PROJECT4_NAMESERVER_DRIVER_H
 
-#include "../../common/thread_pool/task.h"
-#include "../../common/thread_pool/thread_pool.h"
+#include <filesystem>
 
+#include "thread_pool/task.h"
+#include "thread_pool/thread_pool.h"
 #include "tasks/console_task.h"
 #include "tasks/nameserver_task.h"
 
@@ -14,7 +15,7 @@ namespace nameserver {
 
 class NameserverDriver {
  public:
-  explicit NameserverDriver(std::string config_file);
+  explicit NameserverDriver(std::filesystem::path config_file);
 
   [[noreturn]] void Start();
 
@@ -25,7 +26,7 @@ class NameserverDriver {
   std::shared_ptr<nameserver_tasks::NameserverTask> nameserver_task_;
 
   /// Config file
-  const std::string config_file_;
+  const std::filesystem::path config_file_;
 };
 
 }  // namespace nameserver

@@ -9,16 +9,17 @@
 
 namespace nameserver {
 
-enum NameserverCommand { ENTER, EXIT };
+enum class NameserverCommand { ENTER, EXIT };
 
-const std::map<std::string, NameserverCommand> nameserver_cmds = {
-    {"enter", ENTER}, {"exit", EXIT}};
+const std::unordered_map<std::string, NameserverCommand> nameserver_cmds = {
+    {"enter", NameserverCommand::ENTER}, {"exit", NameserverCommand::EXIT}};
 
-enum BootstrapCommand { LOOKUP, INSERT, DELETE };
+enum class BootstrapCommand { LOOKUP, INSERT, DELETE };
 
-const std::map<std::string, BootstrapCommand> bootstrap_cmds = {
-    {"lookup", LOOKUP}, {"insert", INSERT}, {"delete", DELETE}
-};
+const std::unordered_map<std::string, BootstrapCommand> bootstrap_cmds = {
+    {"lookup", BootstrapCommand::LOOKUP},
+    {"insert", BootstrapCommand::INSERT},
+    {"delete", BootstrapCommand::DELETE}};
 
 }  // namespace nameserver
 

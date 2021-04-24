@@ -1,16 +1,22 @@
 #include "bootstrap.h"
 
-nameserver::Bootstrap::Bootstrap(const std::filesystem::path config_file)
-    : Nameserver(config_file) {
+namespace nameserver {
+Bootstrap::Bootstrap(const std::filesystem::path config_file)
+    : Nameserver(config_file) {}
+
+void Bootstrap::HandleRequest(
+    const consistent_hash_msgs::EntranceRequest& request) {}
+void Bootstrap::InitiateEntrance(const message_passing::Endpoint server) {
 
 }
+std::string Bootstrap::LookUp(int key) {
 
-void nameserver::Bootstrap::HandleRequest(
-    const consistent_hash_msgs::BootstrapMessage& request) {
+  return "";
+}
+void Bootstrap::Insert(int key, std::string val) {
 
 }
-
-void nameserver::Bootstrap::HandleRequest(
-    const consistent_hash_msgs::EntranceRequest& request) {
+void Bootstrap::Delete(int key, std::string val) {
 
 }
+}  // namespace nameserver

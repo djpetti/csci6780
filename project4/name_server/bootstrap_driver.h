@@ -20,7 +20,7 @@ class BootstrapDriver {
 
  private:
   /// Pool and tasks
-  thread_pool::ThreadPool pool_;
+  std::shared_ptr<thread_pool::ThreadPool> pool_;
   std::shared_ptr<nameserver_tasks::ConsoleTask> console_task_;
   std::shared_ptr<nameserver_tasks::BootstrapTask> bootstrap_task_;
 };

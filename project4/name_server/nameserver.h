@@ -5,10 +5,13 @@
 #define PROJECT4_NAMESERVER_H
 
 #include <consistent_hash_msgs.pb.h>
-#include "../../common/message_passing/types.h"
 
+#include <filesystem>
 #include <map>
 #include <string>
+#include "message_passing/server.h"
+#include "message_passing/client.h"
+#include "message_passing/types.h"
 
 namespace nameserver {
 
@@ -18,16 +21,34 @@ namespace nameserver {
 class Nameserver {
  public:
   /**
+   * @brief Initializes the name server based on config file.
    * @param the config file of this name server
    */
-  explicit Nameserver(const std::string& config_file);
+  explicit Nameserver(const std::filesystem::path config_file);
 
   /**
+   * @brief Inserts this nameserver into the hash ring.
+   * @return true on success false on failure
+   */
+   bool Enter();
+
+   /**
+    * @brief Deletes this nameserver from the hash ring.
+    * @return true on success false on failure
+    */
+    void Exit();
+
+
+ private:
+
+  /**
+   * Handles a generic NameServerMessage
    * @param Generic NameServerMessage request
    */
   void HandleRequest(const consistent_hash_msgs::NameServerMessage &request);
 
   /**
+   *
    * @param A NameServerMessage request
    */
   void HandleRequest(const consistent_hash_msgs::EntranceInformation &request);
@@ -52,27 +73,39 @@ class Nameserver {
    */
   void ForwardRequest(bool to_predecessor, const consistent_hash_msgs::NameServerMessage &request);
 
- protected:
+  /// The server object
+  std::unique_ptr<message_passing::Server> server_;
+
+  /// The client object
+  std::unique_ptr<message_passing::Client> client_;
+
+  /// The threadpool used by the client
+  std::shared_ptr<thread_pool::ThreadPool> server_threadpool_;
+
+  /// The threadpool used by the server
+  std::shared_ptr<thread_pool::ThreadPool> client_threadpool_;
+
   /// The key-value pairs in this nameserver
-  std::map<int, std::string> pairs;
+  std::unordered_map<int, std::string> pairs_;
 
   /// Key bounds
-  std::pair<int, int> bounds;
+  std::pair<int, int> bounds_;
 
   /// Predecessor nameserver
-  message_passing::Endpoint predecessor;
+  message_passing::Endpoint predecessor_;
 
   /// Successor nameserver
-  message_passing::Endpoint successor;
+  message_passing::Endpoint successor_;
 
   /// Bootstrap endpoint
   message_passing::Endpoint bootstrap_;
 
+  /// Had to comment these out because of "not used" warnings treated as errors
   /// Port of this name server
-  int port;
+  //int port_;
 
   /// Id of this name server
-  int id;
+  //int id_;
 };
 }  // namespace nameserver
 

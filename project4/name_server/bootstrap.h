@@ -27,6 +27,32 @@ class Bootstrap : public Nameserver {
    */
   void HandleRequest(const consistent_hash_msgs::EntranceRequest &request);
 
+  /**
+   * @brief Initiates the insertion process for a joining name server.
+   * @param server The joining server
+   */
+   void InitiateEntrance(const message_passing::Endpoint server);
+
+   /**
+    * @brief Inserts a key-value pair in the ring.
+    * @param key The integer key for the corresponding value
+    * @param val The value
+    */
+    void Insert(int key, std::string val);
+
+    /**
+     * @brief Deletes a key-value pair from the ring.
+     * @param key The integer key for the corresponding value
+     * @param val The value
+     */
+     void Delete(int key, std::string val);
+
+     /**
+      * @brief Looks up a value hosted in the ring.
+      * @param key The integer key of the value to look up.
+      * @return The corresponding value. Empty string if value DNE
+      */
+      std::string LookUp(int key);
 };
 }  // namespace nameserver
 #endif  // PROJECT4_BOOTSTRAP_H
