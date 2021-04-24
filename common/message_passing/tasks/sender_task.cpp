@@ -57,4 +57,6 @@ Task::Status message_passing::SenderTask::RunAtomic() {
   return Task::Status::RUNNING;
 }
 
+int SenderTask::GetFd() const { return send_fd_; }
+
 }  // namespace message_passing

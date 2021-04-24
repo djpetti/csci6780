@@ -8,14 +8,14 @@
 
 #include "../types.h"
 #include "queue/queue.h"
-#include "thread_pool/task.h"
+#include "socket_task_interface.h"
 
 namespace message_passing {
 
 /**
  * @brief Task that is responsible for reading messages from a socket.
  */
-class ReceiverTask : public thread_pool::Task {
+class ReceiverTask : public ISocketTask {
  public:
   /// Queue message containing messages to be sent.
   struct ReceiveQueueMessage {
@@ -29,16 +29,18 @@ class ReceiverTask : public thread_pool::Task {
   };
 
   /**
-   * @param receive_fd The file descriptor to send on.
-   * @param receive_queue The queue that messages to send will be received on.
+   * @param receive_fd The file descriptor to receive on.
+   * @param receive_queue The queue that messages we receive will be sent on.
    * @param endpoint The endpoint that this task is receiving messages from.
    *    This will be set in all queue messages from this task.
    */
   ReceiverTask(int receive_fd,
                std::shared_ptr<queue::Queue<ReceiveQueueMessage>> receive_queue,
                Endpoint endpoint);
+  ~ReceiverTask() override = default;
 
   Status RunAtomic() final;
+  [[nodiscard]] int GetFd() const final;
 
  private:
   /// Size of chunks to receive messages in.

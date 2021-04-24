@@ -1,74 +1,15 @@
 #include "client.h"
 
-#include <arpa/inet.h>
-#include <netinet/in.h>
-#include <sys/types.h>
 #include <unistd.h>
 
-#include <cerrno>
-#include <cstring>
 #include <functional>
 #include <loguru.hpp>
 #include <utility>
 
 #include "wire_protocol/wire_protocol.h"
+#include "utils.h"
 
 namespace message_passing {
-namespace {
-
-/// Timeout in seconds for socket operations.
-constexpr uint32_t kSocketTimeout = 1;
-
-/**
- * @brief Creates an address structure to use for the socket.
- * @param port The port that we want to connect to.
- * @return The address structure that it created.
- */
-struct sockaddr_in MakeAddress(uint16_t port) {
-  struct sockaddr_in address {};
-  address.sin_family = AF_INET;
-  address.sin_addr.s_addr = INADDR_ANY;
-  address.sin_port = htons(port);
-
-  return address;
-}
-
-/**
- * @brief Connects the socket to a remote server.
- * @param address The address structure specifying what to connect to.
- * @param hostname The hostname to connect to.
- * @return The FD of the client socket, or -1 on failure.
- */
-int SetUpSocket(const sockaddr_in& address, const std::string& hostname) {
-  int sock;
-
-  if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-    LOG_S(ERROR) << "Socket creation error: " << std::strerror(errno);
-    return -1;
-  }
-
-  if (inet_pton(AF_INET, hostname.c_str(),
-                (struct sockaddr*)&address.sin_addr) <= 0) {
-    LOG_S(ERROR) << "inet_pton: " << std::strerror(errno);
-    return -1;
-  }
-
-  // Set a timeout.
-  struct timeval timeout {};
-  timeout.tv_sec = kSocketTimeout;
-  timeout.tv_usec = 0;
-  setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout,
-             sizeof(timeout));
-
-  if (connect(sock, (struct sockaddr*)&address, sizeof(address)) < 0) {
-    LOG_S(ERROR) << "Connection Failed: " << std::strerror(errno);
-    return -1;
-  }
-
-  return sock;
-}
-
-}  // namespace
 
 using wire_protocol::Serialize;
 

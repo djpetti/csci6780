@@ -7,7 +7,7 @@
 
 #include "../types.h"
 #include "queue/queue.h"
-#include "thread_pool/task.h"
+#include "socket_task_interface.h"
 
 namespace message_passing {
 
@@ -15,7 +15,7 @@ namespace message_passing {
  * @brief Task that is responsible for reading
  *  messages off a queue and sending them.
  */
-class SenderTask : public thread_pool::Task {
+class SenderTask : public ISocketTask {
  public:
   /// Type alias for the send callback function.
   using SendCallback = std::function<void(MessageId, int)>;
@@ -40,8 +40,10 @@ class SenderTask : public thread_pool::Task {
   SenderTask(int send_fd,
              std::shared_ptr<queue::Queue<SendQueueMessage>> send_queue,
              SendCallback send_callback);
+  ~SenderTask() override = default;
 
   Status RunAtomic() final;
+  [[nodiscard]] int GetFd() const final;
 
  private:
   /// File descriptor to send messages on.

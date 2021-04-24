@@ -14,7 +14,7 @@ using thread_pool::Task;
 ReceiverTask::ReceiverTask(
     int receive_fd,
     std::shared_ptr<queue::Queue<ReceiveQueueMessage>> receive_queue,
-    Endpoint  endpoint)
+    Endpoint endpoint)
     : receive_fd_(receive_fd),
       endpoint_(std::move(endpoint)),
       receive_queue_(std::move(receive_queue)) {}
@@ -51,5 +51,7 @@ Task::Status message_passing::ReceiverTask::RunAtomic() {
   // just get stuck in an infinite loop.
   return kReceiveResult > 0 ? Task::Status::RUNNING : Task::Status::FAILED;
 }
+
+int ReceiverTask::GetFd() const { return receive_fd_; }
 
 }  // namespace message_passing

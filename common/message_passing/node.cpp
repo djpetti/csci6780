@@ -31,4 +31,9 @@ std::shared_ptr<thread_pool::ThreadPool> Node::thread_pool() {
   return thread_pool_;
 }
 
+std::shared_ptr<queue::Queue<ReceiverTask::ReceiveQueueMessage>>
+Node::receive_queue() {
+  return receive_queue_;
+}
+
 }  // namespace message_passing

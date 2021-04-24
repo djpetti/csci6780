@@ -39,7 +39,7 @@ class Node {
    *    false otherwise.
    */
   template <class MessageType>
-  bool Receive(MessageType* message, Endpoint* source) {
+  bool Receive(MessageType* message, Endpoint* source = nullptr) {
     return DoReceive(
         [this](ReceiverTask::ReceiveQueueMessage* message) {
           *message = receive_queue_->Pop();
@@ -62,7 +62,7 @@ class Node {
    */
   template <class MessageType, class Rep, class Period>
   bool Receive(const std::chrono::duration<Rep, Period>& timeout,
-               MessageType* message, Endpoint* source) {
+               MessageType* message, Endpoint* source = nullptr) {
     return DoReceive(
         [this, &timeout](ReceiverTask::ReceiveQueueMessage* message) {
           return receive_queue_->PopTimed(timeout, message);
@@ -82,6 +82,11 @@ class Node {
    * @return The thread pool to use for this class.
    */
   std::shared_ptr<thread_pool::ThreadPool> thread_pool();
+  /**
+   * @return The receive queue to use for this class.
+   */
+  std::shared_ptr<queue::Queue<ReceiverTask::ReceiveQueueMessage>>
+  receive_queue();
 
   /**
    * @brief Ensures that any sockets are initialized and we are properly

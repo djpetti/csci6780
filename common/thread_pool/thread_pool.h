@@ -29,7 +29,7 @@ class ThreadPool : public IThreadPool {
 
   void AddTask(const std::shared_ptr<Task> &task) final;
   Task::Status GetTaskStatus(const std::shared_ptr<Task> &task) final;
-  void CancelTask(const std::shared_ptr<Task> &task_handle) final;
+  void CancelTask(const std::shared_ptr<Task> &task) final;
   void WaitForCompletion() final;
   void WaitForCompletion(const std::shared_ptr<Task> &task) final;
   uint32_t NumThreads() final;

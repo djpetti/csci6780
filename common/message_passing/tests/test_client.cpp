@@ -3,7 +3,6 @@
  */
 
 #include <gtest/gtest.h>
-#include <netinet/in.h>
 #include <sys/socket.h>
 
 #include <cerrno>
@@ -16,6 +15,7 @@
 #include <vector>
 
 #include "../client.h"
+#include "../utils.h"
 #include "test_messages.pb.h"
 #include "thread_pool/thread_pool.h"
 #include "wire_protocol/wire_protocol.h"
@@ -53,54 +53,6 @@ TestResponse MakeTestResponse() {
   test_message.set_parameter(kTestParameterString);
 
   return test_message;
-}
-
-/**
- * @brief Creates the address structure to use for socket creation.
- * @param port The port we want to use.
- * @return The address structure it created.
- */
-struct sockaddr_in MakeAddress(uint16_t port) {
-  struct sockaddr_in address {};
-  address.sin_family = AF_INET;
-  address.sin_addr.s_addr = INADDR_ANY;
-  address.sin_port = htons(port);
-
-  return address;
-}
-
-/**
- * @brief Sets up a server socket for listening.
- * @param address The address structure to use.
- * @return The server socket it created, or -1 if it failed.
- */
-int SetUpListenerSocket(const struct sockaddr_in &address) {
-  // Open a TCP socket.
-  const int server_fd = socket(AF_INET, SOCK_STREAM, 0);
-  if (server_fd == 0) {
-    LOG_S(ERROR) << "Failed to create server socket";
-    return -1;
-  }
-
-  // Allow the server to re-bind to this port if it was restarted quickly.
-  const int option = 1;
-  if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &option,
-                 sizeof(option))) {
-    LOG_S(ERROR) << "Failed to set socket options";
-    // This is not a fatal error.
-  }
-
-  // Bind to the port.
-  if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0) {
-    LOG_S(ERROR) << "bind() failed on server socket";
-    return -1;
-  }
-  if (listen(server_fd, 1) < 0) {
-    LOG_S(ERROR) << "listen() failed on server socket";
-    return -1;
-  }
-
-  return server_fd;
 }
 
 /**
@@ -306,9 +258,9 @@ struct ConfigForTests {
  */
 ConfigForTests MakeConfig() {
   auto thread_pool = std::make_shared<ThreadPool>();
-  auto message_sender = std::make_unique<Client>(thread_pool, kTestEndpoint);
+  auto client = std::make_unique<Client>(thread_pool, kTestEndpoint);
 
-  return {thread_pool, std::move(message_sender)};
+  return {thread_pool, std::move(client)};
 }
 
 /**

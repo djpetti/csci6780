@@ -187,11 +187,11 @@ Task::Status ThreadPool::GetTaskStatus(const std::shared_ptr<Task>& task) {
   return handle_to_status_[task->GetHandle()];
 }
 
-void ThreadPool::CancelTask(const std::shared_ptr<Task>& task_handle) {
+void ThreadPool::CancelTask(const std::shared_ptr<Task>& task) {
   std::lock_guard<std::mutex> lock(mutex_);
 
-  LOG_S(INFO) << "Cancelling task " << task_handle << ".";
-  cancelled_tasks_.insert(task_handle->GetHandle());
+  LOG_S(INFO) << "Cancelling task " << task->GetHandle() << ".";
+  cancelled_tasks_.insert(task->GetHandle());
 }
 
 void ThreadPool::WaitForCompletion() {
