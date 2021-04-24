@@ -38,6 +38,11 @@ inline bool operator==(const Endpoint& e1, const Endpoint& e2) {
   return e1.hostname == e2.hostname && e1.port == e2.port;
 }
 
+/// Inequality operator for endpoints.
+inline bool operator!=(const Endpoint& e1, const Endpoint& e2) {
+  return !(e1 == e2);
+}
+
 }  // namespace message_passing
 
 #endif  // CSCI6780_TYPES_H
