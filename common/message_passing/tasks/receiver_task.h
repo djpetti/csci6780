@@ -8,34 +8,39 @@
 
 #include "../types.h"
 #include "queue/queue.h"
-#include "thread_pool/task.h"
+#include "socket_task_interface.h"
 
 namespace message_passing {
 
 /**
  * @brief Task that is responsible for reading messages from a socket.
  */
-class ReceiverTask : public thread_pool::Task {
+class ReceiverTask : public ISocketTask {
  public:
   /// Queue message containing messages to be sent.
   struct ReceiveQueueMessage {
     /// The serialized message.
     std::vector<uint8_t> message;
 
+    /// The endpoint that this message was received from.
+    Endpoint endpoint;
     /// recv() call status associated with this message.
     int status;
   };
 
   /**
-   * @param receive_fd The file descriptor to send on.
-   * @param receive_queue The queue that messages to send will be received on.
-   * @param send_callback Callback function to call with the message ID and the
-   *    result of `send()` every time a message is sent.
+   * @param receive_fd The file descriptor to receive on.
+   * @param receive_queue The queue that messages we receive will be sent on.
+   * @param endpoint The endpoint that this task is receiving messages from.
+   *    This will be set in all queue messages from this task.
    */
   ReceiverTask(int receive_fd,
-      std::shared_ptr<queue::Queue<ReceiveQueueMessage>> receive_queue);
+               std::shared_ptr<queue::Queue<ReceiveQueueMessage>> receive_queue,
+               Endpoint endpoint);
+  ~ReceiverTask() override = default;
 
   Status RunAtomic() final;
+  [[nodiscard]] int GetFd() const final;
 
  private:
   /// Size of chunks to receive messages in.
@@ -43,6 +48,8 @@ class ReceiverTask : public thread_pool::Task {
 
   /// File descriptor to receive messages on.
   int receive_fd_;
+  /// Endpoint we are receiving from.
+  Endpoint endpoint_;
   /// Buffer to use for partial received messages.
   std::vector<uint8_t> received_message_buffer_{};
 
