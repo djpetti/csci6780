@@ -1,6 +1,6 @@
 #include "bootstrap.h"
 
-nameserver::Bootstrap::Bootstrap(const std::string& config_file)
+nameserver::Bootstrap::Bootstrap(const std::filesystem::path config_file)
     : Nameserver(config_file) {
 
 }

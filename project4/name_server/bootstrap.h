@@ -4,6 +4,8 @@
 #ifndef PROJECT4_BOOTSTRAP_H
 #define PROJECT4_BOOTSTRAP_H
 
+#include <filesystem>
+
 #include "nameserver.h"
 
 namespace nameserver {
@@ -14,9 +16,10 @@ namespace nameserver {
 class Bootstrap : public Nameserver {
  public:
   /**
+   * @brief Initializes
    * @param the config file of this bootstrap
    */
-  explicit Bootstrap(const std::string& config_file);
+  explicit Bootstrap(const std::filesystem::path config_file);
 
   /**
    * @param Generic BootstrapMessage request
