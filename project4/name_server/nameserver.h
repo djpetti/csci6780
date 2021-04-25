@@ -68,7 +68,7 @@ class Nameserver {
   void HandleRequest(const consistent_hash_msgs::DeleteResult &request);
 
   /**
-   * @brief forwards the NameServerMessage and forwards it to the successor or
+   * @brief takes a NameServerMessage and forwards it to the successor or
    * predecessor
    * @param predecessor Predecessor if true, else successor
    * @param request The request to forward
