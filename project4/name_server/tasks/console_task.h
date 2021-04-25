@@ -40,9 +40,10 @@ class ConsoleTask : public thread_pool::Task {
    * clear the line of the console that the cursor is currently on
    */
   void ClearLine();
-
   queue::Queue<std::string> console_message_queue_{};
   std::string prompt_;
+
+  constexpr static const auto kTimeout = std::chrono::milliseconds(100);
 };
 }  // namespace nameserver::tasks
 
