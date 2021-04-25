@@ -5,10 +5,11 @@
 #define PROJECT4_BOOTSTRAP_TASK_H
 
 #include <iostream>
-#include "thread_pool/task.h"
+
 #include "../bootstrap.h"
 #include "../commands.h"
 #include "queue/queue.h"
+#include "thread_pool/task.h"
 
 namespace nameserver::tasks {
 
@@ -17,7 +18,6 @@ namespace nameserver::tasks {
  */
 class BootstrapTask : public thread_pool::Task {
  public:
-
   /**
    * @brief Initializes the bootstrap task based on config file.
    * @param nameserver the bootstrap associated with this task
@@ -33,8 +33,9 @@ class BootstrapTask : public thread_pool::Task {
   std::shared_ptr<nameserver::Bootstrap> bootstrap_;
 
   /// Command queue
-  queue::Queue<std::pair<nameserver::BootstrapCommand, std::string>> cmd_queue_;
-
+  std::shared_ptr<
+      queue::Queue<std::pair<nameserver::NameserverCommand, std::string>>>
+      cmd_queue_{};
 };
 }  // namespace nameserver::tasks
 #endif  // PROJECT4_BOOTSTRAP_TASK_H

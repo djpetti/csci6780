@@ -4,7 +4,7 @@
 #ifndef PROJECT4_COMMANDS_H
 #define PROJECT4_COMMANDS_H
 
-#include <map>
+#include <unordered_map>
 #include <string>
 
 namespace nameserver {
@@ -12,7 +12,9 @@ namespace nameserver {
 enum class NameserverCommand { ENTER, EXIT };
 
 const std::unordered_map<std::string, NameserverCommand> nameserver_cmds = {
-    {"enter", NameserverCommand::ENTER}, {"exit", NameserverCommand::EXIT}};
+    {"enter", NameserverCommand::ENTER},
+    {"exit", NameserverCommand::EXIT}
+};
 
 enum class BootstrapCommand { LOOKUP, INSERT, DELETE };
 
