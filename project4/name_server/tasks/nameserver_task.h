@@ -20,9 +20,9 @@ class NameserverTask : public thread_pool::Task {
 
   /**
    * @brief Initializes the nameserver task based on config file.
-   * @param config_file the config file of this name server
+   * @param nameserver the nameserver associated with this task
    */
-  explicit NameserverTask(const std::filesystem::path config_file);
+  explicit NameserverTask(std::shared_ptr<nameserver::Nameserver> nameserver);
 
   Status SetUp() override;
 
@@ -30,7 +30,7 @@ class NameserverTask : public thread_pool::Task {
 
  private:
   /// Nameserver
-  nameserver::Nameserver nameserver_;
+  std::shared_ptr<nameserver::Nameserver> nameserver_;
 
   /// Command queue
   queue::Queue<std::pair<nameserver::NameserverCommand, std::string>> cmd_queue_;

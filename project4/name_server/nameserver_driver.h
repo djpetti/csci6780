@@ -30,14 +30,13 @@ class NameserverDriver {
   [[noreturn]] void Start();
 
  private:
+  /// Nameserver
+  std::shared_ptr<nameserver::Nameserver> nameserver_;
+
   /// Pool and tasks
-  thread_pool::ThreadPool pool_;
+  std::shared_ptr<thread_pool::ThreadPool> pool_;
   std::shared_ptr<nameserver::tasks::ConsoleTask> console_task_;
   std::shared_ptr<nameserver::tasks::NameserverTask> nameserver_task_;
-
-  /// Config file
-  const std::filesystem::path config_file_;
 };
-
 }  // namespace nameserver
 #endif  // PROJECT4_NAMESERVER_DRIVER_H

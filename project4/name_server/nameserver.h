@@ -67,14 +67,6 @@ class Nameserver {
 
   void HandleRequest(const consistent_hash_msgs::DeleteResult &request);
 
-  /**
-   * @brief takes a NameServerMessage and forwards it to the successor or
-   * predecessor
-   * @param predecessor Predecessor if true, else successor
-   * @param request The request to forward
-   */
-  void ForwardRequest(bool to_predecessor, const consistent_hash_msgs::NameServerMessage &request);
-
   /// The server object
   std::unique_ptr<message_passing::Server> server_;
 

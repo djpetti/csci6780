@@ -5,12 +5,10 @@ Nameserver::Nameserver(const std::filesystem::path config_file) {
   client_threadpool_ = std::make_shared<thread_pool::ThreadPool>();
 }
 
-bool Nameserver::Enter() {
-  return false;
-}
-void Nameserver::Exit() {
+bool Nameserver::Enter() { return false; }
 
-}
+void Nameserver::Exit() {}
+
 void Nameserver::HandleRequest(
     const consistent_hash_msgs::NameServerMessage& request) {}
 
@@ -37,8 +35,5 @@ void Nameserver::HandleRequest(
 
 void Nameserver::HandleRequest(
     const consistent_hash_msgs::DeleteResult& request) {}
-void Nameserver::ForwardRequest(
-    bool to_predecessor,
-    const consistent_hash_msgs::NameServerMessage& request) {}
 
 }  // namespace nameserver

@@ -29,6 +29,9 @@ class BootstrapDriver {
   [[noreturn]] void Start();
 
  private:
+  /// Bootstrap
+  std::shared_ptr<nameserver::Bootstrap> bootstrap_;
+
   /// Pool and tasks
   std::shared_ptr<thread_pool::ThreadPool> pool_;
   std::shared_ptr<nameserver::tasks::ConsoleTask> console_task_;

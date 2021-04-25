@@ -20,9 +20,9 @@ class BootstrapTask : public thread_pool::Task {
 
   /**
    * @brief Initializes the bootstrap task based on config file.
-   * @param config_file the config file of this bootstrap
+   * @param nameserver the bootstrap associated with this task
    */
-  explicit BootstrapTask(const std::filesystem::path config_file);
+  explicit BootstrapTask(std::shared_ptr<nameserver::Bootstrap> bootstrap);
 
   Status SetUp() override;
 
@@ -30,7 +30,7 @@ class BootstrapTask : public thread_pool::Task {
 
  private:
   /// Bootstrap
-  nameserver::Bootstrap bootstrap_;
+  std::shared_ptr<nameserver::Bootstrap> bootstrap_;
 
   /// Command queue
   queue::Queue<std::pair<nameserver::BootstrapCommand, std::string>> cmd_queue_;

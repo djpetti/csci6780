@@ -5,12 +5,16 @@
 namespace nameserver {
 
 NameserverDriver::NameserverDriver(std::filesystem::path config_file)
-    : console_task_(
-          std::make_shared<nameserver::tasks::ConsoleTask>("nameserver=> ")),
-      config_file_(std::move(config_file)) {}
+    : pool_(std::make_shared<thread_pool::ThreadPool>()),
+      console_task_(
+          std::make_shared<nameserver::tasks::ConsoleTask>("nameserver=> ")) {
+  nameserver_ = std::make_shared<nameserver::Nameserver>(config_file);
+  nameserver_task_ =
+      std::make_shared<nameserver::tasks::NameserverTask>(nameserver_);
+}
 
 [[noreturn]] void NameserverDriver::Start() {
-  pool_.AddTask(console_task_);
+  pool_->AddTask(console_task_);
 
   while (true) {
     std::string input;

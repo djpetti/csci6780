@@ -1,10 +1,12 @@
 #include "bootstrap_task.h"
 
+#include <utility>
+
 namespace nameserver::tasks {
 
 /// TODO Instantiate bootstrap
-BootstrapTask::BootstrapTask(const std::filesystem::path config_file)
-    : bootstrap_(config_file) {}
+BootstrapTask::BootstrapTask(std::shared_ptr<nameserver::Bootstrap> bootstrap)
+    : bootstrap_(bootstrap) {}
 
 /// TODO Set up socket listening
 thread_pool::Task::Status BootstrapTask::SetUp() {

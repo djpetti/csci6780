@@ -3,9 +3,13 @@
 namespace nameserver {
 
 BootstrapDriver::BootstrapDriver(const std::filesystem::path config_file)
-    : console_task_(
-          std::make_shared<nameserver::tasks::ConsoleTask>("bootstrap=> ")),
-      bootstrap_task_(std::make_shared<nameserver::tasks::BootstrapTask>(config_file)) {}
+    : pool_(std::make_shared<thread_pool::ThreadPool>()),
+      console_task_(
+          std::make_shared<nameserver::tasks::ConsoleTask>("bootstrap=> ")) {
+  bootstrap_ = std::make_shared<nameserver::Bootstrap>(config_file);
+  bootstrap_task_ =
+      std::make_shared<nameserver::tasks::BootstrapTask>(bootstrap_);
+}
 
 [[noreturn]] void BootstrapDriver::Start() {
   pool_->AddTask(console_task_);

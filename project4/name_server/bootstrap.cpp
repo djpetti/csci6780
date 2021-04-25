@@ -6,17 +6,15 @@ Bootstrap::Bootstrap(const std::filesystem::path config_file)
 
 void Bootstrap::HandleRequest(
     const consistent_hash_msgs::EntranceRequest& request) {}
-void Bootstrap::InitiateEntrance(const message_passing::Endpoint server) {
 
-}
+void Bootstrap::InitiateEntrance(const message_passing::Endpoint server) {}
+
 std::string Bootstrap::LookUp(int key) {
-
   return "";
 }
-void Bootstrap::Insert(int key, std::string val) {
 
-}
-void Bootstrap::Delete(int key, std::string val) {
+void Bootstrap::Insert(int key, std::string val) {}
 
-}
+void Bootstrap::Delete(int key, std::string val) {}
+
 }  // namespace nameserver
