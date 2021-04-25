@@ -10,14 +10,14 @@
 #include <iostream>
 #include <string>
 #include <vector>
-#include "../../../common/queue/queue.h"
+#include "queue/queue.h"
 
 #include "thread_pool/task.h"
 
-namespace nameserver_tasks {
+namespace nameserver::tasks {
 
 /**
- * @class The coordinator of all participant console output
+ * @class The coordinator of all nameserver console output
  */
 class ConsoleTask : public thread_pool::Task {
  public:
@@ -44,6 +44,6 @@ class ConsoleTask : public thread_pool::Task {
   queue::Queue<std::string> console_message_queue_{};
   std::string prompt_;
 };
-}  // namespace nameserver_tasks
+}  // namespace nameserver::tasks
 
 #endif  // PROJECT4_CONSOLE_TASK_H

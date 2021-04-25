@@ -12,17 +12,27 @@
 
 namespace nameserver {
 
+/**
+ * @class The driver called by main to handle the Bootstrap user interface
+ */
 class BootstrapDriver {
  public:
-  explicit BootstrapDriver(const std::string& config_file);
 
+  /**
+   * @param config_file The configuration file location
+   */
+  explicit BootstrapDriver(const std::filesystem::path config_file);
+
+  /**
+   * Start the user input loop
+   */
   [[noreturn]] void Start();
 
  private:
   /// Pool and tasks
   std::shared_ptr<thread_pool::ThreadPool> pool_;
-  std::shared_ptr<nameserver_tasks::ConsoleTask> console_task_;
-  std::shared_ptr<nameserver_tasks::BootstrapTask> bootstrap_task_;
+  std::shared_ptr<nameserver::tasks::ConsoleTask> console_task_;
+  std::shared_ptr<nameserver::tasks::BootstrapTask> bootstrap_task_;
 };
 }  // namespace nameserver
 #endif  // PROJECT4_BOOTSTRAP_DRIVER_H

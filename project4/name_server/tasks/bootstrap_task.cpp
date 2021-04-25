@@ -1,9 +1,9 @@
 #include "bootstrap_task.h"
 
-namespace nameserver_tasks {
+namespace nameserver::tasks {
 
 /// TODO Instantiate bootstrap
-BootstrapTask::BootstrapTask(const std::string &config_file)
+BootstrapTask::BootstrapTask(const std::filesystem::path config_file)
     : bootstrap_(config_file) {}
 
 /// TODO Set up socket listening
@@ -17,4 +17,4 @@ thread_pool::Task::Status BootstrapTask::RunAtomic() {
   return thread_pool::Task::Status::RUNNING;
 }
 
-}  // namespace nameserver_tasks
+}  // namespace nameserver::tasks

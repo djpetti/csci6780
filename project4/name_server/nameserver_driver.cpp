@@ -6,7 +6,7 @@ namespace nameserver {
 
 NameserverDriver::NameserverDriver(std::filesystem::path config_file)
     : console_task_(
-          std::make_shared<nameserver_tasks::ConsoleTask>("nameserver=> ")),
+          std::make_shared<nameserver::tasks::ConsoleTask>("nameserver=> ")),
       config_file_(std::move(config_file)) {}
 
 [[noreturn]] void NameserverDriver::Start() {

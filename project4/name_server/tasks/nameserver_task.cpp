@@ -1,9 +1,9 @@
 #include "nameserver_task.h"
 
-namespace nameserver_tasks {
+namespace nameserver::tasks {
 
 /// TODO Instantiate name server
-NameserverTask::NameserverTask(const std::string &config_file)
+NameserverTask::NameserverTask(const std::filesystem::path config_file)
     : nameserver_(config_file) {}
 
 /// TODO Set up socket listening
@@ -17,4 +17,4 @@ thread_pool::Task::Status NameserverTask::RunAtomic() {
   return thread_pool::Task::Status::RUNNING;
 }
 
-}  // namespace nameserver_tasks
+}  // namespace nameserver::tasks

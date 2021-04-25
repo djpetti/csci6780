@@ -13,17 +13,27 @@
 
 namespace nameserver {
 
+/**
+ * @class The driver called by main to handle the Nameserver user interface
+ */
 class NameserverDriver {
  public:
+
+  /**
+   * @param config_file The configuration file location
+   */
   explicit NameserverDriver(std::filesystem::path config_file);
 
+  /**
+   * Start the user input loop
+   */
   [[noreturn]] void Start();
 
  private:
   /// Pool and tasks
   thread_pool::ThreadPool pool_;
-  std::shared_ptr<nameserver_tasks::ConsoleTask> console_task_;
-  std::shared_ptr<nameserver_tasks::NameserverTask> nameserver_task_;
+  std::shared_ptr<nameserver::tasks::ConsoleTask> console_task_;
+  std::shared_ptr<nameserver::tasks::NameserverTask> nameserver_task_;
 
   /// Config file
   const std::filesystem::path config_file_;

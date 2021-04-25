@@ -3,7 +3,7 @@
 #include <loguru.hpp>
 #include <utility>
 
-namespace nameserver_tasks {
+namespace nameserver::tasks {
 
 ConsoleTask::ConsoleTask(const std::string& prompt) : prompt_(prompt) {}
 
@@ -34,4 +34,4 @@ void ConsoleTask::SendConsole(const std::string& message) {
 
 void ConsoleTask::ClearLine() { std::cout << "\033[A\33[2K\r"; }
 
-}  // namespace nameserver_tasks
+}  // namespace nameserver::tasks

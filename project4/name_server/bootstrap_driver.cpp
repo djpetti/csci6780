@@ -2,10 +2,10 @@
 
 namespace nameserver {
 
-BootstrapDriver::BootstrapDriver(const std::string& config_file)
+BootstrapDriver::BootstrapDriver(const std::filesystem::path config_file)
     : console_task_(
-          std::make_shared<nameserver_tasks::ConsoleTask>("bootstrap=> ")),
-      bootstrap_task_(std::make_shared<nameserver_tasks::BootstrapTask>(config_file)) {}
+          std::make_shared<nameserver::tasks::ConsoleTask>("bootstrap=> ")),
+      bootstrap_task_(std::make_shared<nameserver::tasks::BootstrapTask>(config_file)) {}
 
 [[noreturn]] void BootstrapDriver::Start() {
   pool_->AddTask(console_task_);

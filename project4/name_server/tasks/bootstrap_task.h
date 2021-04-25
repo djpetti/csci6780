@@ -8,13 +8,21 @@
 #include "thread_pool/task.h"
 #include "../bootstrap.h"
 #include "../commands.h"
-#include "../../../common/queue/queue.h"
+#include "queue/queue.h"
 
-namespace nameserver_tasks {
+namespace nameserver::tasks {
 
+/**
+ * @class The task that controls the contained bootstrap
+ */
 class BootstrapTask : public thread_pool::Task {
  public:
-  explicit BootstrapTask(const std::string& config_file);
+
+  /**
+   * @brief Initializes the bootstrap task based on config file.
+   * @param config_file the config file of this bootstrap
+   */
+  explicit BootstrapTask(const std::filesystem::path config_file);
 
   Status SetUp() override;
 
@@ -28,5 +36,5 @@ class BootstrapTask : public thread_pool::Task {
   queue::Queue<std::pair<nameserver::BootstrapCommand, std::string>> cmd_queue_;
 
 };
-}
+}  // namespace nameserver::tasks
 #endif  // PROJECT4_BOOTSTRAP_TASK_H

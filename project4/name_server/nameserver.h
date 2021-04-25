@@ -16,13 +16,13 @@
 namespace nameserver {
 
 /**
- * @class The basic name server
+ * @class The basic nameserver
  */
 class Nameserver {
  public:
   /**
-   * @brief Initializes the name server based on config file.
-   * @param the config file of this name server
+   * @brief Initializes the nameserver based on config file.
+   * @param the config file of this nameserver
    */
   explicit Nameserver(const std::filesystem::path config_file);
 
@@ -68,6 +68,8 @@ class Nameserver {
   void HandleRequest(const consistent_hash_msgs::DeleteResult &request);
 
   /**
+   * @brief forwards the NameServerMessage and forwards it to the successor or
+   * predecessor
    * @param predecessor Predecessor if true, else successor
    * @param request The request to forward
    */
