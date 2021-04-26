@@ -4,9 +4,8 @@
 #ifndef PROJECT4_BOOTSTRAP_DRIVER_H
 #define PROJECT4_BOOTSTRAP_DRIVER_H
 
-#include "../../common/thread_pool/task.h"
-#include "../../common/thread_pool/thread_pool.h"
-
+#include "thread_pool/task.h"
+#include "thread_pool/thread_pool.h"
 #include "tasks/console_task.h"
 #include "tasks/bootstrap_task.h"
 
@@ -17,11 +16,10 @@ namespace nameserver {
  */
 class BootstrapDriver {
  public:
-
   /**
    * @param config_file The configuration file location
    */
-  explicit BootstrapDriver(const std::filesystem::path config_file);
+  explicit BootstrapDriver(std::filesystem::path config_file);
 
   /**
    * Start the user input loop

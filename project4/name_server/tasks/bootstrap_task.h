@@ -31,11 +31,6 @@ class BootstrapTask : public thread_pool::Task {
  private:
   /// Bootstrap
   std::shared_ptr<nameserver::Bootstrap> bootstrap_;
-
-  /// Command queue
-  std::shared_ptr<
-      queue::Queue<std::pair<nameserver::NameserverCommand, std::string>>>
-      cmd_queue_{};
 };
 }  // namespace nameserver::tasks
 #endif  // PROJECT4_BOOTSTRAP_TASK_H

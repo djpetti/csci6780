@@ -31,11 +31,6 @@ class NameserverTask : public thread_pool::Task {
  private:
   /// Nameserver
   std::shared_ptr<nameserver::Nameserver> nameserver_;
-
-  /// Command queue
-  std::shared_ptr<
-      queue::Queue<std::pair<nameserver::NameserverCommand, std::string>>>
-      cmd_queue_{};
 };
 }  // namespace nameserver::tasks
 #endif  // PROJECT4_NAMESERVER_TASK_H

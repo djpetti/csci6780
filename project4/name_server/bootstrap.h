@@ -21,6 +21,14 @@ class Bootstrap : public Nameserver {
    */
   explicit Bootstrap(const std::filesystem::path config_file);
 
+
+  /**
+   * Handles a generic NameServerMessage
+   * @param Generic NameServerMessage request
+   */
+  void HandleRequest(const google::protobuf::Message &request);
+
+ private:
   /**
    * @brief Handles an entrance request from an entering name server.
    * @param A BootstrapMessage request

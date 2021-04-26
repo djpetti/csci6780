@@ -4,6 +4,11 @@ namespace nameserver {
 Bootstrap::Bootstrap(const std::filesystem::path config_file)
     : Nameserver(config_file) {}
 
+void Bootstrap::HandleRequest(const google::protobuf::Message& request) {
+  /// Handle as if BootstrapMessage, else call:
+  /// nameserver::Nameserver::HandleRequest(request);
+}
+
 void Bootstrap::HandleRequest(
     const consistent_hash_msgs::EntranceRequest& request) {}
 

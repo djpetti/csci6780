@@ -9,8 +9,9 @@
 #include <filesystem>
 #include <map>
 #include <string>
-#include "message_passing/server.h"
+
 #include "message_passing/client.h"
+#include "message_passing/server.h"
 #include "message_passing/types.h"
 
 namespace nameserver {
@@ -30,23 +31,22 @@ class Nameserver {
    * @brief Inserts this nameserver into the hash ring.
    * @return true on success false on failure
    */
-   bool Enter();
+  bool Enter();
 
-   /**
-    * @brief Deletes this nameserver from the hash ring.
-    * @return true on success false on failure
-    */
-    void Exit();
+  /**
+   * @brief Deletes this nameserver from the hash ring.
+   * @return true on success false on failure
+   */
+  void Exit();
 
-
- private:
-
+ protected:
   /**
    * Handles a generic NameServerMessage
    * @param Generic NameServerMessage request
    */
-  void HandleRequest(const consistent_hash_msgs::NameServerMessage &request);
+  virtual void HandleRequest(const google::protobuf::Message &request);
 
+ private:
   /**
    *
    * @param A NameServerMessage request
@@ -55,11 +55,14 @@ class Nameserver {
 
   void HandleRequest(const consistent_hash_msgs::ExitInformation &request);
 
-  void HandleRequest(const consistent_hash_msgs::UpdatePredecessorRequest &request);
+  void HandleRequest(
+      const consistent_hash_msgs::UpdatePredecessorRequest &request);
 
-  void HandleRequest(const consistent_hash_msgs::UpdateSuccessorRequest &request);
+  void HandleRequest(
+      const consistent_hash_msgs::UpdateSuccessorRequest &request);
 
-  void HandleRequest(const consistent_hash_msgs::UpdatePredecessorResponse &request);
+  void HandleRequest(
+      const consistent_hash_msgs::UpdatePredecessorResponse &request);
 
   void HandleRequest(const consistent_hash_msgs::LookUpResult &request);
 
@@ -96,10 +99,10 @@ class Nameserver {
 
   /// Had to comment these out because of "not used" warnings treated as errors
   /// Port of this name server
-  //int port_;
+  // int port_;
 
   /// Id of this name server
-  //int id_;
+  // int id_;
 };
 }  // namespace nameserver
 

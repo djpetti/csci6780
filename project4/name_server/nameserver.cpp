@@ -10,7 +10,7 @@ bool Nameserver::Enter() { return false; }
 void Nameserver::Exit() {}
 
 void Nameserver::HandleRequest(
-    const consistent_hash_msgs::NameServerMessage& request) {}
+    const google::protobuf::Message& request) {}
 
 void Nameserver::HandleRequest(
     const consistent_hash_msgs::EntranceInformation& request) {}

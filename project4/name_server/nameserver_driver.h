@@ -4,8 +4,6 @@
 #ifndef PROJECT4_NAMESERVER_DRIVER_H
 #define PROJECT4_NAMESERVER_DRIVER_H
 
-#include <filesystem>
-
 #include "thread_pool/task.h"
 #include "thread_pool/thread_pool.h"
 #include "tasks/console_task.h"
@@ -18,7 +16,6 @@ namespace nameserver {
  */
 class NameserverDriver {
  public:
-
   /**
    * @param config_file The configuration file location
    */
