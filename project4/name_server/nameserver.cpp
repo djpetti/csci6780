@@ -1,5 +1,15 @@
 #include "nameserver.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <errno.h>
+#include <netdb.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 namespace nameserver {
+
 Nameserver::Nameserver(
     std::shared_ptr<thread_pool::ThreadPool> pool,
     std::shared_ptr<nameserver::tasks::ConsoleTask> console_task,
@@ -7,6 +17,10 @@ Nameserver::Nameserver(
   console_task_ = console_task;
   threadpool_ = pool;
   client_ = std::make_unique<message_passing::Client>(threadpool_, bootstrap_);
+}
+
+std::string GetIp() {
+
 }
 
 bool Nameserver::Enter() {
@@ -35,11 +49,13 @@ bool Nameserver::Enter() {
   bounds_.first = update_pred_res.lower_bounds();
   bounds_.second = update_pred_res.upper_bounds();
   for (int i = 0; i < update_pred_res.mutable_keys()->size(); i++) {
-    std::pair<int, std::string> pair(update_pred_res.mutable_keys()->at(i), update_pred_res.mutable_values()->at(i));
+    std::pair<int, std::string> pair(update_pred_res.mutable_keys()->at(i),
+                                     update_pred_res.mutable_values()->at(i));
     pairs_.insert(pair);
   }
   // tell this entering server's predecessor to update it's successor info
-  client_ = std::make_unique<message_passing::Client>(threadpool_,predecessor_);
+  client_ =
+      std::make_unique<message_passing::Client>(threadpool_, predecessor_);
   update_succ_req.mutable_successor_info()->set_port(port_);
   update_succ_req.mutable_successor_info()->set_id(id_);
   if (client_->Send(update_succ_req) < 0) return false;
@@ -59,17 +75,36 @@ void Nameserver::Exit() {
     count++;
   }
   // send exit information to successor
+  // successor will inform this server's predecessor to update it's successor
   client_ = std::make_unique<message_passing::Client>(threadpool_, successor_);
   if (client_->Send(exit_info) < 0) {
     // error
   }
-
 }
 
-void Nameserver::HandleRequest(const google::protobuf::Message& request) {}
+void Nameserver::HandleRequest(
+    const consistent_hash_msgs::NameServerMessage& request) {
+  HandleRequest(request);
+}
 
 void Nameserver::HandleRequest(
-    const consistent_hash_msgs::EntranceInformation& request) {}
+    consistent_hash_msgs::EntranceInformation& request) {
+  if (request.id() == (id_ + 1)) {
+    // this nameserver is the entering nameserver's predecessor
+    request.mutable_predecessor_info()->set_id(id_);
+    request.mutable_predecessor_info()->set_port(port_);
+  } else if (request.id() == (id_ - 1)) {
+    // this nameserver is the entering nameserver's to-be successor.
+    // the entering nameserver's successor will be this name server's current successor
+    request.mutable_successor_info()->set_port(successor_.port);
+    request.mutable_successor_info()->set_ip(successor_.hostname);
+  }
+  if (successor_ == bootstrap_ && !request.successor_info().IsInitialized() &&
+      !request.predecessor_info().IsInitialized()) {
+    request.mutable_successor_info()->set_id(kBootstrapID);
+    request.mutable_successor_info()->set_port(bootstrap_.port);
+  }
+}
 
 void Nameserver::HandleRequest(
     const consistent_hash_msgs::ExitInformation& request) {}

@@ -47,14 +47,14 @@ class Nameserver {
    * Handles a generic NameServerMessage
    * @param Generic NameServerMessage request
    */
-  void HandleRequest(const google::protobuf::Message &request);
+  void HandleRequest(const consistent_hash_msgs::NameServerMessage &request);
 
  private:
   /**
    *
    * @param A NameServerMessage request
    */
-  void HandleRequest(const consistent_hash_msgs::EntranceInformation &request);
+  void HandleRequest(consistent_hash_msgs::EntranceInformation &request);
 
   void HandleRequest(const consistent_hash_msgs::ExitInformation &request);
 
@@ -72,6 +72,9 @@ class Nameserver {
   void HandleRequest(const consistent_hash_msgs::InsertResult &request);
 
   void HandleRequest(const consistent_hash_msgs::DeleteResult &request);
+
+  /// The bootstrap ID
+  const int kBootstrapID = 0;
 
   /// The server object
   std::unique_ptr<message_passing::Server> server_;
