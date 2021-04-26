@@ -6,7 +6,8 @@ BootstrapDriver::BootstrapDriver(const std::filesystem::path config_file)
     : pool_(std::make_shared<thread_pool::ThreadPool>()),
       console_task_(
           std::make_shared<nameserver::tasks::ConsoleTask>("bootstrap=> ")) {
-  bootstrap_ = std::make_shared<nameserver::Bootstrap>(config_file);
+  bootstrap_ = std::make_shared<nameserver::Bootstrap>(pool_, console_task_,
+                                                       config_file);
   bootstrap_task_ =
       std::make_shared<nameserver::tasks::BootstrapTask>(bootstrap_);
 }

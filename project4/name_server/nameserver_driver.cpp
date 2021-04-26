@@ -8,7 +8,8 @@ NameserverDriver::NameserverDriver(std::filesystem::path config_file)
     : pool_(std::make_shared<thread_pool::ThreadPool>()),
       console_task_(
           std::make_shared<nameserver::tasks::ConsoleTask>("nameserver=> ")) {
-  nameserver_ = std::make_shared<nameserver::Nameserver>(pool_, config_file);
+  nameserver_ = std::make_shared<nameserver::Nameserver>(pool_, console_task_,
+                                                         config_file);
   nameserver_task_ =
       std::make_shared<nameserver::tasks::NameserverTask>(nameserver_);
 }

@@ -19,8 +19,9 @@ class Bootstrap : public Nameserver {
    * @brief Initializes the bootstrap server from config file parameters.
    * @param the config file of this bootstrap
    */
-  Bootstrap(std::shared_ptr<thread_pool::ThreadPool> pool, const std::filesystem::path config_file);
-
+  Bootstrap(std::shared_ptr<thread_pool::ThreadPool> pool,
+            std::shared_ptr<nameserver::tasks::ConsoleTask> console_task,
+            const std::filesystem::path config_file);
 
   /**
    * Handles a generic NameServerMessage
@@ -62,6 +63,18 @@ class Bootstrap : public Nameserver {
    */
   void InitiateEntrance(const message_passing::Endpoint server);
 
+  /**
+   * @param A NameServerMessage request
+   */
+  void HandleRequest(const consistent_hash_msgs::EntranceInformation &request);
+
+  void HandleRequest(const consistent_hash_msgs::ExitInformation &request);
+
+  void HandleRequest(const consistent_hash_msgs::LookUpResult &request);
+
+  void HandleRequest(const consistent_hash_msgs::InsertResult &request);
+
+  void HandleRequest(const consistent_hash_msgs::DeleteResult &request);
 };
 }  // namespace nameserver
 #endif  // PROJECT4_BOOTSTRAP_H

@@ -1,6 +1,10 @@
 #include "nameserver.h"
 namespace nameserver {
-Nameserver::Nameserver(std::shared_ptr<thread_pool::ThreadPool> pool, const std::filesystem::path config_file) {
+Nameserver::Nameserver(
+    std::shared_ptr<thread_pool::ThreadPool> pool,
+    std::shared_ptr<nameserver::tasks::ConsoleTask> console_task,
+    const std::filesystem::path config_file) {
+  console_task_ = console_task;
   threadpool_ = pool;
 }
 
@@ -8,8 +12,7 @@ bool Nameserver::Enter() { return false; }
 
 void Nameserver::Exit() {}
 
-void Nameserver::HandleRequest(
-    const google::protobuf::Message& request) {}
+void Nameserver::HandleRequest(const google::protobuf::Message& request) {}
 
 void Nameserver::HandleRequest(
     const consistent_hash_msgs::EntranceInformation& request) {}
