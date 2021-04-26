@@ -88,9 +88,6 @@ void Nameserver::Exit() {
 }
 
 void Nameserver::HandleRequest(
-    const consistent_hash_msgs::NameServerMessage& request) {}
-
-void Nameserver::HandleRequest(
     consistent_hash_msgs::EntranceInformation& request) {
   if (request.id() > id_ && request.id() < successor_id_) {
     // this entering nameserver's to-be successor will be

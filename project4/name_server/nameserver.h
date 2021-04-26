@@ -44,13 +44,6 @@ class Nameserver {
 
  protected:
   /**
-   * Handles a generic NameServerMessage
-   * @param Generic NameServerMessage request
-   */
-  void HandleRequest(const consistent_hash_msgs::NameServerMessage &request);
-
- private:
-  /**
    *
    * @param A NameServerMessage request
    */
@@ -72,6 +65,8 @@ class Nameserver {
   void HandleRequest(consistent_hash_msgs::InsertResult &request);
 
   void HandleRequest(consistent_hash_msgs::DeleteResult &request);
+
+ private:
 
   /// The server object
   std::unique_ptr<message_passing::Server> server_;
