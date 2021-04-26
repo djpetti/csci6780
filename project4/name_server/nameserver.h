@@ -44,7 +44,7 @@ class Nameserver {
    * Handles a generic NameServerMessage
    * @param Generic NameServerMessage request
    */
-  virtual void HandleRequest(const google::protobuf::Message &request);
+  void HandleRequest(const google::protobuf::Message &request);
 
  private:
   /**
