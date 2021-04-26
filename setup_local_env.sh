@@ -9,6 +9,8 @@ NC='\033[0m' # No Color
 
 # Local prefix directory.
 LOCAL_PREFIX="${HOME}/.local"
+# Temporary build directory.
+TEMP_BUILD_DIR=$(mktemp -d)
 
 function on_error() {
   echo -e ${RED}Setup script failed!${NC}
@@ -67,11 +69,14 @@ function install_protobuf() {
 # Cleans up all the downloaded files.
 function cleanup() {
   echo -e ${GREEN}Cleaning up...${NC}
-  rm -rf gcc* cmake* protobuf*
+  rm -rf ${TEMP_BUILD_DIR}
 }
 
 echo -e ${GREEN}Installing to local directory: ${LOCAL_PREFIX}${NC}
 mkdir -p ${LOCAL_PREFIX}
+
+# Build everything in /tmp.
+cd ${TEMP_BUILD_DIR}
 
 install_gcc
 install_cmake
