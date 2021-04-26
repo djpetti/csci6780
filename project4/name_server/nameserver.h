@@ -67,11 +67,11 @@ class Nameserver {
   void HandleRequest(
       const consistent_hash_msgs::UpdatePredecessorResponse &request);
 
-  void HandleRequest(const consistent_hash_msgs::LookUpResult &request);
+  void HandleRequest(consistent_hash_msgs::LookUpResult &request);
 
-  void HandleRequest(const consistent_hash_msgs::InsertResult &request);
+  void HandleRequest(consistent_hash_msgs::InsertResult &request);
 
-  void HandleRequest(const consistent_hash_msgs::DeleteResult &request);
+  void HandleRequest(consistent_hash_msgs::DeleteResult &request);
 
   /// The server object
   std::unique_ptr<message_passing::Server> server_;

@@ -187,13 +187,24 @@ void Nameserver::HandleRequest(
 void Nameserver::HandleRequest(
     const consistent_hash_msgs::UpdatePredecessorResponse& request) {}
 
-void Nameserver::HandleRequest(
-    const consistent_hash_msgs::LookUpResult& request) {}
+void Nameserver::HandleRequest(consistent_hash_msgs::LookUpResult& request) {
+  if (request.key() <= bounds_.second && request.key() >= bounds_.first) {
+    // key-val resides in this nameserver
+    auto itr = pairs_.find(request.key());
+    if (itr != pairs_.end()) {
+      // value found
+      request.set_value(itr->second);
+      request.set_id(id_);
 
-void Nameserver::HandleRequest(
-    const consistent_hash_msgs::InsertResult& request) {}
+    }
+  }
+  // denote this server as contacted
+  auto ids = request.server_ids();
+  request.set_server_ids(ids.size(), id_);
+}
 
-void Nameserver::HandleRequest(
-    const consistent_hash_msgs::DeleteResult& request) {}
+void Nameserver::HandleRequest(consistent_hash_msgs::InsertResult& request) {}
+
+void Nameserver::HandleRequest(consistent_hash_msgs::DeleteResult& request) {}
 
 }  // namespace nameserver
