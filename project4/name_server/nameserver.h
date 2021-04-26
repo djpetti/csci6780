@@ -58,8 +58,8 @@ class Nameserver {
 
   void HandleRequest(const consistent_hash_msgs::ExitInformation &request);
 
-  void HandleRequest(
-      const consistent_hash_msgs::UpdatePredecessorRequest &request);
+  void HandleRequest(consistent_hash_msgs::UpdatePredecessorRequest &request,
+                     message_passing::Endpoint source);
 
   void HandleRequest(
       const consistent_hash_msgs::UpdateSuccessorRequest &request);
@@ -104,10 +104,10 @@ class Nameserver {
 
   /// Had to comment these out because of "not used" warnings treated as errors
   /// Port of this name server
-   int port_;
+  int port_;
 
   /// Id of this name server
-   int id_;
+  int id_;
 };
 }  // namespace nameserver
 

@@ -64,6 +64,7 @@ bool Nameserver::Enter() {
 
 void Nameserver::Exit() {
   consistent_hash_msgs::ExitInformation exit_info;
+  consistent_hash_msgs::UpdateSuccessorRequest update_succ_req;
   int count = 0;
   // prepare exit information
   exit_info.set_lower_bounds(bounds_.first);
@@ -73,17 +74,30 @@ void Nameserver::Exit() {
     exit_info.set_values(count, pair.second);
     count++;
   }
+  exit_info.mutable_predecessor_info()->set_port(predecessor_.port);
+  exit_info.mutable_predecessor_info()->set_id(predecessor_id_);
+  exit_info.mutable_predecessor_info()->set_ip(predecessor_.hostname);
   // send exit information to successor
-  // successor will inform this server's predecessor to update it's successor
+  // so it can update it's key's and predecessor info
   client_ = std::make_unique<message_passing::Client>(threadpool_, successor_);
+  if (client_->Send(exit_info) < 0) {
+    // error
+  }
+  // prepare update successor information
+  update_succ_req.mutable_successor_info()->set_id(successor_id_);
+  update_succ_req.mutable_successor_info()->set_port(successor_.port);
+  update_succ_req.mutable_successor_info()->set_ip(successor_.hostname);
+
+  // tell predecessor to update it's successor info
+  client_ =
+      std::make_unique<message_passing::Client>(threadpool_, predecessor_);
   if (client_->Send(exit_info) < 0) {
     // error
   }
 }
 
 void Nameserver::HandleRequest(
-    const consistent_hash_msgs::NameServerMessage& request) {
-}
+    const consistent_hash_msgs::NameServerMessage& request) {}
 
 void Nameserver::HandleRequest(
     consistent_hash_msgs::EntranceInformation& request) {
@@ -106,25 +120,69 @@ void Nameserver::HandleRequest(
       !request.mutable_predecessor_info()->IsInitialized()) {
     // the entering nameserver will be the last successor in the hash ring.
     // the entering nameserver's to-be successor is the bootstrap server.
-    // note that the bootstrap server will provide it's predecessor information (which is this nameserver)
+    // note that the bootstrap server will provide it's predecessor information
+    // (which is this nameserver)
     request.mutable_successor_info()->set_id(successor_id_);
     request.mutable_successor_info()->set_port(successor_.port);
     request.mutable_successor_info()->set_ip(successor_.hostname);
   }
-  // if the the request does not have predecessor info but has successor info by the time it reaches back to bootstrap,
-  // we know the entering nameserver will be the last in the ring.
-  // if the request does not have successor info but has predecessor info by the time it reaches back to bootstrap,
-  // we know the entering nameserver will be the first in the ring.
+  // if the the request does not have predecessor info but has successor info by
+  // the time it reaches back to bootstrap, we know the entering nameserver will
+  // be the last in the ring. if the request does not have successor info but
+  // has predecessor info by the time it reaches back to bootstrap, we know the
+  // entering nameserver will be the first in the ring.
 }
 
 void Nameserver::HandleRequest(
-    const consistent_hash_msgs::ExitInformation& request) {}
+    const consistent_hash_msgs::ExitInformation& request) {
+  // take over the exiting server's key-vals
+  bounds_.second = request.upper_bounds();
+  for (int i = 0; i < request.keys_size(); i++) {
+    std::pair<int, std::string> pair(request.keys(i), request.values(i));
+    pairs_.insert(pair);
+  }
+
+  // update predecessor info
+  predecessor_.port = request.predecessor_info().port();
+  predecessor_.hostname = request.predecessor_info().ip();
+  predecessor_id_ = request.predecessor_info().id();
+}
 
 void Nameserver::HandleRequest(
-    const consistent_hash_msgs::UpdatePredecessorRequest& request) {}
+    consistent_hash_msgs::UpdatePredecessorRequest& request,
+    message_passing::Endpoint source) {
+  // update predecessor info
+  predecessor_.port = request.predecessor_info().port();
+  predecessor_.hostname = source.hostname;
+  predecessor_id_ = request.predecessor_info().id();
+
+  // give lower half of it's key-val range to the entering nameserver
+  consistent_hash_msgs::UpdatePredecessorResponse res;
+  res.set_lower_bounds(bounds_.first);
+  res.set_upper_bounds(bounds_.second / 2);
+  int count = 0;
+  for (std::pair<int, std::string> pair : pairs_) {
+    res.set_keys(count, pair.first);
+    res.set_values(count, pair.second);
+    pairs_.erase(pair.first);
+    if (count == (bounds_.second / 2) - bounds_.first) {
+      break;
+    }
+  }
+  client_ =
+      std::make_unique<message_passing::Client>(threadpool_, predecessor_);
+  if (client_->Send(res) < 0) {
+    // error
+  }
+}
 
 void Nameserver::HandleRequest(
-    const consistent_hash_msgs::UpdateSuccessorRequest& request) {}
+    const consistent_hash_msgs::UpdateSuccessorRequest& request) {
+  // update successor info
+  successor_.hostname = request.successor_info().ip();
+  successor_.port = request.successor_info().port();
+  successor_id_ = request.successor_info().id();
+}
 
 void Nameserver::HandleRequest(
     const consistent_hash_msgs::UpdatePredecessorResponse& request) {}
