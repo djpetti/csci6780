@@ -73,9 +73,6 @@ class Nameserver {
 
   void HandleRequest(const consistent_hash_msgs::DeleteResult &request);
 
-  /// The bootstrap ID
-  const int kBootstrapID = 0;
-
   /// The server object
   std::unique_ptr<message_passing::Server> server_;
 
@@ -96,9 +93,11 @@ class Nameserver {
 
   /// Predecessor nameserver
   message_passing::Endpoint predecessor_;
+  int predecessor_id_;
 
   /// Successor nameserver
   message_passing::Endpoint successor_;
+  int successor_id_;
 
   /// Bootstrap endpoint
   message_passing::Endpoint bootstrap_;
