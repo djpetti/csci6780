@@ -23,9 +23,7 @@ thread_pool::Task::Status ConsoleTask::RunAtomic() {
   std::cout << first_message << std::endl;
   // Print any additional lines consecutively.
   while (!console_message_queue_.Empty()) {
-    std::string output;
-    console_message_queue_.PopTimed(kTimeout, &output);
-    std::cout << output << std::endl;
+    std::cout << console_message_queue_.Pop() << std::endl;
   }
 
   // Display prompt for end-user

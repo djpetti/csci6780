@@ -43,6 +43,7 @@ class ConsoleTask : public thread_pool::Task {
   queue::Queue<std::string> console_message_queue_{};
   std::string prompt_;
 
+  /// Timeout used for PopTimout()
   constexpr static const auto kTimeout = std::chrono::milliseconds(100);
 };
 }  // namespace nameserver::tasks
