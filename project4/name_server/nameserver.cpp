@@ -1,14 +1,5 @@
 #include "nameserver.h"
 
-#include <arpa/inet.h>
-#include <errno.h>
-#include <netdb.h>
-#include <netinet/in.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <unistd.h>
 namespace nameserver {
 
 Nameserver::Nameserver(
@@ -201,6 +192,12 @@ void Nameserver::HandleRequest(consistent_hash_msgs::LookUpResult& request) {
   // denote this server as contacted
   auto ids = request.server_ids();
   request.set_server_ids(ids.size(), id_);
+
+  // forward LookUpResult to successor
+  client_ = std::make_unique<message_passing::Client>(threadpool_,successor_);
+  if (client_->Send(request) < 0) {
+    // error
+  }
 }
 
 void Nameserver::HandleRequest(consistent_hash_msgs::InsertResult& request) {}
