@@ -102,10 +102,10 @@ class Nameserver {
 
   /// Had to comment these out because of "not used" warnings treated as errors
   /// Port of this name server
-  // int port_;
+   int port_;
 
   /// Id of this name server
-  // int id_;
+   int id_;
 };
 }  // namespace nameserver
 
