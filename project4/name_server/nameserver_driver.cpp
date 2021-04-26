@@ -15,6 +15,7 @@ NameserverDriver::NameserverDriver(std::filesystem::path config_file)
 
 [[noreturn]] void NameserverDriver::Start() {
   pool_->AddTask(console_task_);
+  pool_->AddTask(nameserver_task_);
 
   while (true) {
     std::string input;
