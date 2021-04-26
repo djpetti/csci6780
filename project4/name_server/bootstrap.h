@@ -19,7 +19,7 @@ class Bootstrap : public Nameserver {
    * @brief Initializes the bootstrap server from config file parameters.
    * @param the config file of this bootstrap
    */
-  explicit Bootstrap(const std::filesystem::path config_file);
+  Bootstrap(std::shared_ptr<thread_pool::ThreadPool> pool, const std::filesystem::path config_file);
 
 
   /**
@@ -27,19 +27,6 @@ class Bootstrap : public Nameserver {
    * @param Generic NameServerMessage request
    */
   void HandleRequest(const google::protobuf::Message &request);
-
- private:
-  /**
-   * @brief Handles an entrance request from an entering name server.
-   * @param A BootstrapMessage request
-   */
-  void HandleRequest(const consistent_hash_msgs::EntranceRequest &request);
-
-  /**
-   * @brief Initiates the insertion process for a joining name server.
-   * @param server The joining server
-   */
-  void InitiateEntrance(const message_passing::Endpoint server);
 
   /**
    * @brief Inserts a key-value pair in the ring.
@@ -61,6 +48,20 @@ class Bootstrap : public Nameserver {
    * @return The corresponding value. Empty string if value DNE
    */
   std::string LookUp(int key);
+
+ private:
+  /**
+   * @brief Handles an entrance request from an entering name server.
+   * @param A BootstrapMessage request
+   */
+  void HandleRequest(const consistent_hash_msgs::EntranceRequest &request);
+
+  /**
+   * @brief Initiates the insertion process for a joining name server.
+   * @param server The joining server
+   */
+  void InitiateEntrance(const message_passing::Endpoint server);
+
 };
 }  // namespace nameserver
 #endif  // PROJECT4_BOOTSTRAP_H

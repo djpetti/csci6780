@@ -1,8 +1,10 @@
 #include "bootstrap.h"
 
 namespace nameserver {
-Bootstrap::Bootstrap(const std::filesystem::path config_file)
-    : Nameserver(config_file) {}
+Bootstrap::Bootstrap(std::shared_ptr<thread_pool::ThreadPool> pool, const std::filesystem::path config_file)
+    : Nameserver(pool, config_file) {
+
+}
 
 void Bootstrap::HandleRequest(const google::protobuf::Message& request) {
   /// Handle as if BootstrapMessage, else call:

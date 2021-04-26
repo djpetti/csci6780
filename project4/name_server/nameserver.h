@@ -25,7 +25,7 @@ class Nameserver {
    * @brief Initializes the nameserver based on config file.
    * @param the config file of this nameserver
    */
-  explicit Nameserver(const std::filesystem::path config_file);
+  Nameserver(std::shared_ptr<thread_pool::ThreadPool> pool, const std::filesystem::path config_file);
 
   /**
    * @brief Inserts this nameserver into the hash ring.
@@ -76,11 +76,8 @@ class Nameserver {
   /// The client object
   std::unique_ptr<message_passing::Client> client_;
 
-  /// The threadpool used by the client
-  std::shared_ptr<thread_pool::ThreadPool> server_threadpool_;
-
-  /// The threadpool used by the server
-  std::shared_ptr<thread_pool::ThreadPool> client_threadpool_;
+  /// The threadpool used by client, server
+  std::shared_ptr<thread_pool::ThreadPool> threadpool_;
 
   /// The key-value pairs in this nameserver
   std::unordered_map<int, std::string> pairs_;

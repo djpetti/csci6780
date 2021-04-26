@@ -1,8 +1,7 @@
 #include "nameserver.h"
 namespace nameserver {
-Nameserver::Nameserver(const std::filesystem::path config_file) {
-  server_threadpool_ = std::make_shared<thread_pool::ThreadPool>();
-  client_threadpool_ = std::make_shared<thread_pool::ThreadPool>();
+Nameserver::Nameserver(std::shared_ptr<thread_pool::ThreadPool> pool, const std::filesystem::path config_file) {
+  threadpool_ = pool;
 }
 
 bool Nameserver::Enter() { return false; }
