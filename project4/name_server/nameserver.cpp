@@ -186,7 +186,6 @@ void Nameserver::HandleRequest(consistent_hash_msgs::LookUpResult& request) {
       // value found
       request.set_value(itr->second);
       request.set_id(id_);
-
     }
   }
   // denote this server as contacted
@@ -194,14 +193,49 @@ void Nameserver::HandleRequest(consistent_hash_msgs::LookUpResult& request) {
   request.set_server_ids(ids.size(), id_);
 
   // forward LookUpResult to successor
-  client_ = std::make_unique<message_passing::Client>(threadpool_,successor_);
+  client_ = std::make_unique<message_passing::Client>(threadpool_, successor_);
   if (client_->Send(request) < 0) {
     // error
   }
 }
 
-void Nameserver::HandleRequest(consistent_hash_msgs::InsertResult& request) {}
+void Nameserver::HandleRequest(consistent_hash_msgs::InsertResult& request) {
+  if (request.key() <= bounds_.second && request.key() >= bounds_.first) {
+    // key-val should be inserted in this nameserver
+    std::pair<int, std::string> pair(request.key(), request.value());
+    pairs_.insert(pair);
+    request.set_id(id_);
+  }
+  // denote this server as contacted
+  auto ids = request.server_ids();
+  request.set_server_ids(ids.size(), id_);
 
-void Nameserver::HandleRequest(consistent_hash_msgs::DeleteResult& request) {}
+  // forward LookUpResult to successor
+  client_ = std::make_unique<message_passing::Client>(threadpool_, successor_);
+  if (client_->Send(request) < 0) {
+    // error
+  }
+}
+
+void Nameserver::HandleRequest(consistent_hash_msgs::DeleteResult& request) {
+  if (request.key() <= bounds_.second && request.key() >= bounds_.first) {
+    // key-val resides in this nameserver
+    auto itr = pairs_.find(request.key());
+    if (itr != pairs_.end()) {
+      // key-val pair found , now delete
+      pairs_.erase(itr);
+      request.set_delete_success(true);
+    }
+  }
+  // denote this server as contacted
+  auto ids = request.server_ids();
+  request.set_server_ids(ids.size(), id_);
+
+  // forward LookUpResult to successor
+  client_ = std::make_unique<message_passing::Client>(threadpool_, successor_);
+  if (client_->Send(request) < 0) {
+    // error
+  }
+}
 
 }  // namespace nameserver
