@@ -42,7 +42,6 @@ class Nameserver {
    */
   void Exit();
 
- protected:
   /**
    *
    * @param A NameServerMessage request
