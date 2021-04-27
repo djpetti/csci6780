@@ -120,7 +120,19 @@ void Bootstrap::Delete(uint key) {
 
 void Bootstrap::HandleRequest(consistent_hash_msgs::LookUpResult& request) {
   // check's if key-val is in the bootstrap, denote this server as contacted
-  this->Nameserver::HandleRequest(request);
+  if (request.key() <= bounds_.second && request.key() >= bounds_.first) {
+    // key-val resides in this nameserver
+    auto itr = pairs_.find(request.key());
+    if (itr != pairs_.end()) {
+      // value found
+      request.set_value(itr->second);
+      request.set_id(0);
+    }
+  }
+  // denote this server as contacted
+  auto ids = request.server_ids();
+  request.set_server_ids(ids.size(), 0);
+
   std::cout << "got lookup" << std::endl;
   if (request.value().empty()) {
     // id 0 indicates bootstrap, except bootstrap never sends this request
