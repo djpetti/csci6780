@@ -10,6 +10,29 @@ Nameserver::Nameserver(
   threadpool_ = pool;
   client_ = std::make_unique<message_passing::Client>(threadpool_, bootstrap_);
 }
+void Nameserver::HandleRequest(consistent_hash_msgs::NameServerMessage& msg, message_passing::Endpoint source) {
+  if (msg.has_update_succ_req()) {
+    auto req = msg.update_succ_req();
+    HandleRequest(req);
+  } else if (msg.has_delete_result()) {
+    auto req = msg.delete_result();
+    HandleRequest(req);
+  } else if (msg.has_look_up_result()) {
+    auto req = msg.look_up_result();
+    HandleRequest(req);
+  } else if (msg.has_insert_result()) {
+    auto req = msg.insert_result();
+    HandleRequest(req);
+  } else if (msg.has_entrance_info()) {
+    auto req = msg.entrance_info();
+    HandleRequest(req);
+  } else if (msg.has_exit_info()) {
+    HandleRequest(msg.exit_info());
+  } else if (msg.has_update_pred_req()) {
+    auto req = msg.update_pred_req();
+    HandleRequest(req, source);
+  }
+}
 
 bool Nameserver::Enter() {
   consistent_hash_msgs::EntranceRequest entrance_req;
@@ -157,6 +180,8 @@ void Nameserver::HandleRequest(
       break;
     }
   }
+  bounds_.first = bounds_.second / 2 + 1;
+
   client_ =
       std::make_unique<message_passing::Client>(threadpool_, predecessor_);
   if (client_->Send(res) < 0) {

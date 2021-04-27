@@ -43,6 +43,13 @@ class Nameserver {
   void Exit();
 
   /**
+   * @brief Handles a NameserverMessage
+   * @param msg the message
+   */
+  void HandleRequest(consistent_hash_msgs::NameServerMessage &msg, message_passing::Endpoint source);
+
+ private:
+  /**
    *
    * @param A NameServerMessage request
    */
@@ -64,8 +71,6 @@ class Nameserver {
   void HandleRequest(consistent_hash_msgs::InsertResult &request);
 
   void HandleRequest(consistent_hash_msgs::DeleteResult &request);
-
- private:
 
   /// The server object
   std::unique_ptr<message_passing::Server> server_;
