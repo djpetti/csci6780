@@ -73,6 +73,10 @@ class Nameserver {
   message_passing::Endpoint successor_;
   uint successor_id_;
 
+  /// Predecessor nameserver
+  message_passing::Endpoint predecessor_;
+  uint predecessor_id_;
+
   /// Bootstrap endpoint
   message_passing::Endpoint bootstrap_;
 
@@ -99,10 +103,6 @@ class Nameserver {
   void HandleRequest(consistent_hash_msgs::InsertResult &request);
 
   void HandleRequest(consistent_hash_msgs::DeleteResult &request);
-
-  /// Predecessor nameserver
-  message_passing::Endpoint predecessor_;
-  uint predecessor_id_;
 
   /// Port of this name server
   int port_;

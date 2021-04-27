@@ -48,21 +48,28 @@ bool Nameserver::Enter() {
   consistent_hash_msgs::UpdateSuccessorRequest update_succ_req;
 
   // send entrance info request to bootstrap
-  if (!client_->SendRequest(entrance_req, &entrance_info)) return false;
+  if (!client_->SendRequest(entrance_req, &entrance_info)){ return false; }
 
-  // update successor & predecessor information
-  successor_.port = entrance_info.mutable_successor_info()->port();
-  successor_.hostname = entrance_info.mutable_successor_info()->ip();
-  successor_id_ = entrance_info.mutable_successor_info()->id();
-  predecessor_.port = entrance_info.mutable_predecessor_info()->port();
-  predecessor_.hostname = entrance_info.mutable_predecessor_info()->ip();
-  predecessor_id_ = entrance_info.mutable_predecessor_info()->id();
-
+  if (entrance_info.IsInitialized()) {
+    // ring is not empty.
+    // update successor & predecessor information
+    successor_.port = entrance_info.mutable_successor_info()->port();
+    successor_.hostname = entrance_info.mutable_successor_info()->ip();
+    successor_id_ = entrance_info.mutable_successor_info()->id();
+    predecessor_.port = entrance_info.mutable_predecessor_info()->port();
+    predecessor_.hostname = entrance_info.mutable_predecessor_info()->ip();
+    predecessor_id_ = entrance_info.mutable_predecessor_info()->id();
+  } else {
+    // ring is empty.
+    // this nameserver's predecessor & successor will be the bootstrap
+    successor_ = bootstrap_;
+    predecessor_ = bootstrap_;
+  }
   // tell this entering server's successor to update it's predecessor info
   client_ = std::make_unique<message_passing::Client>(threadpool_, successor_);
   update_pred_req.mutable_predecessor_info()->set_id(id_);
   update_pred_req.mutable_predecessor_info()->set_port(port_);
-  if (!client_->SendRequest(update_pred_req, &update_pred_res)) return false;
+  if (!client_->SendRequest(update_pred_req, &update_pred_res)){ return false; }
 
   // retrieve key-value information from the response
   bounds_.first = update_pred_res.lower_bounds();
@@ -77,7 +84,7 @@ bool Nameserver::Enter() {
       std::make_unique<message_passing::Client>(threadpool_, predecessor_);
   update_succ_req.mutable_successor_info()->set_port(port_);
   update_succ_req.mutable_successor_info()->set_id(id_);
-  if (client_->Send(update_succ_req) < 0) return false;
+  if (client_->Send(update_succ_req) < 0){ return false; }
 
   return true;
 }

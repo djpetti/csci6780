@@ -19,7 +19,7 @@ void Bootstrap::HandleRequest(
   std::cout << "IS A MSG" << std::endl;
   if (request.has_entrance_request()) {
     std::cout << "IS BS MSG" << std::endl;
-    HandleRequest(request.entrance_request());
+    HandleRequest(request.entrance_request(), source);
   } else if (request.has_name_server_message()) {
     /// FIXME if receiving a type of NameServerMessage, but listening for a
     /// BootstrapMessage, the BootstrapMessage message will have not an
@@ -44,13 +44,45 @@ void Bootstrap::HandleRequest(
 }
 
 void Bootstrap::HandleRequest(
-    const consistent_hash_msgs::EntranceRequest& request) {
-  /// FIXME Implement
+    const consistent_hash_msgs::EntranceRequest& request, const message_passing::Endpoint source) {
+  consistent_hash_msgs::EntranceInformation entrance_info;
+  entering_nameserver_ = source;
+  if (successor_ == bootstrap_) {
+    // ring is empty
+    client_ = std::make_unique<message_passing::Client>(threadpool_, source);
+    // send empty entrance info message.
+    // the joining nameserver will know it's predecessor and successor are the bootstrap server.
+    client_->Send(entrance_info);
+  } else {
+    // send entrance info message to be filled out
+    entrance_info.set_id(request.id());
+    client_ = std::make_unique<message_passing::Client>(threadpool_, successor_);
+    client_->Send(entrance_info);
+  }
+
 }
 
 void Bootstrap::HandleRequest(
-    const consistent_hash_msgs::EntranceInformation& request) {
-  /// FIXME Implement
+    consistent_hash_msgs::EntranceInformation& request) {
+  if (request.successor_info().IsInitialized() && !request.predecessor_info().IsInitialized()) {
+    // the entering server will now be the last in the ring.
+    request.mutable_predecessor_info()->set_id(predecessor_id_);
+    request.mutable_predecessor_info()->set_ip(predecessor_.hostname);
+    request.mutable_predecessor_info()->set_port(predecessor_.port);
+  } else if (!request.successor_info().IsInitialized() && request.predecessor_info().IsInitialized()) {
+    // the entering server will now be the first in the ring.
+    request.mutable_successor_info()->set_port(successor_.port);
+    request.mutable_successor_info()->set_ip(successor_.hostname);
+    request.mutable_predecessor_info()->set_id(successor_id_);
+  } else if (request.mutable_predecessor_info()->IsInitialized() || request.mutable_successor_info()->IsInitialized()) {
+    // this should never happen.
+    // error
+    return;
+  }
+  client_ = std::make_unique<message_passing::Client>(threadpool_, entering_nameserver_);
+  if (client_->Send(request) < 0 ) {
+    // error
+  }
 }
 
 void Bootstrap::LookUp(uint key) {
@@ -119,16 +151,6 @@ void Bootstrap::Delete(uint key) {
 }
 
 void Bootstrap::HandleRequest(consistent_hash_msgs::LookUpResult& request) {
-  // check's if key-val is in the bootstrap, denote this server as contacted
-  if (request.key() <= bounds_.second && request.key() >= bounds_.first) {
-    // key-val resides in this nameserver
-    auto itr = pairs_.find(request.key());
-    if (itr != pairs_.end()) {
-      // value found
-      request.set_value(itr->second);
-      request.set_id(0);
-    }
-  }
   // denote this server as contacted
   auto ids = request.server_ids();
   request.set_server_ids(ids.size(), 0);
@@ -149,10 +171,8 @@ void Bootstrap::HandleRequest(consistent_hash_msgs::InsertResult& request) {
   // denote this server as contacted
   auto ids = request.server_ids();
   request.set_server_ids(ids.size(), 0);
-
   if (request.id() == 0) {
-    // id 0 indicates bootstrap, except bootstrap never sends this request
-    // fulfilled by 0
+    // the id is 0 and the bootstrap did not insert.
     console_task_->SendConsole("Key out of range.");
   } else {
     console_task_->SendConsole(

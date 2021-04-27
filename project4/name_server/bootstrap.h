@@ -54,12 +54,12 @@ class Bootstrap : public Nameserver {
    * @brief Handles an entrance request from an entering name server.
    * @param A BootstrapMessage request
    */
-  void HandleRequest(const consistent_hash_msgs::EntranceRequest &request);
+  void HandleRequest(const consistent_hash_msgs::EntranceRequest &request, const message_passing::Endpoint source);
 
   /**
    * @param A NameServerMessage request
    */
-  void HandleRequest(const consistent_hash_msgs::EntranceInformation &request);
+  void HandleRequest(consistent_hash_msgs::EntranceInformation &request);
 
   void HandleRequest(consistent_hash_msgs::LookUpResult &request);
 
@@ -74,6 +74,9 @@ class Bootstrap : public Nameserver {
    */
   void PrintContacted(
       google::protobuf::RepeatedField<google::protobuf::uint32> server_ids);
+
+  /// The nameserver that wishes to enter the hash ring.
+  message_passing::Endpoint entering_nameserver_;
 };
 }  // namespace nameserver
 #endif  // PROJECT4_BOOTSTRAP_H
