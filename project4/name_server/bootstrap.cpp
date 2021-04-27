@@ -60,6 +60,8 @@ void Bootstrap::LookUp(uint key) {
     // key-val pair found , now print
     console_task_->SendConsole(std::string("Value: ").append(itr->second));
     console_task_->SendConsole("Contacted: 0");
+  } else if (successor_ == bootstrap_) {
+    console_task_->SendConsole("Key not found.");
   } else {
     std::cout << "sending lookup" << std::endl;
     consistent_hash_msgs::LookUpResult lookup;
