@@ -110,7 +110,7 @@ bool Client::EnsureConnected() {
     StartReceiverTask(client_fd_, endpoint_);
   }
 
-  return client_fd_;
+  return client_fd_ >= 0;
 }
 
 }  // namespace message_passing
