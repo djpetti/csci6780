@@ -5,12 +5,18 @@ namespace nameserver {
 Nameserver::Nameserver(
     std::shared_ptr<thread_pool::ThreadPool> pool,
     std::shared_ptr<nameserver::tasks::ConsoleTask> console_task,
-    const std::filesystem::path config_file) {
+    int port,
+    message_passing::Endpoint bootstrap) {
+  port_ = port;
+  bootstrap_ = bootstrap;
   console_task_ = console_task;
   threadpool_ = pool;
   client_ = std::make_unique<message_passing::Client>(threadpool_, bootstrap_);
+  server_ = std::make_unique<message_passing::Server>(threadpool_, port_);
 }
-void Nameserver::HandleRequest(consistent_hash_msgs::NameServerMessage& msg, message_passing::Endpoint source) {
+
+void Nameserver::HandleRequest(consistent_hash_msgs::NameServerMessage& msg,
+                               message_passing::Endpoint source) {
   if (msg.has_update_succ_req()) {
     auto req = msg.update_succ_req();
     HandleRequest(req);
@@ -171,8 +177,8 @@ void Nameserver::HandleRequest(
   consistent_hash_msgs::UpdatePredecessorResponse res;
   res.set_lower_bounds(bounds_.first);
   res.set_upper_bounds(bounds_.second / 2);
-  int count = 0;
-  for (std::pair<int, std::string> pair : pairs_) {
+  uint count = 0;
+  for (std::pair<uint, std::string> pair : pairs_) {
     res.set_keys(count, pair.first);
     res.set_values(count, pair.second);
     pairs_.erase(pair.first);

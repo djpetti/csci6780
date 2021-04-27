@@ -24,13 +24,14 @@ class BootstrapTask : public thread_pool::Task {
    */
   explicit BootstrapTask(std::shared_ptr<nameserver::Bootstrap> bootstrap);
 
-  Status SetUp() override;
-
   Status RunAtomic() override;
 
  private:
   /// Bootstrap
   std::shared_ptr<nameserver::Bootstrap> bootstrap_;
+
+  /// Timeout used to receive messages
+  constexpr static const auto kTimeout = std::chrono::milliseconds(100);
 };
 }  // namespace nameserver::tasks
 #endif  // PROJECT4_BOOTSTRAP_TASK_H

@@ -24,9 +24,18 @@ class BootstrapDriver {
   /**
    * Start the user input loop
    */
-  [[noreturn]] void Start();
+  void Start();
 
  private:
+
+  /**
+   * @param config_loc The location of the configuration
+   */
+  void LoadConfig(const std::filesystem::path& config_loc);
+
+  /// Whether this driver is supposed to be running
+  bool running_;
+
   /// Bootstrap
   std::shared_ptr<nameserver::Bootstrap> bootstrap_;
 

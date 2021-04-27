@@ -21,34 +21,33 @@ class Bootstrap : public Nameserver {
    */
   Bootstrap(std::shared_ptr<thread_pool::ThreadPool> pool,
             std::shared_ptr<nameserver::tasks::ConsoleTask> console_task,
-            const std::filesystem::path config_file);
+            int port, std::unordered_map<uint, std::string> kvs);
 
   /**
-   * Handles a generic NameServerMessage
-   * @param Generic NameServerMessage request
+   * Handles a generic BootstrapMessage
+   * @param Generic BootstrapMessage request
    */
-  void HandleRequest(const google::protobuf::Message &request);
+  void HandleRequest(const consistent_hash_msgs::BootstrapMessage &request,
+                     message_passing::Endpoint source);
 
   /**
    * @brief Inserts a key-value pair in the ring.
    * @param key The integer key for the corresponding value
    * @param val The value
    */
-  void Insert(int key, std::string val);
+  void Insert(uint key, std::string val);
 
   /**
    * @brief Deletes a key-value pair from the ring.
    * @param key The integer key for the corresponding value
-   * @param val The value
    */
-  void Delete(int key, std::string val);
+  void Delete(uint key);
 
   /**
    * @brief Looks up a value hosted in the ring.
    * @param key The integer key of the value to look up.
-   * @return The corresponding value. Empty string if value DNE
    */
-  std::string LookUp(int key);
+  void LookUp(uint key);
 
  private:
   /**
@@ -58,23 +57,23 @@ class Bootstrap : public Nameserver {
   void HandleRequest(const consistent_hash_msgs::EntranceRequest &request);
 
   /**
-   * @brief Initiates the insertion process for a joining name server.
-   * @param server The joining server
-   */
-  void InitiateEntrance(const message_passing::Endpoint server);
-
-  /**
    * @param A NameServerMessage request
    */
   void HandleRequest(const consistent_hash_msgs::EntranceInformation &request);
 
-  void HandleRequest(const consistent_hash_msgs::ExitInformation &request);
+  void HandleRequest(consistent_hash_msgs::LookUpResult &request);
 
-  void HandleRequest(const consistent_hash_msgs::LookUpResult &request);
+  void HandleRequest(consistent_hash_msgs::InsertResult &request);
 
-  void HandleRequest(const consistent_hash_msgs::InsertResult &request);
+  void HandleRequest(consistent_hash_msgs::DeleteResult &request);
 
-  void HandleRequest(const consistent_hash_msgs::DeleteResult &request);
+  /**
+   * @brief Using Protobuf, print to console_task_ a comma-separated, joined
+   * list of contacted server_ids
+   * @param server_ids
+   */
+  void PrintContacted(
+      google::protobuf::RepeatedField<google::protobuf::uint32> server_ids);
 };
 }  // namespace nameserver
 #endif  // PROJECT4_BOOTSTRAP_H
