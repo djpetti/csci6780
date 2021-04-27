@@ -76,6 +76,8 @@ class Nameserver {
   /// Bootstrap endpoint
   message_passing::Endpoint bootstrap_;
 
+  void HandleRequest(consistent_hash_msgs::LookUpResult &request);
+
  private:
   /**
    *
@@ -93,8 +95,6 @@ class Nameserver {
 
   void HandleRequest(
       const consistent_hash_msgs::UpdatePredecessorResponse &request);
-
-  void HandleRequest(consistent_hash_msgs::LookUpResult &request);
 
   void HandleRequest(consistent_hash_msgs::InsertResult &request);
 
