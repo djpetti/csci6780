@@ -16,9 +16,7 @@ Bootstrap::Bootstrap(
 void Bootstrap::HandleRequest(
     const consistent_hash_msgs::BootstrapMessage& request,
     message_passing::Endpoint source) {
-  std::cout << "IS A MSG" << std::endl;
   if (request.has_entrance_request()) {
-    std::cout << "IS BS MSG" << std::endl;
     HandleRequest(request.entrance_request(), source);
   } else if (request.has_name_server_message()) {
     /// FIXME if receiving a type of NameServerMessage, but listening for a
@@ -95,7 +93,6 @@ void Bootstrap::LookUp(uint key) {
   } else if (successor_ == bootstrap_) {
     console_task_->SendConsole("Key not found.");
   } else {
-    std::cout << "sending lookup" << std::endl;
     consistent_hash_msgs::LookUpResult lookup;
     lookup.set_id(0);
     lookup.set_key(key);
@@ -104,7 +101,6 @@ void Bootstrap::LookUp(uint key) {
     if (client_->Send(lookup) < 0) {
       // error
     }
-    std::cout << "sent lookup" << std::endl;
   }
 }
 
@@ -155,11 +151,9 @@ void Bootstrap::HandleRequest(consistent_hash_msgs::LookUpResult& request) {
   auto ids = request.server_ids();
   request.set_server_ids(ids.size(), 0);
 
-  std::cout << "got lookup" << std::endl;
   if (request.value().empty()) {
     // id 0 indicates bootstrap, except bootstrap never sends this request
     // fulfilled by 0
-    std::cout << "not found" << std::endl;
     console_task_->SendConsole("Key not found.");
   } else {
     console_task_->SendConsole(std::string("Value: ").append(request.value()));
