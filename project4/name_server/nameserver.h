@@ -33,7 +33,7 @@ class Nameserver {
              std::shared_ptr<nameserver::tasks::ConsoleTask> console_task,
              int port, message_passing::Endpoint bootstrap);
 
-  ~Nameserver();
+  virtual ~Nameserver() = default;
 
   /**
    * @brief Inserts this nameserver into the hash ring.
