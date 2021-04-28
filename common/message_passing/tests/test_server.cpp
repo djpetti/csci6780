@@ -296,6 +296,63 @@ TEST(Server, ReceiveMultipleClients) {
 }
 
 /**
+ * @test Tests that receiving interleaved messages works.
+ */
+TEST(Server, ReceiveInterleaved) {
+  // Arrange.
+  auto config = MakeConfig();
+
+  // Create two new clients.
+  const int kClient1Fd = Connect(kTestEndpoint);
+  const int kClient2Fd = Connect(kTestEndpoint);
+
+  // For this test, we're going to have to manually interleave the messages
+  // when sending.
+  const auto kTestMessage = MakeTestMessage();
+  std::vector<uint8_t> message_serialized;
+  ASSERT_TRUE(Serialize(kTestMessage, &message_serialized));
+
+  // Basically, we send the same message from each client.
+  const size_t kFirstHalfSize = message_serialized.size() / 2;
+  const size_t kSecondHalfSize = message_serialized.size() - kFirstHalfSize;
+  ASSERT_EQ(kFirstHalfSize,
+            send(kClient1Fd, message_serialized.data(), kFirstHalfSize, 0));
+  ASSERT_EQ(kFirstHalfSize,
+            send(kClient2Fd, message_serialized.data(), kFirstHalfSize, 0));
+
+  // Wait a little so it's more likely that the server reads both of these and
+  // puts them on the queue.
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+  // Now send the second half.
+  ASSERT_EQ(kSecondHalfSize,
+            send(kClient1Fd, message_serialized.data() + kFirstHalfSize,
+                 kSecondHalfSize, 0));
+  ASSERT_EQ(kSecondHalfSize,
+            send(kClient2Fd, message_serialized.data() + kFirstHalfSize,
+                 kSecondHalfSize, 0));
+
+  // Act.
+  // Read both messages.
+  TestMessage received_message_1, received_message_2;
+  const bool kReceiveResult1 = config.server->Receive(&received_message_1);
+  const bool kReceiveResult2 = config.server->Receive(&received_message_2);
+
+  // Assert.
+  // It should have successfully received both messages.
+  EXPECT_TRUE(kReceiveResult1);
+  EXPECT_TRUE(kReceiveResult2);
+
+  // Both messages should be correct.
+  EXPECT_EQ(kTestMessage.parameter(), received_message_1.parameter());
+  EXPECT_EQ(kTestMessage.parameter(), received_message_2.parameter());
+
+  // Cleanup the sockets.
+  close(kClient1Fd);
+  close(kClient2Fd);
+}
+
+/**
  * @test Tests that we can send a single message.
  */
 TEST(Server, SendSingleMessage) {
