@@ -6,9 +6,9 @@ Bootstrap::Bootstrap(
     std::shared_ptr<thread_pool::ThreadPool> pool,
     std::shared_ptr<nameserver::tasks::ConsoleTask> console_task, int port,
     std::unordered_map<uint, std::string> kvs)
-    : Nameserver(pool, console_task, port,
+    : Nameserver(pool, std::move(console_task), port,
                  {"127.0.0.1", static_cast<uint16_t>(port)}) {
-  pairs_ = kvs;
+  pairs_ = std::move(kvs);
   bounds_.first = 0;
   bounds_.second = 1023;
   successor_ = bootstrap_;
@@ -19,6 +19,7 @@ void Bootstrap::HandleRequest(
     message_passing::Endpoint source) {
   std::cout << "IS A MSG" << std::endl;
   if (request.has_entrance_request()) {
+    LOG_F(INFO, "Bootstrap received EntranceRequest message from node %s", source.hostname.c_str());
     std::cout << "IS BS MSG" << std::endl;
     HandleRequest(request.entrance_request(), source);
   } else if (request.has_name_server_message()) {
@@ -27,16 +28,20 @@ void Bootstrap::HandleRequest(
     /// EntranceRequest nor an instance of NameServerMessage.
     auto msg = request.name_server_message();
     if (msg.has_delete_result()) {
-      auto del_msg = msg.delete_result();
+      LOG_F(INFO, "Bootstrap received DeleteResult message from node %s", source.hostname.c_str());
+      const auto del_msg = msg.delete_result();
       HandleRequest(del_msg);
     } else if (msg.has_insert_result()) {
-      auto ins_msg = msg.insert_result();
+      LOG_F(INFO, "Bootstrap received InsertResult message from node %s", source.hostname.c_str());
+      const auto ins_msg = msg.insert_result();
       HandleRequest(ins_msg);
     } else if (msg.has_look_up_result()) {
-      auto lou_msg = msg.look_up_result();
+      LOG_F(INFO, "Bootstrap received LookUpResult message from node %s", source.hostname.c_str());
+      const auto lou_msg = msg.look_up_result();
       HandleRequest(lou_msg);
     } else if (msg.has_entrance_info()) {
-      auto ent_msg = msg.entrance_info();
+      LOG_F(INFO, "Bootstrap received EntranceInfo message from node %s", source.hostname.c_str());
+      const auto ent_msg = msg.entrance_info();
       HandleRequest(ent_msg);
     } else {
       Nameserver::HandleRequest(msg, source);
@@ -76,7 +81,7 @@ void Bootstrap::HandleRequest(
     req.mutable_successor_info()->set_port(successor_.port);
     req.mutable_successor_info()->set_ip(successor_.hostname);
     req.mutable_predecessor_info()->set_id(successor_id_);
-  } else if (req.mutable_predecessor_info()->IsInitialized() || req.mutable_successor_info()->IsInitialized()) {
+  } else if (!(req.mutable_predecessor_info()->IsInitialized() || req.mutable_successor_info()->IsInitialized())) {
     LOG_F(FATAL, "EntranceInformation message is uninitialized after returning to the bootstrap.");
     return;
   }
@@ -163,8 +168,7 @@ void Bootstrap::HandleRequest(const consistent_hash_msgs::LookUpResult& request)
 
   std::cout << "got lookup" << std::endl;
   if (req.value().empty()) {
-    // id 0 indicates bootstrap, except bootstrap never sends this request
-    // fulfilled by 0
+    // no nameserver in the ring initialized the value field of the message.
     std::cout << "not found" << std::endl;
     console_task_->SendConsole("Key not found.");
   } else {

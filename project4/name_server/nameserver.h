@@ -23,8 +23,11 @@ namespace nameserver {
 class Nameserver {
  public:
   /**
-   * @brief Initializes the nameserver based on config file.
-   * @param the config file of this nameserver
+   * @brief Initializes the nameserver.
+   * @param pool the threadpool of this server
+   * @param console_task the console task of this server
+   * @param port the port to listen on
+   * @param bootstrap hostname and port information.
    */
   Nameserver(std::shared_ptr<thread_pool::ThreadPool> pool,
              std::shared_ptr<nameserver::tasks::ConsoleTask> console_task,
@@ -92,7 +95,7 @@ class Nameserver {
   void HandleRequest(const consistent_hash_msgs::ExitInformation &request);
 
   void HandleRequest(const consistent_hash_msgs::UpdatePredecessorRequest &request,
-                     message_passing::Endpoint source);
+                     const message_passing::Endpoint& source);
 
   void HandleRequest(
       const consistent_hash_msgs::UpdateSuccessorRequest &request);
