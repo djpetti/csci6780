@@ -33,6 +33,8 @@ class Nameserver {
              std::shared_ptr<nameserver::tasks::ConsoleTask> console_task,
              int port, message_passing::Endpoint bootstrap);
 
+  ~Nameserver();
+
   /**
    * @brief Inserts this nameserver into the hash ring.
    * @return true on success false on failure

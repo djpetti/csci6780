@@ -14,6 +14,8 @@ Nameserver::Nameserver(
   server_ = std::make_unique<message_passing::Server>(threadpool_, port_);
 }
 
+Nameserver::~Nameserver() = default;
+
 void Nameserver::HandleRequest(
     const consistent_hash_msgs::NameServerMessage& msg,
     const message_passing::Endpoint source) {
