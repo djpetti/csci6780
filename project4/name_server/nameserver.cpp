@@ -15,27 +15,28 @@ Nameserver::Nameserver(
   server_ = std::make_unique<message_passing::Server>(threadpool_, port_);
 }
 
-void Nameserver::HandleRequest(consistent_hash_msgs::NameServerMessage& msg,
-                               message_passing::Endpoint source) {
-  if (msg.has_update_succ_req()) {
-    auto req = msg.update_succ_req();
+void Nameserver::HandleRequest(const consistent_hash_msgs::NameServerMessage& msg,
+                               const message_passing::Endpoint source) {
+  consistent_hash_msgs::NameServerMessage message = msg;
+  if (message.has_update_succ_req()) {
+    auto req = message.update_succ_req();
     HandleRequest(req);
-  } else if (msg.has_delete_result()) {
-    auto req = msg.delete_result();
+  } else if (message.has_delete_result()) {
+    auto req = message.delete_result();
     HandleRequest(req);
-  } else if (msg.has_look_up_result()) {
-    auto req = msg.look_up_result();
+  } else if (message.has_look_up_result()) {
+    auto req = message.look_up_result();
     HandleRequest(req);
-  } else if (msg.has_insert_result()) {
-    auto req = msg.insert_result();
+  } else if (message.has_insert_result()) {
+    auto req = message.insert_result();
     HandleRequest(req);
-  } else if (msg.has_entrance_info()) {
-    auto req = msg.entrance_info();
+  } else if (message.has_entrance_info()) {
+    auto req = message.entrance_info();
     HandleRequest(req);
-  } else if (msg.has_exit_info()) {
-    HandleRequest(msg.exit_info());
-  } else if (msg.has_update_pred_req()) {
-    auto req = msg.update_pred_req();
+  } else if (message.has_exit_info()) {
+    HandleRequest(message.exit_info());
+  } else if (message.has_update_pred_req()) {
+    auto req = message.update_pred_req();
     HandleRequest(req, source);
   }
 }
@@ -124,31 +125,32 @@ void Nameserver::Exit() {
 }
 
 void Nameserver::HandleRequest(
-    consistent_hash_msgs::EntranceInformation& request) {
-  if (request.id() > id_ && request.id() < successor_id_) {
+    const consistent_hash_msgs::EntranceInformation& request) {
+  consistent_hash_msgs::EntranceInformation req = request;
+  if (req.id() > id_ && req.id() < successor_id_) {
     // this entering nameserver's to-be successor will be
     // this nameserver's successor.
-    request.mutable_successor_info()->set_id(successor_id_);
-    request.mutable_successor_info()->set_port(successor_.port);
-    request.mutable_successor_info()->set_ip(successor_.hostname);
+    req.mutable_successor_info()->set_id(successor_id_);
+    req.mutable_successor_info()->set_port(successor_.port);
+    req.mutable_successor_info()->set_ip(successor_.hostname);
   } else if (request.id() < id_ && request.id() > predecessor_id_) {
     // this entering nameserver's predecessor will be
     // this nameserver's predecessor
-    request.mutable_predecessor_info()->set_port(predecessor_.port);
-    request.mutable_predecessor_info()->set_id(predecessor_id_);
-    request.mutable_predecessor_info()->set_ip(predecessor_.hostname);
+    req.mutable_predecessor_info()->set_port(predecessor_.port);
+    req.mutable_predecessor_info()->set_id(predecessor_id_);
+    req.mutable_predecessor_info()->set_ip(predecessor_.hostname);
   }
 
   if (successor_ == bootstrap_ &&
-      !request.mutable_successor_info()->IsInitialized() &&
-      !request.mutable_predecessor_info()->IsInitialized()) {
+      !req.mutable_successor_info()->IsInitialized() &&
+      !req.mutable_predecessor_info()->IsInitialized()) {
     // the entering nameserver will be the last successor in the hash ring.
     // the entering nameserver's to-be successor is the bootstrap server.
     // note that the bootstrap server will provide it's predecessor information
     // (which is this nameserver)
-    request.mutable_successor_info()->set_id(successor_id_);
-    request.mutable_successor_info()->set_port(successor_.port);
-    request.mutable_successor_info()->set_ip(successor_.hostname);
+    req.mutable_successor_info()->set_id(successor_id_);
+    req.mutable_successor_info()->set_port(successor_.port);
+    req.mutable_successor_info()->set_ip(successor_.hostname);
   }
   // if the the request does not have predecessor info but has successor info by
   // the time it reaches back to bootstrap, we know the entering nameserver will
@@ -173,8 +175,8 @@ void Nameserver::HandleRequest(
 }
 
 void Nameserver::HandleRequest(
-    consistent_hash_msgs::UpdatePredecessorRequest& request,
-    message_passing::Endpoint source) {
+    const consistent_hash_msgs::UpdatePredecessorRequest& request,
+    const message_passing::Endpoint source) {
   // update predecessor info
   predecessor_.port = request.predecessor_info().port();
   predecessor_.hostname = source.hostname;
@@ -213,62 +215,65 @@ void Nameserver::HandleRequest(
 void Nameserver::HandleRequest(
     const consistent_hash_msgs::UpdatePredecessorResponse& request) {}
 
-void Nameserver::HandleRequest(consistent_hash_msgs::LookUpResult& request) {
-  if (request.key() <= bounds_.second && request.key() >= bounds_.first) {
+void Nameserver::HandleRequest(const consistent_hash_msgs::LookUpResult& request) {
+  consistent_hash_msgs::LookUpResult req = request;
+  if (req.key() <= bounds_.second && req.key() >= bounds_.first) {
     // key-val resides in this nameserver
-    auto itr = pairs_.find(request.key());
+    auto itr = pairs_.find(req.key());
     if (itr != pairs_.end()) {
       // value found
-      request.set_value(itr->second);
-      request.set_id(id_);
+      req.set_value(itr->second);
+      req.set_id(id_);
     }
   }
   // denote this server as contacted
-  auto ids = request.server_ids();
-  request.set_server_ids(ids.size(), id_);
+  auto ids = req.server_ids();
+  req.set_server_ids(ids.size(), id_);
 
   // forward LookUpResult to successor
   client_ = std::make_unique<message_passing::Client>(threadpool_, successor_);
-  if (client_->Send(request) < 0) {
+  if (client_->Send(req) < 0) {
     // error
   }
 }
 
-void Nameserver::HandleRequest(consistent_hash_msgs::InsertResult& request) {
-  if (request.key() <= bounds_.second && request.key() >= bounds_.first) {
+void Nameserver::HandleRequest(const consistent_hash_msgs::InsertResult& request) {
+  consistent_hash_msgs::InsertResult req = request;
+  if (req.key() <= bounds_.second && req.key() >= bounds_.first) {
     // key-val should be inserted in this nameserver
-    std::pair<int, std::string> pair(request.key(), request.value());
+    std::pair<int, std::string> pair(req.key(), req.value());
     pairs_.insert(pair);
-    request.set_id(id_);
+    req.set_id(id_);
   }
   // denote this server as contacted
-  auto ids = request.server_ids();
-  request.set_server_ids(ids.size(), id_);
+  auto ids = req.server_ids();
+  req.set_server_ids(ids.size(), id_);
 
   // forward LookUpResult to successor
   client_ = std::make_unique<message_passing::Client>(threadpool_, successor_);
-  if (client_->Send(request) < 0) {
+  if (client_->Send(req) < 0) {
     // error
   }
 }
 
-void Nameserver::HandleRequest(consistent_hash_msgs::DeleteResult& request) {
-  if (request.key() <= bounds_.second && request.key() >= bounds_.first) {
+void Nameserver::HandleRequest(const consistent_hash_msgs::DeleteResult& request) {
+  consistent_hash_msgs::DeleteResult req = request;
+  if (req.key() <= bounds_.second && req.key() >= bounds_.first) {
     // key-val resides in this nameserver
-    auto itr = pairs_.find(request.key());
+    auto itr = pairs_.find(req.key());
     if (itr != pairs_.end()) {
       // key-val pair found , now delete
       pairs_.erase(itr);
-      request.set_delete_success(true);
+      req.set_delete_success(true);
     }
   }
   // denote this server as contacted
-  auto ids = request.server_ids();
-  request.set_server_ids(ids.size(), id_);
+  auto ids = req.server_ids();
+  req.set_server_ids(ids.size(), id_);
 
   // forward LookUpResult to successor
   client_ = std::make_unique<message_passing::Client>(threadpool_, successor_);
-  if (client_->Send(request) < 0) {
+  if (client_->Send(req) < 0) {
     // error
   }
 }

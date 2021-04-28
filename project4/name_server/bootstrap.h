@@ -59,13 +59,13 @@ class Bootstrap : public Nameserver {
   /**
    * @param A NameServerMessage request
    */
-  void HandleRequest(consistent_hash_msgs::EntranceInformation &request);
+  void HandleRequest(const consistent_hash_msgs::EntranceInformation &request);
 
-  void HandleRequest(consistent_hash_msgs::LookUpResult &request);
+  void HandleRequest(const consistent_hash_msgs::LookUpResult &request);
 
-  void HandleRequest(consistent_hash_msgs::InsertResult &request);
+  void HandleRequest(const consistent_hash_msgs::InsertResult &request);
 
-  void HandleRequest(consistent_hash_msgs::DeleteResult &request);
+  void HandleRequest(const consistent_hash_msgs::DeleteResult &request);
 
   /**
    * @brief Using Protobuf, print to console_task_ a comma-separated, joined

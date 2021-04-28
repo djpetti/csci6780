@@ -1,4 +1,5 @@
 #include "bootstrap.h"
+#include "loguru.hpp"
 
 namespace nameserver {
 Bootstrap::Bootstrap(
@@ -63,20 +64,20 @@ void Bootstrap::HandleRequest(
 }
 
 void Bootstrap::HandleRequest(
-    consistent_hash_msgs::EntranceInformation& request) {
-  if (request.successor_info().IsInitialized() && !request.predecessor_info().IsInitialized()) {
+    const consistent_hash_msgs::EntranceInformation& request) {
+  consistent_hash_msgs::EntranceInformation req = request;
+  if (req.successor_info().IsInitialized() && !req.predecessor_info().IsInitialized()) {
     // the entering server will now be the last in the ring.
-    request.mutable_predecessor_info()->set_id(predecessor_id_);
-    request.mutable_predecessor_info()->set_ip(predecessor_.hostname);
-    request.mutable_predecessor_info()->set_port(predecessor_.port);
+    req.mutable_predecessor_info()->set_id(predecessor_id_);
+    req.mutable_predecessor_info()->set_ip(predecessor_.hostname);
+    req.mutable_predecessor_info()->set_port(predecessor_.port);
   } else if (!request.successor_info().IsInitialized() && request.predecessor_info().IsInitialized()) {
     // the entering server will now be the first in the ring.
-    request.mutable_successor_info()->set_port(successor_.port);
-    request.mutable_successor_info()->set_ip(successor_.hostname);
-    request.mutable_predecessor_info()->set_id(successor_id_);
-  } else if (request.mutable_predecessor_info()->IsInitialized() || request.mutable_successor_info()->IsInitialized()) {
-    // this should never happen.
-    // error
+    req.mutable_successor_info()->set_port(successor_.port);
+    req.mutable_successor_info()->set_ip(successor_.hostname);
+    req.mutable_predecessor_info()->set_id(successor_id_);
+  } else if (req.mutable_predecessor_info()->IsInitialized() || req.mutable_successor_info()->IsInitialized()) {
+    LOG_F(FATAL, "EntranceInformation message is uninitialized after returning to the bootstrap.");
     return;
   }
   client_ = std::make_unique<message_passing::Client>(threadpool_, entering_nameserver_);
@@ -150,47 +151,50 @@ void Bootstrap::Delete(uint key) {
   }
 }
 
-void Bootstrap::HandleRequest(consistent_hash_msgs::LookUpResult& request) {
+void Bootstrap::HandleRequest(const consistent_hash_msgs::LookUpResult& request) {
+  consistent_hash_msgs::LookUpResult req = request;
   // denote this server as contacted
   auto ids = request.server_ids();
-  request.set_server_ids(ids.size(), 0);
+  req.set_server_ids(ids.size(), 0);
 
   std::cout << "got lookup" << std::endl;
-  if (request.value().empty()) {
+  if (req.value().empty()) {
     // id 0 indicates bootstrap, except bootstrap never sends this request
     // fulfilled by 0
     std::cout << "not found" << std::endl;
     console_task_->SendConsole("Key not found.");
   } else {
-    console_task_->SendConsole(std::string("Value: ").append(request.value()));
+    console_task_->SendConsole(std::string("Value: ").append(req.value()));
     PrintContacted(request.server_ids());
   }
 }
 
-void Bootstrap::HandleRequest(consistent_hash_msgs::InsertResult& request) {
+void Bootstrap::HandleRequest(const consistent_hash_msgs::InsertResult& request) {
+  consistent_hash_msgs::InsertResult req = request;
   // denote this server as contacted
   auto ids = request.server_ids();
-  request.set_server_ids(ids.size(), 0);
-  if (request.id() == 0) {
+  req.set_server_ids(ids.size(), 0);
+  if (req.id() == 0) {
     // the id is 0 and the bootstrap did not insert.
     console_task_->SendConsole("Key out of range.");
   } else {
     console_task_->SendConsole(
-        std::string("Inserted into: ").append(std::to_string(request.id())));
-    PrintContacted(request.server_ids());
+        std::string("Inserted into: ").append(std::to_string(req.id())));
+    PrintContacted(req.server_ids());
   }
 }
 
-void Bootstrap::HandleRequest(consistent_hash_msgs::DeleteResult& request) {
+void Bootstrap::HandleRequest(const consistent_hash_msgs::DeleteResult& request) {
+  consistent_hash_msgs::DeleteResult req = request;
   // denote this server as contacted
-  auto ids = request.server_ids();
-  request.set_server_ids(ids.size(), 0);
+  auto ids = req.server_ids();
+  req.set_server_ids(ids.size(), 0);
 
-  if (!request.delete_success()) {
+  if (!req.delete_success()) {
     console_task_->SendConsole("Key not found.");
   } else {
     console_task_->SendConsole("Successful deletion.");
-    PrintContacted(request.server_ids());
+    PrintContacted(req.server_ids());
   }
 }
 void Bootstrap::PrintContacted(

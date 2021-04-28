@@ -47,7 +47,7 @@ class Nameserver {
    * @brief Handles a NameserverMessage
    * @param msg the message
    */
-  void HandleRequest(consistent_hash_msgs::NameServerMessage &msg, message_passing::Endpoint source);
+  void HandleRequest(const consistent_hash_msgs::NameServerMessage &msg, const message_passing::Endpoint source);
 
   /// The server object
   std::unique_ptr<message_passing::Server> server_;
@@ -80,18 +80,18 @@ class Nameserver {
   /// Bootstrap endpoint
   message_passing::Endpoint bootstrap_;
 
-  void HandleRequest(consistent_hash_msgs::LookUpResult &request);
+  void HandleRequest(const consistent_hash_msgs::LookUpResult &request);
 
  private:
   /**
    *
    * @param A NameServerMessage request
    */
-  void HandleRequest(consistent_hash_msgs::EntranceInformation &request);
+  void HandleRequest(const consistent_hash_msgs::EntranceInformation &request);
 
   void HandleRequest(const consistent_hash_msgs::ExitInformation &request);
 
-  void HandleRequest(consistent_hash_msgs::UpdatePredecessorRequest &request,
+  void HandleRequest(const consistent_hash_msgs::UpdatePredecessorRequest &request,
                      message_passing::Endpoint source);
 
   void HandleRequest(
@@ -100,9 +100,9 @@ class Nameserver {
   void HandleRequest(
       const consistent_hash_msgs::UpdatePredecessorResponse &request);
 
-  void HandleRequest(consistent_hash_msgs::InsertResult &request);
+  void HandleRequest(const consistent_hash_msgs::InsertResult &request);
 
-  void HandleRequest(consistent_hash_msgs::DeleteResult &request);
+  void HandleRequest(const consistent_hash_msgs::DeleteResult &request);
 
   /// Port of this name server
   int port_;
