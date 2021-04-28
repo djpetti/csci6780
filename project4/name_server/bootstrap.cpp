@@ -14,6 +14,8 @@ Bootstrap::Bootstrap(
   successor_ = bootstrap_;
 }
 
+Bootstrap::~Bootstrap() = default;
+
 void Bootstrap::HandleRequest(
     const consistent_hash_msgs::BootstrapMessage& request,
     message_passing::Endpoint source) {

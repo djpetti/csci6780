@@ -23,6 +23,8 @@ class Bootstrap : public Nameserver {
             std::shared_ptr<nameserver::tasks::ConsoleTask> console_task,
             int port, std::unordered_map<uint, std::string> kvs);
 
+  ~Bootstrap();
+
   /**
    * Handles a generic BootstrapMessage
    * @param Generic BootstrapMessage request
