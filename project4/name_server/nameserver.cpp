@@ -111,8 +111,8 @@ bool Nameserver::Enter() {
   bounds_.first = update_pred_res.lower_bounds();
   bounds_.second = update_pred_res.upper_bounds();
   for (int i = 0; i < update_pred_res.mutable_keys()->size(); i++) {
-    std::pair<int, std::string> pair(update_pred_res.mutable_keys()->at(i),
-                                     update_pred_res.mutable_values()->at(i));
+    std::pair<int, std::string> pair(update_pred_res.mutable_keys()->Get(i),
+                                     update_pred_res.mutable_values()->Get(i));
     pairs_.insert(pair);
   }
   LOG_F(
