@@ -81,14 +81,15 @@ void Bootstrap::HandleRequest(
     return;
   }
   client_ = std::make_unique<message_passing::Client>(threadpool_, entering_nameserver_);
-  if (client_->Send(request) < 0 ) {
+  if (!client_->SendAsync(request)) {
+    LOG_F(ERROR, "Request failed to send.");
     // error
   }
 }
 
 void Bootstrap::LookUp(uint key) {
   // key-val resides in this nameserver
-  auto itr = pairs_.find(key);
+  const auto itr = pairs_.find(key);
   if (itr != pairs_.end()) {
     // key-val pair found , now print
     console_task_->SendConsole(std::string("Value: ").append(itr->second));
@@ -102,8 +103,9 @@ void Bootstrap::LookUp(uint key) {
     lookup.set_key(key);
     client_ =
         std::make_unique<message_passing::Client>(threadpool_, successor_);
-    if (client_->Send(lookup) < 0) {
+    if (!client_->SendAsync(lookup)) {
       // error
+      LOG_F(ERROR, "Request failed to send.");
     }
     std::cout << "sent lookup" << std::endl;
   }
@@ -124,8 +126,9 @@ void Bootstrap::Insert(uint key, std::string val) {
     insert.set_key(0);
     client_ =
         std::make_unique<message_passing::Client>(threadpool_, successor_);
-    if (client_->Send(insert) < 0) {
+    if (!client_->SendAsync(insert)) {
       // error
+      LOG_F(ERROR, "Request failed to send.");
     }
   }
 }
@@ -145,8 +148,9 @@ void Bootstrap::Delete(uint key) {
     delete_r.set_key(key);
     client_ =
         std::make_unique<message_passing::Client>(threadpool_, successor_);
-    if (client_->Send(delete_r) < 0) {
+    if (!client_->SendAsync(delete_r)) {
       // error
+      LOG_F(ERROR, "Request failed to send.");
     }
   }
 }
@@ -154,7 +158,7 @@ void Bootstrap::Delete(uint key) {
 void Bootstrap::HandleRequest(const consistent_hash_msgs::LookUpResult& request) {
   consistent_hash_msgs::LookUpResult req = request;
   // denote this server as contacted
-  auto ids = request.server_ids();
+  const auto ids = request.server_ids();
   req.set_server_ids(ids.size(), 0);
 
   std::cout << "got lookup" << std::endl;
@@ -172,7 +176,7 @@ void Bootstrap::HandleRequest(const consistent_hash_msgs::LookUpResult& request)
 void Bootstrap::HandleRequest(const consistent_hash_msgs::InsertResult& request) {
   consistent_hash_msgs::InsertResult req = request;
   // denote this server as contacted
-  auto ids = request.server_ids();
+  const auto ids = request.server_ids();
   req.set_server_ids(ids.size(), 0);
   if (req.id() == 0) {
     // the id is 0 and the bootstrap did not insert.
@@ -187,7 +191,7 @@ void Bootstrap::HandleRequest(const consistent_hash_msgs::InsertResult& request)
 void Bootstrap::HandleRequest(const consistent_hash_msgs::DeleteResult& request) {
   consistent_hash_msgs::DeleteResult req = request;
   // denote this server as contacted
-  auto ids = req.server_ids();
+  const auto ids = req.server_ids();
   req.set_server_ids(ids.size(), 0);
 
   if (!req.delete_success()) {
