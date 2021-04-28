@@ -45,11 +45,10 @@ class Nameserver {
    */
   void Exit();
 
-  virtual /**
-           * @brief Receive a message and handle the message with server_
-           */
-      void
-      ReceiveAndHandle();
+  /**
+   * @brief Receive a message and handle the message with server_
+   */
+  virtual void ReceiveAndHandle();
 
  protected:
   /// The threadpool used by client, server

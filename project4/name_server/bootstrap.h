@@ -52,7 +52,7 @@ class Bootstrap : public Nameserver {
   /**
    * @brief Receive a message and handle the message with server_
    */
-  void ReceiveAndHandle();
+  void ReceiveAndHandle() override;
 
  private:
   /**
