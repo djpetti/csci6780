@@ -9,8 +9,8 @@ BootstrapDriver::BootstrapDriver(const std::filesystem::path config_file)
       console_task_(
           std::make_shared<nameserver::tasks::ConsoleTask>("bootstrap=> ")) {
   LoadConfig(config_file);
-  bootstrap_task_ =
-      std::make_shared<nameserver::tasks::BootstrapTask>(bootstrap_);
+  nameserver_task_ =
+      std::make_shared<nameserver::tasks::NameserverTask>(bootstrap_);
 }
 
 void BootstrapDriver::LoadConfig(const std::filesystem::path& config_loc) {
@@ -30,8 +30,8 @@ void BootstrapDriver::LoadConfig(const std::filesystem::path& config_loc) {
       ss >> value;
       kvs.insert(std::pair<uint, std::string>(std::stoi(key), value));
     }
-    bootstrap_ = std::make_shared<nameserver::Bootstrap>(
-        pool_, console_task_, std::stoi(port), kvs);
+    bootstrap_ = std::make_shared<nameserver::Bootstrap>(pool_, console_task_,
+                                                         std::stoi(port), kvs);
   } else {
     console_task_->SendConsole("No config or invalid config found!");
     running_ = false;
@@ -40,7 +40,7 @@ void BootstrapDriver::LoadConfig(const std::filesystem::path& config_loc) {
 
 void BootstrapDriver::Start() {
   pool_->AddTask(console_task_);
-  pool_->AddTask(bootstrap_task_);
+  pool_->AddTask(nameserver_task_);
 
   while (running_) {
     std::string input;

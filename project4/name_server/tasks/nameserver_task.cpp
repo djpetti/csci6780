@@ -9,11 +9,7 @@ NameserverTask::NameserverTask(
     : nameserver_(nameserver) {}
 
 thread_pool::Task::Status NameserverTask::RunAtomic() {
-  message_passing::Endpoint endpoint;
-  consistent_hash_msgs::NameServerMessage ns_msg;
-  if (nameserver_->server_->Receive(kTimeout, &ns_msg, &endpoint)) {
-    nameserver_->HandleRequest(ns_msg, endpoint);
-  }
+  nameserver_->ReceiveAndHandle();
   return thread_pool::Task::Status::RUNNING;
 }
 

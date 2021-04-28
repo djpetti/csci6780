@@ -29,9 +29,6 @@ class NameserverTask : public thread_pool::Task {
  private:
   /// Nameserver
   std::shared_ptr<nameserver::Nameserver> nameserver_;
-
-  /// Timeout used to receive messages
-  constexpr static const auto kTimeout = std::chrono::milliseconds(100);
 };
 }  // namespace nameserver::tasks
 #endif  // PROJECT4_NAMESERVER_TASK_H

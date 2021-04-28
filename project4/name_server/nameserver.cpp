@@ -176,6 +176,14 @@ void Nameserver::Exit() {
   }
 }
 
+void Nameserver::ReceiveAndHandle() {
+  message_passing::Endpoint endpoint;
+  consistent_hash_msgs::NameServerMessage ns_msg;
+  if (server_->Receive(kTimeout, &ns_msg, &endpoint)) {
+    HandleRequest(ns_msg, endpoint);
+  }
+}
+
 void Nameserver::HandleRequest(
     const consistent_hash_msgs::EntranceInformation& request) {
   consistent_hash_msgs::EntranceInformation req = request;
@@ -219,9 +227,13 @@ void Nameserver::HandleRequest(
   // entering nameserver will be the first in the ring.
 
   // forward to successor
-  message_passing::Client client = message_passing::Client(threadpool_,successor_);
+  message_passing::Client client =
+      message_passing::Client(threadpool_, successor_);
   if (!client.SendAsync(req)) {
-    LOG_F(ERROR, "Error sending EntranceInfo message from namserver #%i to successor #%i", id_, successor_id_);
+    LOG_F(ERROR,
+          "Error sending EntranceInfo message from namserver #%i to successor "
+          "#%i",
+          id_, successor_id_);
   }
 }
 
@@ -284,9 +296,6 @@ void Nameserver::HandleRequest(
 }
 
 void Nameserver::HandleRequest(
-    const consistent_hash_msgs::UpdatePredecessorResponse& request) {}
-
-void Nameserver::HandleRequest(
     const consistent_hash_msgs::LookUpResult& request) {
   consistent_hash_msgs::LookUpResult req = request;
   if (req.key() <= bounds_.second && req.key() >= bounds_.first) {
@@ -304,7 +313,8 @@ void Nameserver::HandleRequest(
   LOG_F(INFO, "Nameserver #%i sending a LookUpResult to successor #%i", id_,
         successor_id_);
   // forward LookUpResult to successor
-  message_passing::Client client = message_passing::Client(threadpool_, successor_);
+  message_passing::Client client =
+      message_passing::Client(threadpool_, successor_);
   if (!client.SendAsync(req)) {
     // error
     LOG_F(ERROR, "Request failed to send.");
@@ -327,7 +337,8 @@ void Nameserver::HandleRequest(
   LOG_F(INFO, "Nameserver #%i sending a InsertResult to successor #%i", id_,
         successor_id_);
   // forward LookUpResult to successor
-  message_passing::Client client = message_passing::Client(threadpool_, successor_);
+  message_passing::Client client =
+      message_passing::Client(threadpool_, successor_);
   if (!client.SendAsync(req)) {
     // error
     LOG_F(ERROR, "Request failed to send.");
@@ -353,7 +364,8 @@ void Nameserver::HandleRequest(
   LOG_F(INFO, "Nameserver #%i sending a DeleteResult to successor #%i", id_,
         successor_id_);
   // forward LookUpResult to successor
-  message_passing::Client client = message_passing::Client(threadpool_, successor_);
+  message_passing::Client client =
+      message_passing::Client(threadpool_, successor_);
   if (!client.SendAsync(req)) {
     // error
     LOG_F(ERROR, "Request failed to send.");

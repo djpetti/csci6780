@@ -31,8 +31,7 @@ class Nameserver {
    */
   Nameserver(std::shared_ptr<thread_pool::ThreadPool> pool,
              std::shared_ptr<nameserver::tasks::ConsoleTask> console_task,
-             int port,
-             message_passing::Endpoint bootstrap);
+             int port, message_passing::Endpoint bootstrap);
 
   /**
    * @brief Inserts this nameserver into the hash ring.
@@ -46,19 +45,18 @@ class Nameserver {
    */
   void Exit();
 
-  /**
-   * @brief Handles a NameserverMessage
-   * @param msg the message
-   */
-  void HandleRequest(const consistent_hash_msgs::NameServerMessage &msg, const message_passing::Endpoint source);
+  virtual /**
+           * @brief Receive a message and handle the message with server_
+           */
+      void
+      ReceiveAndHandle();
+
+ protected:
+  /// The threadpool used by client, server
+  std::shared_ptr<thread_pool::ThreadPool> threadpool_;
 
   /// The server object
   std::unique_ptr<message_passing::Server> server_;
-
- protected:
-
-  /// The threadpool used by client, server
-  std::shared_ptr<thread_pool::ThreadPool> threadpool_;
 
   /// The client object
   std::unique_ptr<message_passing::Client> client_;
@@ -83,6 +81,16 @@ class Nameserver {
   /// Bootstrap endpoint
   message_passing::Endpoint bootstrap_;
 
+  /// Timeout used to receive messages
+  constexpr static const auto kTimeout = std::chrono::milliseconds(100);
+
+  /**
+   * @brief Handles a NameserverMessage
+   * @param msg the message
+   */
+  void HandleRequest(const consistent_hash_msgs::NameServerMessage &msg,
+                     const message_passing::Endpoint source);
+
   void HandleRequest(const consistent_hash_msgs::LookUpResult &request);
 
  private:
@@ -94,14 +102,12 @@ class Nameserver {
 
   void HandleRequest(const consistent_hash_msgs::ExitInformation &request);
 
-  void HandleRequest(const consistent_hash_msgs::UpdatePredecessorRequest &request,
-                     const message_passing::Endpoint& source);
+  void HandleRequest(
+      const consistent_hash_msgs::UpdatePredecessorRequest &request,
+      const message_passing::Endpoint &source);
 
   void HandleRequest(
       const consistent_hash_msgs::UpdateSuccessorRequest &request);
-
-  void HandleRequest(
-      const consistent_hash_msgs::UpdatePredecessorResponse &request);
 
   void HandleRequest(const consistent_hash_msgs::InsertResult &request);
 

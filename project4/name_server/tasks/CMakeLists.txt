@@ -1,2 +1,2 @@
-add_library(name_server_tasks_lib console_task.cpp bootstrap_task.cpp nameserver_task.cpp)
+add_library(name_server_tasks_lib console_task.cpp nameserver_task.cpp)
 target_link_libraries(name_server_tasks_lib consistent_hash_msgs thread_pool wire_protocol loguru)

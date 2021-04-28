@@ -35,7 +35,7 @@ class Bootstrap : public Nameserver {
    * @param key The integer key for the corresponding value
    * @param val The value
    */
-  void Insert(uint key, std::string val);
+  void Insert(uint key, const std::string &val);
 
   /**
    * @brief Deletes a key-value pair from the ring.
@@ -49,12 +49,18 @@ class Bootstrap : public Nameserver {
    */
   void LookUp(uint key);
 
+  /**
+   * @brief Receive a message and handle the message with server_
+   */
+  void ReceiveAndHandle();
+
  private:
   /**
    * @brief Handles an entrance request from an entering name server.
    * @param A BootstrapMessage request
    */
-  void HandleRequest(const consistent_hash_msgs::EntranceRequest &request, const message_passing::Endpoint source);
+  void HandleRequest(const consistent_hash_msgs::EntranceRequest &request,
+                     const message_passing::Endpoint source);
 
   /**
    * @param A NameServerMessage request
