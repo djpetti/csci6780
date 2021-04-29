@@ -10,8 +10,8 @@
 #include <iostream>
 #include <string>
 #include <vector>
-#include "queue/queue.h"
 
+#include "queue/queue.h"
 #include "thread_pool/task.h"
 
 namespace nameserver::tasks {

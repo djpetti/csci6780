@@ -24,8 +24,6 @@ class NameserverTask : public thread_pool::Task {
    */
   explicit NameserverTask(std::shared_ptr<nameserver::Nameserver> nameserver);
 
-  Status SetUp() override;
-
   Status RunAtomic() override;
 
  private:

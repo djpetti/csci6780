@@ -1,6 +1,6 @@
 #include "nameserver_driver.h"
 
-#include <utility>
+#include <fstream>
 
 namespace nameserver {
 
@@ -8,17 +8,37 @@ NameserverDriver::NameserverDriver(std::filesystem::path config_file)
     : pool_(std::make_shared<thread_pool::ThreadPool>()),
       console_task_(
           std::make_shared<nameserver::tasks::ConsoleTask>("nameserver=> ")) {
-  nameserver_ = std::make_shared<nameserver::Nameserver>(pool_, console_task_,
-                                                         config_file);
+  LoadConfig(config_file);
   nameserver_task_ =
       std::make_shared<nameserver::tasks::NameserverTask>(nameserver_);
 }
 
-[[noreturn]] void NameserverDriver::Start() {
+void NameserverDriver::LoadConfig(const std::filesystem::path& config_loc) {
+  std::ifstream conf_file(config_loc);
+  if (conf_file.is_open()) {
+    std::string id;
+    std::getline(conf_file, id);
+    std::string port;
+    std::getline(conf_file, port);
+    std::string bootstrap_info;
+    std::getline(conf_file, bootstrap_info);
+    std::istringstream ss(bootstrap_info);
+    message_passing::Endpoint bootstrap;
+    ss >> bootstrap.hostname;
+    ss >> bootstrap.port;
+    nameserver_ = std::make_shared<nameserver::Nameserver>(
+        pool_, console_task_, std::stoi(port), bootstrap);
+  } else {
+    console_task_->SendConsole("No config or invalid config found!");
+    running_ = false;
+  }
+}
+
+void NameserverDriver::Start() {
   pool_->AddTask(console_task_);
   pool_->AddTask(nameserver_task_);
 
-  while (true) {
+  while (running_) {
     std::string input;
     std::getline(std::cin, input);
     auto itr = nameserver_cmds.find(input);
@@ -28,12 +48,12 @@ NameserverDriver::NameserverDriver(std::filesystem::path config_file)
     }
     switch (itr->second) {
       case NameserverCommand::ENTER:
-        console_task_->SendConsole("joining...");
-        /// TODO Set up nameserver task
+        console_task_->SendConsole("Entering...");
+        nameserver_->Enter();
         break;
       case NameserverCommand::EXIT:
-        console_task_->SendConsole("leaving!...");
-        /// TODO Close down nameserver task
+        console_task_->SendConsole("Exiting...");
+        nameserver_->Exit();
         break;
     }
   }

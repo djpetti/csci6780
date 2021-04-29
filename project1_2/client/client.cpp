@@ -3,11 +3,11 @@
 #include <memory>
 #include <sstream>
 
-#include "thread_pool/task.h"
-#include "thread_pool/thread_pool.h"
 #include "client_tasks/download_task.h"
 #include "client_tasks/terminate_task.h"
 #include "client_tasks/upload_task.h"
+#include "thread_pool/task.h"
+#include "thread_pool/thread_pool.h"
 
 namespace client {
 
@@ -31,8 +31,8 @@ bool Client::SendReq() {
     perror("Cannot Send Request... no longer connected to server");
     return false;
   }
-  if (SendForever(client_fd_, outgoing_msg_buf_.data(), outgoing_msg_buf_.size(), 0) <
-      0) {
+  if (SendForever(client_fd_, outgoing_msg_buf_.data(),
+                  outgoing_msg_buf_.size(), 0) < 0) {
     perror("Failed to send request");
     return false;
   }
@@ -154,8 +154,8 @@ void Client::FtpShell() {
       // If put command, FileContents will have to be sent.
       auto contents = ip->GetContentsMessage();
       wire_protocol::Serialize(contents, &outgoing_msg_buf_);
-      put_task = std::make_shared<client_tasks::UploadTask>(
-          client_fd_, outgoing_msg_buf_);
+      put_task = std::make_shared<client_tasks::UploadTask>(client_fd_,
+                                                            outgoing_msg_buf_);
       pool.AddTask(put_task);
 
       if (!ip->IsForking()) {
@@ -164,8 +164,8 @@ void Client::FtpShell() {
       }
     } else if (r.has_get()) {
       // If get command, FileContents will have to be received.
-      get_task = std::make_shared<client_tasks::DownloadTask>(
-          ip->GetFilename(), client_fd_);
+      get_task = std::make_shared<client_tasks::DownloadTask>(ip->GetFilename(),
+                                                              client_fd_);
       pool.AddTask(get_task);
 
       if (!ip->IsForking()) {
