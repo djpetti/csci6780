@@ -67,17 +67,17 @@ void Bootstrap::HandleRequest(
   entering_nameserver_ = source;
   if (successor_ == bootstrap_) {
     // ring is empty
-    client_ = std::make_unique<message_passing::Client>(threadpool_, source);
+    message_passing::Client client = message_passing::Client(threadpool_, source);
     // send empty entrance info message.
     // the joining nameserver will know it's predecessor and successor are the
     // bootstrap server.
-    client_->Send(entrance_info);
+    client.Send(entrance_info);
   } else {
     // send entrance info message to be filled out
     entrance_info.set_id(request.id());
-    client_ =
-        std::make_unique<message_passing::Client>(threadpool_, successor_);
-    client_->Send(entrance_info);
+    message_passing::Client client =
+        message_passing::Client(threadpool_,successor_);
+    client.Send(entrance_info);
   }
 }
 
