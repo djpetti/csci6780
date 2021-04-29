@@ -66,7 +66,6 @@ bool Nameserver::Enter() {
   consistent_hash_msgs::BootstrapMessage bootstrap_message;
   consistent_hash_msgs::EntranceInformation entrance_info;
   consistent_hash_msgs::UpdatePredecessorResponse update_pred_res;
-  auto* nameserver_message = bootstrap_message.mutable_name_server_message();
 
   LOG_F(INFO,
         "Nameserver #%i sending EntranceRequest message to bootstrap. Now "
@@ -80,7 +79,6 @@ bool Nameserver::Enter() {
     return false;
   }
 
-  // ring is not empty.
   // update successor & predecessor information
   successor_.port = entrance_info.successor_info().port();
   successor_.hostname = entrance_info.successor_info().ip();
@@ -100,15 +98,16 @@ bool Nameserver::Enter() {
   message_passing::Client client =
       message_passing::Client(threadpool_, successor_);
   bootstrap_message.Clear();
-  nameserver_message = bootstrap_message.mutable_name_server_message();
+  auto nameserver_message = bootstrap_message.mutable_name_server_message();
   nameserver_message->mutable_update_pred_req()
       ->mutable_predecessor_info()
       ->set_id(id_);
   nameserver_message->mutable_update_pred_req()
       ->mutable_predecessor_info()
       ->set_port(port_);
+
   if (!client.SendRequest(bootstrap_message, &update_pred_res)) {
-    LOG_F(ERROR, "No response received from the bootstrap.");
+    LOG_F(ERROR, "No UpdatePredecessorResponse received from the successor.");
     return false;
   }
 

@@ -63,26 +63,27 @@ void Bootstrap::ReceiveAndHandle() {
 void Bootstrap::HandleRequest(
     const consistent_hash_msgs::EntranceRequest& request,
     const message_passing::Endpoint source) {
-  consistent_hash_msgs::EntranceInformation entrance_info;
+  consistent_hash_msgs::NameServerMessage message;
   entering_nameserver_ = source;
   if (successor_ == bootstrap_) {
     // ring is empty
     // Set entrance info with the bootstrap information.
-    entrance_info.mutable_predecessor_info()->set_id(0);
-    entrance_info.mutable_predecessor_info()->set_ip(bootstrap_.hostname);
-    entrance_info.mutable_predecessor_info()->set_port(bootstrap_.port);
+    message.mutable_entrance_info()->mutable_predecessor_info()->set_id(0);
+    message.mutable_entrance_info()->mutable_predecessor_info()->set_ip(bootstrap_.hostname);
+    message.mutable_entrance_info()->mutable_predecessor_info()->set_port(bootstrap_.port);
 
-    entrance_info.mutable_successor_info()->CopyFrom(
-        entrance_info.predecessor_info());
 
-    if (!server_->SendAsync(entrance_info, source)) {
+    message.mutable_entrance_info()->mutable_successor_info()->CopyFrom(
+        message.mutable_entrance_info()->predecessor_info());
+
+    if (!server_->SendAsync(message, source)) {
       LOG_S(ERROR) << "Failed to send EntranceInformation message.";
     }
   } else {
     // send entrance info message to be filled out
-    entrance_info.set_id(request.id());
+    message.mutable_entrance_info()->set_id(request.id());
 
-    if (!server_->SendAsync(entrance_info, source)) {
+    if (!server_->SendAsync(message, source)) {
       LOG_S(ERROR) << "Failed to send EntranceInformation message.";
     }
   }
@@ -91,18 +92,20 @@ void Bootstrap::HandleRequest(
 void Bootstrap::HandleRequest(
     const consistent_hash_msgs::EntranceInformation& request) {
   consistent_hash_msgs::EntranceInformation req = request;
+  consistent_hash_msgs::NameServerMessage message;
+  message.mutable_entrance_info()->CopyFrom(req);
   if (req.successor_info().IsInitialized() &&
       !req.predecessor_info().IsInitialized()) {
     // the entering server will now be the last in the ring.
-    req.mutable_predecessor_info()->set_id(predecessor_id_);
-    req.mutable_predecessor_info()->set_ip(predecessor_.hostname);
-    req.mutable_predecessor_info()->set_port(predecessor_.port);
+    message.mutable_entrance_info()->mutable_predecessor_info()->set_id(predecessor_id_);
+    message.mutable_entrance_info()->mutable_predecessor_info()->set_ip(predecessor_.hostname);
+    message.mutable_entrance_info()->mutable_predecessor_info()->set_port(predecessor_.port);
   } else if (!request.successor_info().IsInitialized() &&
              request.predecessor_info().IsInitialized()) {
     // the entering server will now be the first in the ring.
-    req.mutable_successor_info()->set_port(successor_.port);
-    req.mutable_successor_info()->set_ip(successor_.hostname);
-    req.mutable_predecessor_info()->set_id(successor_id_);
+    message.mutable_entrance_info()->mutable_successor_info()->set_port(successor_.port);
+    message.mutable_entrance_info()->mutable_successor_info()->set_ip(successor_.hostname);
+    message.mutable_entrance_info()->mutable_successor_info()->set_id(successor_id_);
   } else if (!(req.mutable_predecessor_info()->IsInitialized() ||
                req.mutable_successor_info()->IsInitialized())) {
     LOG_F(FATAL,
@@ -112,9 +115,11 @@ void Bootstrap::HandleRequest(
   }
   message_passing::Client client =
       message_passing::Client(threadpool_, entering_nameserver_);
-  if (!client.SendAsync(request)) {
+  if (!client.SendAsync(message)) {
     LOG_F(ERROR, "Request failed to send.");
     // error
+  } else {
+    LOG_F(INFO, "Bootstrap sent InsertResult to successor $%i", successor_id_);
   }
 }
 
@@ -136,6 +141,8 @@ void Bootstrap::LookUp(uint key) {
     if (!client.SendAsync(message)) {
       // error
       LOG_F(ERROR, "Request failed to send.");
+    } else {
+      LOG_F(INFO, "Bootstrap sent LookUpResult to successor $%i", successor_id_);
     }
   }
 }
@@ -159,6 +166,8 @@ void Bootstrap::Insert(uint key, const std::string& val) {
     if (!client.SendAsync(message)) {
       // error
       LOG_F(ERROR, "Request failed to send.");
+    } else {
+      LOG_F(INFO, "Bootstrap sent InsertResult to successor $%i", successor_id_);
     }
   }
 }
@@ -181,6 +190,8 @@ void Bootstrap::Delete(uint key) {
     if (!client.SendAsync(delete_r)) {
       // error
       LOG_F(ERROR, "Request failed to send.");
+    } else {
+      LOG_F(INFO, "Bootstrap Sent DeleteResult to successor $%i", successor_id_);
     }
   }
 }
