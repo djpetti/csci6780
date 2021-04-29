@@ -67,7 +67,8 @@ void Bootstrap::HandleRequest(
   entering_nameserver_ = source;
   if (successor_ == bootstrap_) {
     // ring is empty
-    message_passing::Client client = message_passing::Client(threadpool_, source);
+    message_passing::Client client =
+        message_passing::Client(threadpool_, source);
     // send empty entrance info message.
     // the joining nameserver will know it's predecessor and successor are the
     // bootstrap server.
@@ -76,7 +77,7 @@ void Bootstrap::HandleRequest(
     // send entrance info message to be filled out
     entrance_info.set_id(request.id());
     message_passing::Client client =
-        message_passing::Client(threadpool_,successor_);
+        message_passing::Client(threadpool_, successor_);
     client.Send(entrance_info);
   }
 }
@@ -103,9 +104,9 @@ void Bootstrap::HandleRequest(
           "bootstrap.");
     return;
   }
-  client_ = std::make_unique<message_passing::Client>(threadpool_,
-                                                      entering_nameserver_);
-  if (!client_->SendAsync(request)) {
+  message_passing::Client client =
+      message_passing::Client(threadpool_, entering_nameserver_);
+  if (!client.SendAsync(request)) {
     LOG_F(ERROR, "Request failed to send.");
     // error
   }
@@ -124,8 +125,8 @@ void Bootstrap::LookUp(uint key) {
     consistent_hash_msgs::LookUpResult lookup;
     lookup.set_id(0);
     lookup.set_key(key);
-    client_ =
-        std::make_unique<message_passing::Client>(threadpool_, successor_);
+    message_passing::Client client =
+        message_passing::Client(threadpool_, successor_);
     if (!client_->SendAsync(lookup)) {
       // error
       LOG_F(ERROR, "Request failed to send.");
@@ -147,9 +148,9 @@ void Bootstrap::Insert(uint key, const std::string& val) {
     insert.set_id(0);
     insert.set_key(key);
     insert.set_value(val);
-    client_ =
-        std::make_unique<message_passing::Client>(threadpool_, successor_);
-    if (!client_->SendAsync(insert)) {
+    message_passing::Client client =
+        message_passing::Client(threadpool_, successor_);
+    if (!client.SendAsync(insert)) {
       // error
       LOG_F(ERROR, "Request failed to send.");
     }
@@ -169,9 +170,9 @@ void Bootstrap::Delete(uint key) {
     consistent_hash_msgs::DeleteResult delete_r;
     delete_r.set_delete_success(false);
     delete_r.set_key(key);
-    client_ =
-        std::make_unique<message_passing::Client>(threadpool_, successor_);
-    if (!client_->SendAsync(delete_r)) {
+    message_passing::Client client =
+        message_passing::Client(threadpool_, successor_);
+    if (!client.SendAsync(delete_r)) {
       // error
       LOG_F(ERROR, "Request failed to send.");
     }
