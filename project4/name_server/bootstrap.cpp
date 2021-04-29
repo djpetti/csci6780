@@ -191,17 +191,13 @@ void Bootstrap::HandleRequest(
 
 void Bootstrap::HandleRequest(
     const consistent_hash_msgs::InsertResult& request) {
-  consistent_hash_msgs::InsertResult req = request;
-  // denote this server as contacted
-  const auto ids = request.server_ids();
-  req.set_server_ids(ids.size(), 0);
-  if (req.id() == 0) {
+  if (request.id() == 0) {
     // the id is 0 and the bootstrap did not insert.
     console_task_->SendConsole("Key out of range.");
   } else {
     console_task_->SendConsole(
-        std::string("Inserted into: ").append(std::to_string(req.id())));
-    PrintContacted(req.server_ids());
+        std::string("Inserted into: ").append(std::to_string(request.id())));
+    PrintContacted(request.server_ids());
   }
 }
 

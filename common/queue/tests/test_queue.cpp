@@ -58,7 +58,6 @@ TEST(Queue, PushPopTwoThreads) {
   }
 }
 
-
 /**
  * @test Tests that we can push and pop from the queue with multiple threads
  * when a maximum length is set.
@@ -128,6 +127,63 @@ TEST(Queue, PopTimeout) {
 
   // Assert.
   EXPECT_EQ(42, got_element);
+}
+
+/**
+ * @test Tests that `WaitUntilEmpty` works.
+ */
+TEST(Queue, WaitUntilEmpty) {
+  // Arrange.
+  Queue<int> queue;
+
+  // Push some elements onto the queue initially.
+  queue.Push(1);
+  queue.Push(2);
+
+  // Act.
+  // In another thread, wait for the queue to be empty.
+  std::thread waiter_thread([&]() { queue.WaitUntilEmpty(); });
+
+  // Pop the elements off the queue.
+  queue.Pop();
+  queue.Pop();
+
+  // Assert.
+  // The waiting should now be complete.
+  waiter_thread.join();
+}
+
+/**
+ * @test Tests that `WaitUntilEmpty` works with timeouts.
+ */
+TEST(Queue, WaitUntilEmptyTimeout) {
+  // Arrange.
+  Queue<int> queue;
+
+  const auto kTimeout = std::chrono::milliseconds(100);
+
+  // Push some elements onto the queue initially.
+  queue.Push(1);
+  queue.Push(2);
+
+  // Act.
+  // Initially, it should timeout.
+  const bool kWaitResult1 = queue.WaitUntilEmpty(kTimeout);
+
+  // Pop one off.
+  queue.Pop();
+  // It should still not be empty.
+  const bool kWaitResult2 = queue.WaitUntilEmpty(kTimeout);
+
+  // Pop the next one off.
+  queue.Pop();
+  // It should now return immediately.
+  const bool kWaitResult3 = queue.WaitUntilEmpty(kTimeout);
+
+  // Assert.
+  EXPECT_FALSE(kWaitResult1);
+  EXPECT_FALSE(kWaitResult2);
+  EXPECT_TRUE(kWaitResult3);
 }
 
 }  // namespace queue::tests

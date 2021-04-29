@@ -2,14 +2,21 @@
 
 #include <unistd.h>
 
+#include <chrono>
 #include <functional>
 #include <loguru.hpp>
 #include <utility>
 
-#include "wire_protocol/wire_protocol.h"
 #include "utils.h"
+#include "wire_protocol/wire_protocol.h"
 
 namespace message_passing {
+namespace {
+
+/// Maximum number of seconds to wait for pending sends to complete at exit.
+const auto kSendTimeout = std::chrono::seconds(5);
+
+}  // namespace
 
 using wire_protocol::Serialize;
 
@@ -21,10 +28,17 @@ Client::Client(std::shared_ptr<thread_pool::ThreadPool> thread_pool,
           std::make_shared<queue::Queue<SenderTask::SendQueueMessage>>()) {}
 
 Client::~Client() {
+  // Wait for any pending sends to complete.
+  LOG_S(1) << "Waiting for pending send operations to finish...";
+  if (!send_queue_->WaitUntilEmpty(kSendTimeout)) {
+    LOG_S(WARNING) << "Send operations did not complete in time.";
+  }
+
   // Cancel the tasks we added to the thread pool.
   LOG_S(1) << "Cancelling sender and receiver tasks...";
   if (sender_task_ != nullptr) {
     thread_pool()->CancelTask(sender_task_);
+    thread_pool()->WaitForCompletion(sender_task_);
   }
 
   // Close the socket.

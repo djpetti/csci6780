@@ -4,10 +4,9 @@
 #include <chrono>
 #include <condition_variable>
 #include <cstdint>
+#include <loguru.hpp>
 #include <mutex>
 #include <queue>
-
-#include <loguru.hpp>
 
 namespace queue {
 
@@ -77,9 +76,9 @@ class Queue {
     if (queue_.empty()) {
       // Wait for the queue not to be empty.
       if (!queue_not_empty_.wait_for<Rep, Period>(
-          lock, timeout, [this] { return !queue_.empty(); })) {
+              lock, timeout, [this] { return !queue_.empty(); })) {
         // Timeout expired.
-        LOG_S(1) << "Queue pop timeout expired.";
+        LOG_S(2) << "Queue pop timeout expired.";
         return false;
       }
     }
@@ -90,6 +89,10 @@ class Queue {
 
     // Notify that the queue is no longer full.
     queue_not_full_.notify_one();
+    if (queue_.empty()) {
+      // Notify that the queue is empty.
+      queue_empty_.notify_one();
+    }
 
     return true;
   }
@@ -103,6 +106,41 @@ class Queue {
     return queue_.empty();
   }
 
+  /**
+   * @brief Blocks until the queue is empty. This can be used by a producer
+   *    thread to drain the queue.
+   * @note This does not prevent other threads from pushing to the queue.
+   * @tparam Rep The underlying numeric type for the timeout.
+   * @tparam Period The underlying period for the timeout.
+   * @param timeout The timeout to use for waiting.
+   * @return True if the queue was successfully emptied, false if the timeout
+   *    expired.
+   */
+  template <class Rep, class Period>
+  bool WaitUntilEmpty(const std::chrono::duration<Rep, Period>& timeout) {
+    std::unique_lock<std::mutex> lock(mutex_);
+
+    if (!queue_.empty()) {
+      // Wait until the queue is empty.
+      if (!queue_empty_.template wait_for(lock, timeout,
+                                          [this] { return queue_.empty(); })) {
+        // Timeout expired.
+        LOG_S(2) << "WaitUntilEmpty timeout expired.";
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  /**
+   * @brief Blocks until the queue is empty. Waits forever with no timeout.
+   */
+  void WaitUntilEmpty() {
+    while (!WaitUntilEmpty(std::chrono::hours(1)))
+      ;
+  }
+
  private:
   /// The maximum number of elements allowed in the queue.
   uint32_t max_length_;
@@ -113,6 +151,8 @@ class Queue {
   std::mutex mutex_{};
   /// Condition variable indicating that the queue is not empty.
   std::condition_variable queue_not_empty_{};
+  /// Condition variable indicating that the queue is empty.
+  std::condition_variable queue_empty_{};
   /// Condition variable indicating that the queue is not full.
   std::condition_variable queue_not_full_{};
 };

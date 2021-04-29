@@ -320,8 +320,7 @@ void Nameserver::HandleRequest(
 void Nameserver::HandleRequest(
     const consistent_hash_msgs::LookUpResult& request) {
   consistent_hash_msgs::NameServerMessage msg;
-  if (request.key() <= bounds_.second &&
-      request.key() >= bounds_.first) {
+  if (request.key() <= bounds_.second && request.key() >= bounds_.first) {
     // key-val resides in this nameserver
     auto itr = pairs_.find(request.key());
     if (itr != pairs_.end()) {
@@ -349,23 +348,26 @@ void Nameserver::HandleRequest(
 
 void Nameserver::HandleRequest(
     const consistent_hash_msgs::InsertResult& request) {
-  consistent_hash_msgs::InsertResult req = request;
-  if (req.key() <= bounds_.second && req.key() >= bounds_.first) {
+  consistent_hash_msgs::NameServerMessage message;
+  message.mutable_insert_result()->CopyFrom(request);
+
+  if (request.key() <= bounds_.second && request.key() >= bounds_.first) {
     // key-val should be inserted in this nameserver
-    std::pair<int, std::string> pair(req.key(), req.value());
+    LOG_S(INFO) << "Nameserver " << id_ << " inserting key " << request.key()
+                << ".";
+    std::pair<int, std::string> pair(request.key(), request.value());
     pairs_.insert(pair);
-    req.set_id(id_);
+    message.mutable_insert_result()->set_id(id_);
   }
   // denote this server as contacted
-  auto ids = req.server_ids();
-  req.add_server_ids(id_);
+  message.mutable_insert_result()->add_server_ids(id_);
 
   LOG_F(INFO, "Nameserver #%i sending a InsertResult to successor #%i", id_,
         successor_id_);
   // forward LookUpResult to successor
   message_passing::Client client =
       message_passing::Client(threadpool_, successor_);
-  if (!client.SendAsync(req)) {
+  if (!client.SendAsync(message)) {
     // error
     LOG_F(ERROR, "Request failed to send.");
   }

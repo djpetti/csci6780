@@ -47,6 +47,7 @@ void Participant::Start() {
         pub_sub_messages::RegistrationResponse response;
         parser_.GetMessage(&response);
         input_parser_.participant_id_ = response.participant_id();
+        [[fallthrough]];
       }
       case input_parser::InputParser::RECON: {
         if (connected_) {

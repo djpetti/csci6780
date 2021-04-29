@@ -277,6 +277,7 @@ Agent::ClientState Agent::HandleRequest(
 
 Agent::ClientState Agent::HandleRequest(
     const ftp_messages::ListRequest &request) {
+  (void)request;
   LOG_F(INFO, "Performing a LIST operation for client (%i).", client_fd_);
 
   // List the directory contents.
@@ -331,6 +332,7 @@ Agent::ClientState Agent::HandleRequest(
 
 Agent::ClientState Agent::HandleRequest(
     const ftp_messages::PwdRequest &request) {
+  (void)request;
   LOG_F(INFO, "Performing a PWD operation for client (%i).", client_fd_);
 
   // Get the directory.
@@ -354,6 +356,7 @@ Agent::ClientState Agent::HandleRequest(
 
 Agent::ClientState Agent::HandleRequest(
     const ftp_messages::QuitRequest &request) {
+  (void)request;
   LOG_F(INFO, "Quit request for client (%i).", client_fd_);
   // Indicate that we are finished with this client.
   return ClientState::DISCONNECTED;
