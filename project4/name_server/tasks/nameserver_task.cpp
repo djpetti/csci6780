@@ -1,7 +1,5 @@
 #include "nameserver_task.h"
 
-#include <utility>
-
 namespace nameserver::tasks {
 
 NameserverTask::NameserverTask(

@@ -25,12 +25,13 @@ class Nameserver {
    * @brief Initializes the nameserver.
    * @param pool the threadpool of this server
    * @param console_task the console task of this server
+   * @param id The ID of this nameserver.
    * @param port the port to listen on
    * @param bootstrap hostname and port information.
    */
   Nameserver(std::shared_ptr<thread_pool::ThreadPool> pool,
              std::shared_ptr<nameserver::tasks::ConsoleTask> console_task,
-             int port, message_passing::Endpoint bootstrap);
+             uint id, int port, message_passing::Endpoint bootstrap);
 
   virtual ~Nameserver() = default;
 
@@ -113,11 +114,11 @@ class Nameserver {
 
   void HandleRequest(const consistent_hash_msgs::DeleteResult &request);
 
-  /// Port of this name server
-  int port_;
-
   /// Id of this name server
   uint id_;
+
+  /// Port of this name server
+  int port_;
 };
 }  // namespace nameserver
 

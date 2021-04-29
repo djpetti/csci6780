@@ -27,7 +27,7 @@ void NameserverDriver::LoadConfig(const std::filesystem::path& config_loc) {
     ss >> bootstrap.hostname;
     ss >> bootstrap.port;
     nameserver_ = std::make_shared<nameserver::Nameserver>(
-        pool_, console_task_, std::stoi(port), bootstrap);
+        pool_, console_task_, std::stoi(id), std::stoi(port), bootstrap);
   } else {
     console_task_->SendConsole("No config or invalid config found!");
     running_ = false;

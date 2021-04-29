@@ -7,7 +7,7 @@ Bootstrap::Bootstrap(
     std::shared_ptr<thread_pool::ThreadPool> pool,
     std::shared_ptr<nameserver::tasks::ConsoleTask> console_task, int port,
     std::unordered_map<uint, std::string> kvs)
-    : Nameserver(pool, std::move(console_task), port,
+    : Nameserver(pool, std::move(console_task), 0, port,
                  {"127.0.0.1", static_cast<uint16_t>(port)}) {
   pairs_ = std::move(kvs);
   bounds_ = {0, 1023};
@@ -22,9 +22,6 @@ void Bootstrap::HandleRequest(
           source.hostname.c_str());
     HandleRequest(request.entrance_request(), source);
   } else if (request.has_name_server_message()) {
-    /// FIXME if receiving a type of NameServerMessage, but listening for a
-    /// BootstrapMessage, the BootstrapMessage message will have not an
-    /// EntranceRequest nor an instance of NameServerMessage.
     auto msg = request.name_server_message();
     if (msg.has_delete_result()) {
       LOG_F(INFO, "Bootstrap received DeleteResult message from node %s",
@@ -49,6 +46,9 @@ void Bootstrap::HandleRequest(
     } else {
       Nameserver::HandleRequest(msg, source);
     }
+  } else {
+    LOG_S(ERROR) << "Bootstrap received an empty BootstrapMessage from node "
+                 << source.hostname << ".";
   }
 }
 
@@ -67,18 +67,24 @@ void Bootstrap::HandleRequest(
   entering_nameserver_ = source;
   if (successor_ == bootstrap_) {
     // ring is empty
-    message_passing::Client client =
-        message_passing::Client(threadpool_, source);
-    // send empty entrance info message.
-    // the joining nameserver will know it's predecessor and successor are the
-    // bootstrap server.
-    client.Send(entrance_info);
+    // Set entrance info with the bootstrap information.
+    entrance_info.mutable_predecessor_info()->set_id(0);
+    entrance_info.mutable_predecessor_info()->set_ip(bootstrap_.hostname);
+    entrance_info.mutable_predecessor_info()->set_port(bootstrap_.port);
+
+    entrance_info.mutable_successor_info()->CopyFrom(
+        entrance_info.predecessor_info());
+
+    if (!server_->SendAsync(entrance_info, source)) {
+      LOG_S(ERROR) << "Failed to send EntranceInformation message.";
+    }
   } else {
     // send entrance info message to be filled out
     entrance_info.set_id(request.id());
-    message_passing::Client client =
-        message_passing::Client(threadpool_, successor_);
-    client.Send(entrance_info);
+
+    if (!server_->SendAsync(entrance_info, source)) {
+      LOG_S(ERROR) << "Failed to send EntranceInformation message.";
+    }
   }
 }
 

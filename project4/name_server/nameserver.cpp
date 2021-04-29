@@ -4,8 +4,9 @@ namespace nameserver {
 
 Nameserver::Nameserver(
     std::shared_ptr<thread_pool::ThreadPool> pool,
-    std::shared_ptr<nameserver::tasks::ConsoleTask> console_task, int port,
-    message_passing::Endpoint bootstrap) {
+    std::shared_ptr<nameserver::tasks::ConsoleTask> console_task, uint id,
+    int port, message_passing::Endpoint bootstrap)
+    : id_(id) {
   port_ = port;
   bootstrap_ = bootstrap;
   console_task_ = std::move(console_task);
@@ -62,37 +63,35 @@ void Nameserver::HandleRequest(
 }
 
 bool Nameserver::Enter() {
-  consistent_hash_msgs::EntranceRequest entrance_req;
+  consistent_hash_msgs::BootstrapMessage bootstrap_message;
   consistent_hash_msgs::EntranceInformation entrance_info;
   consistent_hash_msgs::UpdatePredecessorResponse update_pred_res;
-  consistent_hash_msgs::UpdatePredecessorRequest update_pred_req;
-  consistent_hash_msgs::UpdateSuccessorRequest update_succ_req;
+  auto* nameserver_message = bootstrap_message.mutable_name_server_message();
 
   LOG_F(INFO,
         "Nameserver #%i sending EntranceRequest message to bootstrap. Now "
         "waiting for an EntranceInfo from the server.",
         id_);
   // send entrance info request to bootstrap
-  if (!client_->SendRequest(entrance_req, &entrance_info)) {
+  bootstrap_message.mutable_entrance_request()->set_id(id_);
+  bootstrap_message.mutable_entrance_request()->set_port(port_);
+  if (!client_->SendRequest(bootstrap_message, &entrance_info)) {
     LOG_F(ERROR, "No response received from the bootstrap.");
     return false;
   }
 
-  if (entrance_info.IsInitialized()) {
-    // ring is not empty.
-    // update successor & predecessor information
-    successor_.port = entrance_info.successor_info().port();
-    successor_.hostname = entrance_info.successor_info().ip();
-    successor_id_ = entrance_info.successor_info().id();
-    predecessor_.port = entrance_info.predecessor_info().port();
-    predecessor_.hostname = entrance_info.predecessor_info().ip();
-    predecessor_id_ = entrance_info.predecessor_info().id();
-  } else {
-    // ring is empty.
-    // this nameserver's predecessor & successor will be the bootstrap
-    successor_ = bootstrap_;
-    predecessor_ = bootstrap_;
-  }
+  // ring is not empty.
+  // update successor & predecessor information
+  successor_.port = entrance_info.successor_info().port();
+  successor_.hostname = entrance_info.successor_info().ip();
+  successor_id_ = entrance_info.successor_info().id();
+  predecessor_.port = entrance_info.predecessor_info().port();
+  predecessor_.hostname = entrance_info.predecessor_info().ip();
+  predecessor_id_ = entrance_info.predecessor_info().id();
+  LOG_S(INFO) << "Setting predecessor to " << predecessor_.hostname << ":"
+              << predecessor_.port << " and successor to "
+              << successor_.hostname << ":" << successor_.port << ".";
+
   LOG_F(INFO,
         "Nameserver #%i sending UpdatePredecessorRequest message to successor "
         "#%i. Waiting for an UpdatePredecessorResponse",
@@ -100,9 +99,15 @@ bool Nameserver::Enter() {
   // tell this entering server's successor to update it's predecessor info
   message_passing::Client client =
       message_passing::Client(threadpool_, successor_);
-  update_pred_req.mutable_predecessor_info()->set_id(id_);
-  update_pred_req.mutable_predecessor_info()->set_port(port_);
-  if (!client.SendRequest(update_pred_req, &update_pred_res)) {
+  bootstrap_message.Clear();
+  nameserver_message = bootstrap_message.mutable_name_server_message();
+  nameserver_message->mutable_update_pred_req()
+      ->mutable_predecessor_info()
+      ->set_id(id_);
+  nameserver_message->mutable_update_pred_req()
+      ->mutable_predecessor_info()
+      ->set_port(port_);
+  if (!client.SendRequest(bootstrap_message, &update_pred_res)) {
     LOG_F(ERROR, "No response received from the bootstrap.");
     return false;
   }
@@ -110,9 +115,11 @@ bool Nameserver::Enter() {
   // retrieve key-value information from the response
   bounds_.first = update_pred_res.lower_bounds();
   bounds_.second = update_pred_res.upper_bounds();
-  for (int i = 0; i < update_pred_res.mutable_keys()->size(); i++) {
-    std::pair<int, std::string> pair(update_pred_res.mutable_keys()->Get(i),
-                                     update_pred_res.mutable_values()->Get(i));
+  LOG_S(INFO) << "Setting key range to [" << bounds_.first << ", "
+              << bounds_.second << "].";
+  for (int i = 0; i < update_pred_res.keys().size(); i++) {
+    std::pair<int, std::string> pair(update_pred_res.keys().Get(i),
+                                     update_pred_res.values().Get(i));
     pairs_.insert(pair);
   }
   LOG_F(
@@ -122,10 +129,16 @@ bool Nameserver::Enter() {
   // tell this entering server's predecessor to update it's successor info
   message_passing::Client pred_client =
       message_passing::Client(threadpool_, predecessor_);
-  update_succ_req.mutable_successor_info()->set_port(port_);
-  update_succ_req.mutable_successor_info()->set_id(id_);
-  if (pred_client.Send(update_succ_req) < 0) {
-    LOG_F(ERROR, "No response received from the bootstrap.");
+  bootstrap_message.Clear();
+  nameserver_message = bootstrap_message.mutable_name_server_message();
+  nameserver_message->mutable_update_succ_req()
+      ->mutable_successor_info()
+      ->set_port(port_);
+  nameserver_message->mutable_update_succ_req()
+      ->mutable_successor_info()
+      ->set_id(id_);
+  if (pred_client.Send(bootstrap_message) < 0) {
+    LOG_F(ERROR, "Failed to send UpdateSuccessorRequest to the predecessor.");
     return false;
   }
 
@@ -263,25 +276,22 @@ void Nameserver::HandleRequest(
   // give lower half of it's key-val range to the entering nameserver
   consistent_hash_msgs::UpdatePredecessorResponse res;
   res.set_lower_bounds(bounds_.first);
-  const uint kMiddleKey = (bounds_.first - bounds_.second) / 2;
-  res.set_upper_bounds(bounds_.first - kMiddleKey);
-  uint pair_index = 0;
+  const uint kMiddleKey = (bounds_.second - bounds_.first) / 2;
+  res.set_upper_bounds(bounds_.second - kMiddleKey);
   for (const auto& pair : pairs_) {
-    if (pair.first < bounds_.second / 2 + 1) {
+    if (pair.first <= kMiddleKey) {
       // this key-val goes to the entering nameserver
-      res.set_keys(pair_index, pair.first);
-      res.set_values(pair_index, pair.second);
+      res.add_keys(pair.first);
+      res.add_values(pair.second);
       pairs_.erase(pair.first);
     }
   }
-  bounds_.first += (bounds_.second - bounds_.first) / 2 + 1;
+  bounds_.first += kMiddleKey + 1;
 
   LOG_F(INFO,
         "Nameserver #%i sending UpdatePredecessorResponse to name server %s",
         id_, source.hostname.c_str());
-  message_passing::Client client =
-      message_passing::Client(threadpool_, predecessor_);
-  if (!client.SendAsync(res)) {
+  if (!server_->SendAsync(res, source)) {
     // error
     LOG_F(ERROR, "Request failed to send.");
   }

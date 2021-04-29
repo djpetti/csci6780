@@ -49,6 +49,8 @@ message DeleteResult {
 message EntranceRequest {
   /// the id of the entering name server
   uint32 id = 1;
+  /// The port that the server is listening on.
+  uint32 port = 2;
 }
 
 /// entrance information to be rippled through the name servers.
