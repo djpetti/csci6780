@@ -57,10 +57,15 @@ message EntranceRequest {
 message EntranceInformation {
   /// the id of the entering name server
   uint32 id = 1;
+  /// Whether we've found the predecessor yet.
+  bool found_predecessor = 2;
+  /// Whether we've found the successor yet.
+  bool found_successor = 3;
+
   /// the server info for entering server's successor.
-  ServerInfo successor_info = 2;
+  ServerInfo successor_info = 4;
   /// the server info for entering server's predecessor.
-  ServerInfo predecessor_info = 3;
+  ServerInfo predecessor_info = 5;
 }
 
 /// request to update predecessor to be sent by the entering name server to it's to-be successor.

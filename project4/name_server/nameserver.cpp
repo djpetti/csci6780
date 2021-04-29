@@ -199,50 +199,42 @@ void Nameserver::ReceiveAndHandle() {
 
 void Nameserver::HandleRequest(
     const consistent_hash_msgs::EntranceInformation& request) {
-  consistent_hash_msgs::EntranceInformation req = request;
-  if (req.id() > id_ && req.id() < successor_id_) {
-    LOG_F(INFO,
-          "Nameserver #%i will be the successor of entering name server #%i",
-          id_, req.id());
-    // this entering nameserver's to-be successor will be
-    // this nameserver's successor.
-    req.mutable_successor_info()->set_id(successor_id_);
-    req.mutable_successor_info()->set_port(successor_.port);
-    req.mutable_successor_info()->set_ip(successor_.hostname);
-  } else if (request.id() < id_ && request.id() > predecessor_id_) {
+  consistent_hash_msgs::NameServerMessage message;
+  auto* entrance_info = message.mutable_entrance_info();
+  entrance_info->CopyFrom(request);
+
+  if (request.id() > id_ &&
+      // The extra condition is due to the fact that the bootstrap node has an
+      // ID of zero, but we still want to handle the case we were are inserting
+      // the last node in the ring.
+      (request.id() < successor_id_ || successor_ == bootstrap_)) {
     LOG_F(INFO,
           "Nameserver #%i will be the predecessor of entering name server #%i",
-          id_, req.id());
+          id_, request.id());
+    // this entering nameserver's to-be successor will be
+    // this nameserver's successor.
+    entrance_info->mutable_successor_info()->set_id(successor_id_);
+    entrance_info->mutable_successor_info()->set_port(successor_.port);
+    entrance_info->mutable_successor_info()->set_ip(successor_.hostname);
+
+    entrance_info->set_found_successor(true);
+  } else if (request.id() < id_ && request.id() > predecessor_id_) {
+    LOG_F(INFO,
+          "Nameserver #%i will be the successor of entering name server #%i",
+          id_, request.id());
     // this entering nameserver's predecessor will be
     // this nameserver's predecessor
-    req.mutable_predecessor_info()->set_port(predecessor_.port);
-    req.mutable_predecessor_info()->set_id(predecessor_id_);
-    req.mutable_predecessor_info()->set_ip(predecessor_.hostname);
-  }
+    entrance_info->mutable_predecessor_info()->set_port(predecessor_.port);
+    entrance_info->mutable_predecessor_info()->set_id(predecessor_id_);
+    entrance_info->mutable_predecessor_info()->set_ip(predecessor_.hostname);
 
-  if (successor_ == bootstrap_ &&
-      !req.mutable_successor_info()->IsInitialized() &&
-      !req.mutable_predecessor_info()->IsInitialized()) {
-    LOG_F(INFO, "Bootstrap will be the successor of entering name server #%i",
-          req.id());
-    // the entering nameserver will be the last successor in the hash ring.
-    // the entering nameserver's to-be successor is the bootstrap server.
-    // note that the bootstrap server will provide it's predecessor information
-    // (which is this nameserver)
-    req.mutable_successor_info()->set_id(successor_id_);
-    req.mutable_successor_info()->set_port(successor_.port);
-    req.mutable_successor_info()->set_ip(successor_.hostname);
+    entrance_info->set_found_predecessor(true);
   }
-  // if the the request does not have predecessor info but has successor info by
-  // the time it reaches back to bootstrap, we know the entering nameserver will
-  // be the last in the ring. if the request does not have successor info but
-  // has predecessor info by the time it reaches back to bootstrap, we know the
-  // entering nameserver will be the first in the ring.
 
   // forward to successor
   message_passing::Client client =
       message_passing::Client(threadpool_, successor_);
-  if (!client.SendAsync(req)) {
+  if (!client.SendAsync(message)) {
     LOG_F(ERROR,
           "Error sending EntranceInfo message from namserver #%i to successor "
           "#%i",
@@ -276,11 +268,11 @@ void Nameserver::HandleRequest(
   // give lower half of it's key-val range to the entering nameserver
   consistent_hash_msgs::UpdatePredecessorResponse res;
   res.set_lower_bounds(bounds_.first);
-  const uint kMiddleKey = (bounds_.second - bounds_.first) / 2;
-  res.set_upper_bounds(bounds_.second - kMiddleKey);
+  const uint kBoundsMiddle = (bounds_.second - bounds_.first) / 2;
+  res.set_upper_bounds(bounds_.second - kBoundsMiddle);
   std::vector<uint> to_delete;
   for (const auto& pair : pairs_) {
-    if (pair.first <= kMiddleKey) {
+    if (pair.first <= bounds_.first + kBoundsMiddle) {
       // this key-val goes to the entering nameserver
       res.add_keys(pair.first);
       res.add_values(pair.second);
@@ -293,7 +285,9 @@ void Nameserver::HandleRequest(
     pairs_.erase(kKey);
   }
 
-  bounds_.first += kMiddleKey + 1;
+  bounds_.first += kBoundsMiddle + 1;
+  LOG_S(INFO) << "Shrinking key range to [" << bounds_.first << ", "
+              << bounds_.second << "].";
 
   LOG_F(INFO,
         "Nameserver #%i sending UpdatePredecessorResponse to name server %s",
@@ -309,7 +303,7 @@ void Nameserver::HandleRequest(
     const message_passing::Endpoint& source) {
   // update successor info
   successor_.hostname = request.successor_info().ip();
-  if (successor_.hostname == "") {
+  if (successor_.hostname.empty()) {
     // an entering nameserver has sent this request.
     successor_.hostname = source.hostname;
   }
@@ -320,11 +314,14 @@ void Nameserver::HandleRequest(
 void Nameserver::HandleRequest(
     const consistent_hash_msgs::LookUpResult& request) {
   consistent_hash_msgs::NameServerMessage msg;
+  msg.mutable_look_up_result()->CopyFrom(request);
+
   if (request.key() <= bounds_.second && request.key() >= bounds_.first) {
     // key-val resides in this nameserver
     auto itr = pairs_.find(request.key());
     if (itr != pairs_.end()) {
       // value found
+      LOG_S(INFO) << "Found key " << request.key() << " on node " << id_ << ".";
       msg.mutable_look_up_result()->set_value(itr->second);
       msg.mutable_look_up_result()->set_id(id_);
       msg.mutable_look_up_result()->set_value(itr->second);

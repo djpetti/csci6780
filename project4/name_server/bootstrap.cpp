@@ -53,9 +53,13 @@ void Bootstrap::HandleRequest(
     }
   } else {
     // send message to be rippled.
-    info.set_id(request.id());
+    consistent_hash_msgs::NameServerMessage message;
+    message.mutable_entrance_info()->set_id(request.id());
+    message.mutable_entrance_info()->set_found_predecessor(false);
+    message.mutable_entrance_info()->set_found_successor(false);
 
-    if (!server_->SendAsync(info, successor_)) {
+    message_passing::Client client(threadpool_, successor_);
+    if (!client.SendAsync(message)) {
       LOG_S(ERROR) << "Failed to send EntranceInformation message.";
     }
   }
@@ -63,41 +67,33 @@ void Bootstrap::HandleRequest(
 
 void Bootstrap::HandleRequest(
     const consistent_hash_msgs::EntranceInformation& request) {
-  consistent_hash_msgs::EntranceInformation req = request;
-  consistent_hash_msgs::NameServerMessage message;
-  message.mutable_entrance_info()->CopyFrom(req);
-  if (req.successor_info().IsInitialized() &&
-      !req.predecessor_info().IsInitialized()) {
-    // the entering server will now be the last in the ring.
-    message.mutable_entrance_info()->mutable_predecessor_info()->set_id(
-        predecessor_id_);
-    message.mutable_entrance_info()->mutable_predecessor_info()->set_ip(
-        predecessor_.hostname);
-    message.mutable_entrance_info()->mutable_predecessor_info()->set_port(
-        predecessor_.port);
+  consistent_hash_msgs::EntranceInformation entrance_info = request;
+  if (request.found_successor() && !request.found_predecessor()) {
+    // The entering server will now be the last in the ring.
+    entrance_info.mutable_predecessor_info()->set_id(predecessor_id_);
+    entrance_info.mutable_predecessor_info()->set_ip(predecessor_.hostname);
+    entrance_info.mutable_predecessor_info()->set_port(predecessor_.port);
 
   } else if (!request.successor_info().IsInitialized() &&
              request.predecessor_info().IsInitialized()) {
     // the entering server will now be the first in the ring.
-    message.mutable_entrance_info()->mutable_successor_info()->set_port(
-        successor_.port);
-    message.mutable_entrance_info()->mutable_successor_info()->set_ip(
-        successor_.hostname);
-    message.mutable_entrance_info()->mutable_successor_info()->set_id(
-        successor_id_);
+    entrance_info.mutable_successor_info()->set_port(successor_.port);
+    entrance_info.mutable_successor_info()->set_ip(successor_.hostname);
+    entrance_info.mutable_successor_info()->set_id(successor_id_);
 
-  } else if (!(req.mutable_predecessor_info()->IsInitialized() ||
-               req.mutable_successor_info()->IsInitialized())) {
+  } else if (!(request.found_predecessor() || request.found_successor())) {
     LOG_F(FATAL,
           "EntranceInformation message is uninitialized after returning to the "
           "bootstrap.");
     return;
   }
-  if (!server_->SendAsync(message, entering_nameserver_)) {
+  if (!server_->SendAsync(entrance_info, entering_nameserver_)) {
     LOG_F(ERROR, "Request failed to send.");
     // error
   } else {
-    LOG_F(INFO, "Bootstrap sent InsertResult to successor $%i", successor_id_);
+    LOG_S(INFO) << "Bootstrap sent EntranceInfo to nameserver "
+                << entering_nameserver_.hostname << ":"
+                << entering_nameserver_.port << ".";
   }
 }
 
