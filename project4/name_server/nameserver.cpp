@@ -148,33 +148,39 @@ bool Nameserver::Enter() {
 }
 
 void Nameserver::Exit() {
-  consistent_hash_msgs::ExitInformation exit_info;
-  consistent_hash_msgs::UpdateSuccessorRequest update_succ_req;
+  consistent_hash_msgs::NameServerMessage message;
+  auto* exit_info = message.mutable_exit_info();
+
   LOG_F(INFO, "Nameserver #%i exiting.", id_);
+
   // prepare exit information
-  exit_info.set_lower_bounds(bounds_.first);
-  exit_info.set_upper_bounds(bounds_.second);
+  exit_info->set_lower_bounds(bounds_.first);
+  exit_info->set_upper_bounds(bounds_.second);
   for (const auto& pair : pairs_) {
-    exit_info.add_keys(pair.first);
-    exit_info.add_values(pair.second);
+    exit_info->add_keys(pair.first);
+    exit_info->add_values(pair.second);
   }
-  exit_info.mutable_predecessor_info()->set_port(predecessor_.port);
-  exit_info.mutable_predecessor_info()->set_id(predecessor_id_);
-  exit_info.mutable_predecessor_info()->set_ip(predecessor_.hostname);
+  exit_info->mutable_predecessor_info()->set_port(predecessor_.port);
+  exit_info->mutable_predecessor_info()->set_id(predecessor_id_);
+  exit_info->mutable_predecessor_info()->set_ip(predecessor_.hostname);
   // send exit information to successor
   // so it can update it's key's and predecessor info
   message_passing::Client client =
       message_passing::Client(threadpool_, successor_);
   LOG_F(INFO, "Nameserver #%i sending ExitInfo message to successor #%i", id_,
         successor_id_);
-  if (!client.SendAsync(exit_info)) {
+  if (!client.SendAsync(message)) {
     // error
     LOG_F(ERROR, "Request failed to send.");
   }
+
   // prepare update successor information
-  update_succ_req.mutable_successor_info()->set_id(successor_id_);
-  update_succ_req.mutable_successor_info()->set_port(successor_.port);
-  update_succ_req.mutable_successor_info()->set_ip(successor_.hostname);
+  message.Clear();
+  auto* update_successor_request = message.mutable_update_succ_req();
+  update_successor_request->mutable_successor_info()->set_id(successor_id_);
+  update_successor_request->mutable_successor_info()->set_port(successor_.port);
+  update_successor_request->mutable_successor_info()->set_ip(
+      successor_.hostname);
 
   LOG_F(INFO,
         "Nameserver #%i sending UpdateSuccessorRequest message to predecessor "
@@ -183,7 +189,7 @@ void Nameserver::Exit() {
   // tell predecessor to update it's successor info
   message_passing::Client pred_client =
       message_passing::Client(threadpool_, predecessor_);
-  if (!pred_client.SendAsync(update_succ_req)) {
+  if (!pred_client.SendAsync(message)) {
     // error
     LOG_F(ERROR, "Request failed to send.");
   }
@@ -245,7 +251,9 @@ void Nameserver::HandleRequest(
 void Nameserver::HandleRequest(
     const consistent_hash_msgs::ExitInformation& request) {
   // take over the exiting server's key-vals
-  bounds_.second = request.upper_bounds();
+  bounds_.first = request.lower_bounds();
+  LOG_S(INFO) << "Expanding key range to [" << bounds_.first << ", "
+              << bounds_.second << "].";
   for (int i = 0; i < request.keys_size(); i++) {
     std::pair<int, std::string> pair(request.keys(i), request.values(i));
     pairs_.insert(pair);

@@ -74,8 +74,7 @@ void Bootstrap::HandleRequest(
     entrance_info.mutable_predecessor_info()->set_ip(predecessor_.hostname);
     entrance_info.mutable_predecessor_info()->set_port(predecessor_.port);
 
-  } else if (!request.successor_info().IsInitialized() &&
-             request.predecessor_info().IsInitialized()) {
+  } else if (!request.found_successor() && request.found_predecessor()) {
     // the entering server will now be the first in the ring.
     entrance_info.mutable_successor_info()->set_port(successor_.port);
     entrance_info.mutable_successor_info()->set_ip(successor_.hostname);
