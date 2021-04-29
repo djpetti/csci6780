@@ -4,12 +4,11 @@
 #ifndef PROJECT4_NAMESERVER_H
 #define PROJECT4_NAMESERVER_H
 
-#include <consistent_hash_msgs.pb.h>
-
 #include <filesystem>
 #include <map>
 #include <string>
 
+#include "consistent_hash_msgs.pb.h"
 #include "message_passing/client.h"
 #include "message_passing/server.h"
 #include "message_passing/types.h"

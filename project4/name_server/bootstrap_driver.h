@@ -34,7 +34,7 @@ class BootstrapDriver {
   void LoadConfig(const std::filesystem::path& config_loc);
 
   /// Whether this driver is supposed to be running
-  bool running_;
+  bool running_ = true;
 
   /// Bootstrap
   std::shared_ptr<nameserver::Bootstrap> bootstrap_;
