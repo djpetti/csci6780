@@ -128,12 +128,12 @@ void Bootstrap::LookUp(uint key) {
   } else if (successor_ == bootstrap_) {
     console_task_->SendConsole("Key not found.");
   } else {
-    consistent_hash_msgs::LookUpResult lookup;
-    lookup.set_id(0);
-    lookup.set_key(key);
+    consistent_hash_msgs::NameServerMessage message;
+    message.mutable_look_up_result()->set_id(0);
+    message.mutable_look_up_result()->set_key(key);
     message_passing::Client client =
         message_passing::Client(threadpool_, successor_);
-    if (!client_->SendAsync(lookup)) {
+    if (!client.SendAsync(message)) {
       // error
       LOG_F(ERROR, "Request failed to send.");
     }
@@ -150,13 +150,13 @@ void Bootstrap::Insert(uint key, const std::string& val) {
   } else if (successor_ == bootstrap_) {
     console_task_->SendConsole("Key out of range.");
   } else {
-    consistent_hash_msgs::InsertResult insert;
-    insert.set_id(0);
-    insert.set_key(key);
-    insert.set_value(val);
+    consistent_hash_msgs::NameServerMessage message;
+    message.mutable_insert_result()->set_id(0);
+    message.mutable_insert_result()->set_key(key);
+    message.mutable_insert_result()->set_value(val);
     message_passing::Client client =
         message_passing::Client(threadpool_, successor_);
-    if (!client.SendAsync(insert)) {
+    if (!client.SendAsync(message)) {
       // error
       LOG_F(ERROR, "Request failed to send.");
     }

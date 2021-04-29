@@ -37,9 +37,10 @@ void NameserverDriver::LoadConfig(const std::filesystem::path& config_loc) {
 void NameserverDriver::Start() {
   pool_->AddTask(console_task_);
   pool_->AddTask(nameserver_task_);
+  running_ = true;
 
   while (running_) {
-    std::string input;
+    std::string input = "";
     std::getline(std::cin, input);
     auto itr = nameserver_cmds.find(input);
     if (itr == nameserver_cmds.end()) {
