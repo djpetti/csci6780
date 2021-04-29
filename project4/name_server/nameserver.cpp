@@ -323,26 +323,43 @@ void Nameserver::HandleRequest(
 void Nameserver::HandleRequest(
     const consistent_hash_msgs::LookUpResult& request) {
   consistent_hash_msgs::LookUpResult req = request;
+  consistent_hash_msgs::BootstrapMessage bs_msg;
+  consistent_hash_msgs::NameServerMessage msg;
   if (req.key() <= bounds_.second && req.key() >= bounds_.first) {
     // key-val resides in this nameserver
     auto itr = pairs_.find(req.key());
     if (itr != pairs_.end()) {
       // value found
-      req.set_value(itr->second);
-      req.set_id(id_);
+      bs_msg.mutable_name_server_message()->mutable_look_up_result()->set_value(itr->second);
+      bs_msg.mutable_name_server_message()->mutable_look_up_result()->set_id(id_);
+      msg.mutable_look_up_result()->set_value(itr->second);
+      msg.mutable_look_up_result()->set_id(id_);
     }
   }
   // denote this server as contacted
-  auto ids = req.server_ids();
-  req.add_server_ids(id_);
-  LOG_F(INFO, "Nameserver #%i sending a LookUpResult to successor #%i", id_,
-        successor_id_);
+  msg.mutable_look_up_result()->add_server_ids(id_);
   // forward LookUpResult to successor
   message_passing::Client client =
       message_passing::Client(threadpool_, successor_);
-  if (!client.SendAsync(req)) {
-    // error
-    LOG_F(ERROR, "Request failed to send.");
+
+  // bootstrap expects a bootstrap message.
+  // check if the successor is a bootstrap and send accordingly.
+  if (successor_ == bootstrap_) {
+    if (client.Send(bs_msg) < 0) {
+      // error
+      LOG_F(ERROR, "Request failed to send.");
+    } else {
+      LOG_F(INFO, "Nameserver #%i sent a LookUpResult to successor #%i", id_,
+            successor_id_);
+    }
+  } else {
+    if (client.Send(msg) < 0) {
+      // error
+      LOG_F(ERROR, "Request failed to send.");
+    } else {
+      LOG_F(INFO, "Nameserver #%i sent a LookUpResult to successor #%i", id_,
+            successor_id_);
+    }
   }
 }
 

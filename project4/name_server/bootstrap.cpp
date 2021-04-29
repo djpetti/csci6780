@@ -138,7 +138,7 @@ void Bootstrap::LookUp(uint key) {
     message.mutable_look_up_result()->set_key(key);
     message_passing::Client client =
         message_passing::Client(threadpool_, successor_);
-    if (!client.SendAsync(message)) {
+    if (client.Send(message) < 0) {
       // error
       LOG_F(ERROR, "LookUpResult failed to send.");
     } else {
