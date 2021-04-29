@@ -375,26 +375,27 @@ void Nameserver::HandleRequest(
 
 void Nameserver::HandleRequest(
     const consistent_hash_msgs::DeleteResult& request) {
-  consistent_hash_msgs::DeleteResult req = request;
-  if (req.key() <= bounds_.second && req.key() >= bounds_.first) {
+  consistent_hash_msgs::NameServerMessage message;
+  message.mutable_delete_result()->CopyFrom(request);
+
+  if (request.key() <= bounds_.second && request.key() >= bounds_.first) {
     // key-val resides in this nameserver
-    auto itr = pairs_.find(req.key());
+    auto itr = pairs_.find(request.key());
     if (itr != pairs_.end()) {
       // key-val pair found , now delete
       pairs_.erase(itr);
-      req.set_delete_success(true);
+      message.mutable_delete_result()->set_delete_success(true);
     }
   }
   // denote this server as contacted
-  auto ids = req.server_ids();
-  req.add_server_ids(id_);
+  message.mutable_delete_result()->add_server_ids(id_);
 
   LOG_F(INFO, "Nameserver #%i sending a DeleteResult to successor #%i", id_,
         successor_id_);
   // forward LookUpResult to successor
   message_passing::Client client =
       message_passing::Client(threadpool_, successor_);
-  if (!client.SendAsync(req)) {
+  if (!client.SendAsync(message)) {
     // error
     LOG_F(ERROR, "Request failed to send.");
   }

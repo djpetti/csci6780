@@ -141,6 +141,7 @@ void Bootstrap::Insert(uint key, const std::string& val) {
     message.mutable_insert_result()->set_id(0);
     message.mutable_insert_result()->set_key(key);
     message.mutable_insert_result()->set_value(val);
+
     message_passing::Client client =
         message_passing::Client(threadpool_, successor_);
     if (!client.SendAsync(message)) {
@@ -163,12 +164,13 @@ void Bootstrap::Delete(uint key) {
   } else if (successor_ == bootstrap_) {
     console_task_->SendConsole("Key not found.");
   } else {
-    consistent_hash_msgs::DeleteResult delete_r;
-    delete_r.set_delete_success(false);
-    delete_r.set_key(key);
+    consistent_hash_msgs::NameServerMessage message;
+    message.mutable_delete_result()->set_delete_success(false);
+    message.mutable_delete_result()->set_key(key);
+
     message_passing::Client client =
         message_passing::Client(threadpool_, successor_);
-    if (!client.SendAsync(delete_r)) {
+    if (!client.SendAsync(message)) {
       // error
       LOG_F(ERROR, "Request failed to send.");
     } else {
@@ -203,16 +205,11 @@ void Bootstrap::HandleRequest(
 
 void Bootstrap::HandleRequest(
     const consistent_hash_msgs::DeleteResult& request) {
-  consistent_hash_msgs::DeleteResult req = request;
-  // denote this server as contacted
-  const auto ids = req.server_ids();
-  req.set_server_ids(ids.size(), 0);
-
-  if (!req.delete_success()) {
+  if (!request.delete_success()) {
     console_task_->SendConsole("Key not found.");
   } else {
     console_task_->SendConsole("Successful deletion.");
-    PrintContacted(req.server_ids());
+    PrintContacted(request.server_ids());
   }
 }
 void Bootstrap::PrintContacted(
