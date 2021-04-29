@@ -86,34 +86,27 @@ class Nameserver {
   constexpr static const auto kTimeout = std::chrono::milliseconds(100);
 
   /**
-   * @brief Handles a NameserverMessage
+   * @brief Handles a general NameserverMessage
    * @param msg the message
    */
-  void HandleRequest(const consistent_hash_msgs::NameServerMessage &msg,
-                     const message_passing::Endpoint source);
+  virtual void HandleRequest(const consistent_hash_msgs::NameServerMessage &msg,
+                             message_passing::Endpoint source);
 
-  void HandleRequest(const consistent_hash_msgs::LookUpResult &request);
+  /// Specializations for all common sub-messages.
+  virtual void HandleRequest(
+      const consistent_hash_msgs::EntranceInformation &request);
+  virtual void HandleRequest(const consistent_hash_msgs::LookUpResult &request);
+  virtual void HandleRequest(const consistent_hash_msgs::InsertResult &request);
+  virtual void HandleRequest(const consistent_hash_msgs::DeleteResult &request);
 
  private:
-  /**
-   *
-   * @param A NameServerMessage request
-   */
-  void HandleRequest(const consistent_hash_msgs::EntranceInformation &request);
-
   void HandleRequest(const consistent_hash_msgs::ExitInformation &request);
-
   void HandleRequest(
       const consistent_hash_msgs::UpdatePredecessorRequest &request,
       const message_passing::Endpoint &source);
-
   void HandleRequest(
       const consistent_hash_msgs::UpdateSuccessorRequest &request,
       const message_passing::Endpoint &source);
-
-  void HandleRequest(const consistent_hash_msgs::InsertResult &request);
-
-  void HandleRequest(const consistent_hash_msgs::DeleteResult &request);
 
   /// Id of this name server
   uint id_;

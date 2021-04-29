@@ -103,13 +103,7 @@ message UpdateSuccessorRequest {
   /// the server info of the to-be successor
   ServerInfo successor_info = 1;
 }
-/// encapsulates all messages that can be received by the bootstrap name server
-message BootstrapMessage {
-  oneof Messages {
-    NameServerMessage name_server_message = 1;
-    EntranceRequest entrance_request = 2;
-  }
-}
+
 /// encapsulates all messages that can be received by a name server
 message NameServerMessage {
   oneof NameServerMessages {
@@ -121,6 +115,9 @@ message NameServerMessage {
     LookUpResult look_up_result = 6;
     InsertResult insert_result = 7;
     DeleteResult delete_result = 8;
+
+    // Bootstrap-only messages.
+    EntranceRequest entrance_request = 9;
   }
 
 }

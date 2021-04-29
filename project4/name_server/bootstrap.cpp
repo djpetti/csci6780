@@ -15,54 +15,28 @@ Bootstrap::Bootstrap(
 }
 
 void Bootstrap::HandleRequest(
-    const consistent_hash_msgs::BootstrapMessage& request,
+    const consistent_hash_msgs::NameServerMessage& request,
     message_passing::Endpoint source) {
   if (request.has_entrance_request()) {
     LOG_F(INFO, "Bootstrap received EntranceRequest message from node %s",
           source.hostname.c_str());
     HandleRequest(request.entrance_request(), source);
-  } else if (request.has_name_server_message()) {
-    auto msg = request.name_server_message();
-    if (msg.has_delete_result()) {
-      LOG_F(INFO, "Bootstrap received DeleteResult message from node %s",
-            source.hostname.c_str());
-      const auto del_msg = msg.delete_result();
-      HandleRequest(del_msg);
-    } else if (msg.has_insert_result()) {
-      LOG_F(INFO, "Bootstrap received InsertResult message from node %s",
-            source.hostname.c_str());
-      const auto ins_msg = msg.insert_result();
-      HandleRequest(ins_msg);
-    } else if (msg.has_look_up_result()) {
-      LOG_F(INFO, "Bootstrap received LookUpResult message from node %s",
-            source.hostname.c_str());
-      const auto lou_msg = msg.look_up_result();
-      HandleRequest(lou_msg);
-    } else if (msg.has_entrance_info()) {
-      LOG_F(INFO, "Bootstrap received EntranceInfo message from node %s",
-            source.hostname.c_str());
-      const auto ent_msg = msg.entrance_info();
-      HandleRequest(ent_msg);
-    } else {
-      Nameserver::HandleRequest(msg, source);
-    }
   } else {
-    LOG_S(ERROR) << "Bootstrap received an empty BootstrapMessage from node "
-                 << source.hostname << ".";
+    Nameserver::HandleRequest(request, source);
   }
 }
 
 void Bootstrap::ReceiveAndHandle() {
   message_passing::Endpoint endpoint;
-  consistent_hash_msgs::BootstrapMessage bs_msg;
-  if (server_->Receive(kTimeout, &bs_msg, &endpoint)) {
-    HandleRequest(bs_msg, endpoint);
+  consistent_hash_msgs::NameServerMessage message;
+  if (server_->Receive(kTimeout, &message, &endpoint)) {
+    HandleRequest(message, endpoint);
   }
 }
 
 void Bootstrap::HandleRequest(
     const consistent_hash_msgs::EntranceRequest& request,
-    const message_passing::Endpoint source) {
+    const message_passing::Endpoint& source) {
   consistent_hash_msgs::EntranceInformation info;
   entering_nameserver_ = source;
   if (successor_ == bootstrap_) {
@@ -72,8 +46,7 @@ void Bootstrap::HandleRequest(
     info.mutable_predecessor_info()->set_ip(bootstrap_.hostname);
     info.mutable_predecessor_info()->set_port(bootstrap_.port);
 
-    info.mutable_successor_info()->CopyFrom(
-        info.predecessor_info());
+    info.mutable_successor_info()->CopyFrom(info.predecessor_info());
 
     if (!server_->SendAsync(info, source)) {
       LOG_S(ERROR) << "Failed to send EntranceInformation message.";
@@ -96,15 +69,23 @@ void Bootstrap::HandleRequest(
   if (req.successor_info().IsInitialized() &&
       !req.predecessor_info().IsInitialized()) {
     // the entering server will now be the last in the ring.
-    message.mutable_entrance_info()->mutable_predecessor_info()->set_id(predecessor_id_);
-    message.mutable_entrance_info()->mutable_predecessor_info()->set_ip(predecessor_.hostname);
-    message.mutable_entrance_info()->mutable_predecessor_info()->set_port(predecessor_.port);
+    message.mutable_entrance_info()->mutable_predecessor_info()->set_id(
+        predecessor_id_);
+    message.mutable_entrance_info()->mutable_predecessor_info()->set_ip(
+        predecessor_.hostname);
+    message.mutable_entrance_info()->mutable_predecessor_info()->set_port(
+        predecessor_.port);
+
   } else if (!request.successor_info().IsInitialized() &&
              request.predecessor_info().IsInitialized()) {
     // the entering server will now be the first in the ring.
-    message.mutable_entrance_info()->mutable_successor_info()->set_port(successor_.port);
-    message.mutable_entrance_info()->mutable_successor_info()->set_ip(successor_.hostname);
-    message.mutable_entrance_info()->mutable_successor_info()->set_id(successor_id_);
+    message.mutable_entrance_info()->mutable_successor_info()->set_port(
+        successor_.port);
+    message.mutable_entrance_info()->mutable_successor_info()->set_ip(
+        successor_.hostname);
+    message.mutable_entrance_info()->mutable_successor_info()->set_id(
+        successor_id_);
+
   } else if (!(req.mutable_predecessor_info()->IsInitialized() ||
                req.mutable_successor_info()->IsInitialized())) {
     LOG_F(FATAL,
@@ -112,9 +93,7 @@ void Bootstrap::HandleRequest(
           "bootstrap.");
     return;
   }
-  message_passing::Client client =
-      message_passing::Client(threadpool_, entering_nameserver_);
-  if (!client.SendAsync(message)) {
+  if (!server_->SendAsync(message, entering_nameserver_)) {
     LOG_F(ERROR, "Request failed to send.");
     // error
   } else {
@@ -142,7 +121,8 @@ void Bootstrap::LookUp(uint key) {
       // error
       LOG_F(ERROR, "LookUpResult failed to send.");
     } else {
-      LOG_F(INFO, "Bootstrap sent LookUpResult to successor $%i", successor_id_);
+      LOG_F(INFO, "Bootstrap sent LookUpResult to successor $%i",
+            successor_id_);
     }
   }
 }
@@ -167,7 +147,8 @@ void Bootstrap::Insert(uint key, const std::string& val) {
       // error
       LOG_F(ERROR, "Request failed to send.");
     } else {
-      LOG_F(INFO, "Bootstrap sent InsertResult to successor $%i", successor_id_);
+      LOG_F(INFO, "Bootstrap sent InsertResult to successor $%i",
+            successor_id_);
     }
   }
 }
@@ -191,23 +172,19 @@ void Bootstrap::Delete(uint key) {
       // error
       LOG_F(ERROR, "Request failed to send.");
     } else {
-      LOG_F(INFO, "Bootstrap Sent DeleteResult to successor $%i", successor_id_);
+      LOG_F(INFO, "Bootstrap Sent DeleteResult to successor $%i",
+            successor_id_);
     }
   }
 }
 
 void Bootstrap::HandleRequest(
     const consistent_hash_msgs::LookUpResult& request) {
-  consistent_hash_msgs::LookUpResult req = request;
-  // denote this server as contacted
-  const auto ids = request.server_ids();
-  req.set_server_ids(ids.size(), 0);
-
-  if (req.id() == 0) {
+  if (request.id() == 0) {
     // the id is 0 and the bootstrap did not insert.
     console_task_->SendConsole("Key not found.");
   } else {
-    console_task_->SendConsole(std::string("Value: ").append(req.value()));
+    console_task_->SendConsole(std::string("Value: ").append(request.value()));
     PrintContacted(request.server_ids());
   }
 }

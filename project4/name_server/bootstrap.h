@@ -26,13 +26,6 @@ class Bootstrap : public Nameserver {
   ~Bootstrap() override = default;
 
   /**
-   * Handles a generic BootstrapMessage
-   * @param Generic BootstrapMessage request
-   */
-  void HandleRequest(const consistent_hash_msgs::BootstrapMessage &request,
-                     message_passing::Endpoint source);
-
-  /**
    * @brief Inserts a key-value pair in the ring.
    * @param key The integer key for the corresponding value
    * @param val The value
@@ -56,25 +49,25 @@ class Bootstrap : public Nameserver {
    */
   void ReceiveAndHandle() override;
 
+ protected:
+  /**
+   * @brief Handles a general NameserverMessage
+   * @param msg the message
+   */
+  void HandleRequest(const consistent_hash_msgs::NameServerMessage &msg,
+                     message_passing::Endpoint source) override;
+
+  /// Specializations for all common sub-messages.
+  void HandleRequest(
+      const consistent_hash_msgs::EntranceInformation &request) override;
+  void HandleRequest(
+      const consistent_hash_msgs::LookUpResult &request) override;
+  void HandleRequest(
+      const consistent_hash_msgs::InsertResult &request) override;
+  void HandleRequest(
+      const consistent_hash_msgs::DeleteResult &request) override;
+
  private:
-  /**
-   * @brief Handles an entrance request from an entering name server.
-   * @param A BootstrapMessage request
-   */
-  void HandleRequest(const consistent_hash_msgs::EntranceRequest &request,
-                     const message_passing::Endpoint source);
-
-  /**
-   * @param A NameServerMessage request
-   */
-  void HandleRequest(const consistent_hash_msgs::EntranceInformation &request);
-
-  void HandleRequest(const consistent_hash_msgs::LookUpResult &request);
-
-  void HandleRequest(const consistent_hash_msgs::InsertResult &request);
-
-  void HandleRequest(const consistent_hash_msgs::DeleteResult &request);
-
   /**
    * @brief Using Protobuf, print to console_task_ a comma-separated, joined
    * list of contacted server_ids
@@ -82,6 +75,10 @@ class Bootstrap : public Nameserver {
    */
   void PrintContacted(
       google::protobuf::RepeatedField<google::protobuf::uint32> server_ids);
+
+  /// Handlers for bootstrap-specific messages.
+  void HandleRequest(const consistent_hash_msgs::EntranceRequest &request,
+                     const message_passing::Endpoint &source);
 
   /// The nameserver that wishes to enter the hash ring.
   message_passing::Endpoint entering_nameserver_;

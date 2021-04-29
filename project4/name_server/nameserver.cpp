@@ -17,7 +17,7 @@ Nameserver::Nameserver(
 
 void Nameserver::HandleRequest(
     const consistent_hash_msgs::NameServerMessage& msg,
-    const message_passing::Endpoint source) {
+    message_passing::Endpoint source) {
   consistent_hash_msgs::NameServerMessage message = msg;
   if (message.has_update_succ_req()) {
     LOG_F(INFO,
@@ -63,7 +63,7 @@ void Nameserver::HandleRequest(
 }
 
 bool Nameserver::Enter() {
-  consistent_hash_msgs::BootstrapMessage bootstrap_message;
+  consistent_hash_msgs::NameServerMessage name_server_message;
   consistent_hash_msgs::EntranceInformation entrance_info;
   consistent_hash_msgs::UpdatePredecessorResponse update_pred_res;
 
@@ -72,9 +72,9 @@ bool Nameserver::Enter() {
         "waiting for an EntranceInfo from the server.",
         id_);
   // send entrance info request to bootstrap
-  bootstrap_message.mutable_entrance_request()->set_id(id_);
-  bootstrap_message.mutable_entrance_request()->set_port(port_);
-  if (!client_->SendRequest(bootstrap_message, &entrance_info)) {
+  name_server_message.mutable_entrance_request()->set_id(id_);
+  name_server_message.mutable_entrance_request()->set_port(port_);
+  if (!client_->SendRequest(name_server_message, &entrance_info)) {
     LOG_F(ERROR, "No response received from the bootstrap.");
     return false;
   }
@@ -87,13 +87,6 @@ bool Nameserver::Enter() {
   predecessor_.hostname = entrance_info.predecessor_info().ip();
   predecessor_id_ = entrance_info.predecessor_info().id();
 
-  // adjust hostnames if ring is empty since bootstrap cannot know it's own IP.
-  if (predecessor_.hostname == "") {
-    predecessor_.hostname = bootstrap_.hostname;
-  }
-  if (successor_.hostname == "") {
-    successor_.hostname = bootstrap_.hostname;
-  }
   LOG_S(INFO) << "Setting predecessor to " << predecessor_.hostname << ":"
               << predecessor_.port << " and successor to "
               << successor_.hostname << ":" << successor_.port << ".";
@@ -105,21 +98,19 @@ bool Nameserver::Enter() {
   // tell this entering server's successor to update it's predecessor info
   message_passing::Client client =
       message_passing::Client(threadpool_, successor_);
-  bootstrap_message.Clear();
-  auto nameserver_message = bootstrap_message.mutable_name_server_message();
-  nameserver_message->mutable_update_pred_req()
+  name_server_message.Clear();
+  name_server_message.mutable_update_pred_req()
       ->mutable_predecessor_info()
       ->set_id(id_);
-  nameserver_message->mutable_update_pred_req()
+  name_server_message.mutable_update_pred_req()
       ->mutable_predecessor_info()
       ->set_port(port_);
   if (successor_ == bootstrap_) {
-    if (!client_->SendRequest(bootstrap_message, &update_pred_res)) {
+    if (!client_->SendRequest(name_server_message, &update_pred_res)) {
       LOG_F(ERROR, "No UpdatePredecessorResponse received from the successor.");
       return false;
     }
-  }
-  else if (!client.SendRequest(bootstrap_message, &update_pred_res)) {
+  } else if (!client.SendRequest(name_server_message, &update_pred_res)) {
     LOG_F(ERROR, "No UpdatePredecessorResponse received from the successor.");
     return false;
   }
@@ -141,15 +132,14 @@ bool Nameserver::Enter() {
   // tell this entering server's predecessor to update it's successor info
   message_passing::Client pred_client =
       message_passing::Client(threadpool_, predecessor_);
-  bootstrap_message.Clear();
-  nameserver_message = bootstrap_message.mutable_name_server_message();
-  nameserver_message->mutable_update_succ_req()
+  name_server_message.Clear();
+  name_server_message.mutable_update_succ_req()
       ->mutable_successor_info()
       ->set_port(port_);
-  nameserver_message->mutable_update_succ_req()
+  name_server_message.mutable_update_succ_req()
       ->mutable_successor_info()
       ->set_id(id_);
-  if (pred_client.Send(bootstrap_message) < 0) {
+  if (pred_client.Send(name_server_message) < 0) {
     LOG_F(ERROR, "Failed to send UpdateSuccessorRequest to the predecessor.");
     return false;
   }
@@ -288,14 +278,21 @@ void Nameserver::HandleRequest(
   res.set_lower_bounds(bounds_.first);
   const uint kMiddleKey = (bounds_.second - bounds_.first) / 2;
   res.set_upper_bounds(bounds_.second - kMiddleKey);
+  std::vector<uint> to_delete;
   for (const auto& pair : pairs_) {
     if (pair.first <= kMiddleKey) {
       // this key-val goes to the entering nameserver
       res.add_keys(pair.first);
       res.add_values(pair.second);
-      pairs_.erase(pair.first);
+      to_delete.push_back(pair.first);
     }
   }
+
+  // Erase all the keys that we added.
+  for (const auto& kKey : to_delete) {
+    pairs_.erase(kKey);
+  }
+
   bounds_.first += kMiddleKey + 1;
 
   LOG_F(INFO,
@@ -308,8 +305,8 @@ void Nameserver::HandleRequest(
 }
 
 void Nameserver::HandleRequest(
-    const consistent_hash_msgs::UpdateSuccessorRequest &request,
-    const message_passing::Endpoint &source) {
+    const consistent_hash_msgs::UpdateSuccessorRequest& request,
+    const message_passing::Endpoint& source) {
   // update successor info
   successor_.hostname = request.successor_info().ip();
   if (successor_.hostname == "") {
@@ -322,16 +319,15 @@ void Nameserver::HandleRequest(
 
 void Nameserver::HandleRequest(
     const consistent_hash_msgs::LookUpResult& request) {
-  consistent_hash_msgs::LookUpResult req = request;
-  consistent_hash_msgs::BootstrapMessage bs_msg;
   consistent_hash_msgs::NameServerMessage msg;
-  if (req.key() <= bounds_.second && req.key() >= bounds_.first) {
+  if (request.key() <= bounds_.second &&
+      request.key() >= bounds_.first) {
     // key-val resides in this nameserver
-    auto itr = pairs_.find(req.key());
+    auto itr = pairs_.find(request.key());
     if (itr != pairs_.end()) {
       // value found
-      bs_msg.mutable_name_server_message()->mutable_look_up_result()->set_value(itr->second);
-      bs_msg.mutable_name_server_message()->mutable_look_up_result()->set_id(id_);
+      msg.mutable_look_up_result()->set_value(itr->second);
+      msg.mutable_look_up_result()->set_id(id_);
       msg.mutable_look_up_result()->set_value(itr->second);
       msg.mutable_look_up_result()->set_id(id_);
     }
@@ -342,24 +338,12 @@ void Nameserver::HandleRequest(
   message_passing::Client client =
       message_passing::Client(threadpool_, successor_);
 
-  // bootstrap expects a bootstrap message.
-  // check if the successor is a bootstrap and send accordingly.
-  if (successor_ == bootstrap_) {
-    if (client.Send(bs_msg) < 0) {
-      // error
-      LOG_F(ERROR, "Request failed to send.");
-    } else {
-      LOG_F(INFO, "Nameserver #%i sent a LookUpResult to successor #%i", id_,
-            successor_id_);
-    }
+  if (!client.SendAsync(msg)) {
+    // error
+    LOG_F(ERROR, "Request failed to send.");
   } else {
-    if (client.Send(msg) < 0) {
-      // error
-      LOG_F(ERROR, "Request failed to send.");
-    } else {
-      LOG_F(INFO, "Nameserver #%i sent a LookUpResult to successor #%i", id_,
-            successor_id_);
-    }
+    LOG_F(INFO, "Nameserver #%i sent a LookUpResult to successor #%i", id_,
+          successor_id_);
   }
 }
 
