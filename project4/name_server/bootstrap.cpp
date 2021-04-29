@@ -63,27 +63,26 @@ void Bootstrap::ReceiveAndHandle() {
 void Bootstrap::HandleRequest(
     const consistent_hash_msgs::EntranceRequest& request,
     const message_passing::Endpoint source) {
-  consistent_hash_msgs::NameServerMessage message;
+  consistent_hash_msgs::EntranceInformation info;
   entering_nameserver_ = source;
   if (successor_ == bootstrap_) {
     // ring is empty
     // Set entrance info with the bootstrap information.
-    message.mutable_entrance_info()->mutable_predecessor_info()->set_id(0);
-    message.mutable_entrance_info()->mutable_predecessor_info()->set_ip(bootstrap_.hostname);
-    message.mutable_entrance_info()->mutable_predecessor_info()->set_port(bootstrap_.port);
+    info.mutable_predecessor_info()->set_id(0);
+    info.mutable_predecessor_info()->set_ip(bootstrap_.hostname);
+    info.mutable_predecessor_info()->set_port(bootstrap_.port);
 
+    info.mutable_successor_info()->CopyFrom(
+        info.predecessor_info());
 
-    message.mutable_entrance_info()->mutable_successor_info()->CopyFrom(
-        message.mutable_entrance_info()->predecessor_info());
-
-    if (!server_->SendAsync(message, source)) {
+    if (!server_->SendAsync(info, source)) {
       LOG_S(ERROR) << "Failed to send EntranceInformation message.";
     }
   } else {
-    // send entrance info message to be filled out
-    message.mutable_entrance_info()->set_id(request.id());
+    // send message to be rippled.
+    info.set_id(request.id());
 
-    if (!server_->SendAsync(message, source)) {
+    if (!server_->SendAsync(info, successor_)) {
       LOG_S(ERROR) << "Failed to send EntranceInformation message.";
     }
   }
@@ -133,6 +132,7 @@ void Bootstrap::LookUp(uint key) {
   } else if (successor_ == bootstrap_) {
     console_task_->SendConsole("Key not found.");
   } else {
+    LOG_F(INFO, "Initiating LookUp procedure.");
     consistent_hash_msgs::NameServerMessage message;
     message.mutable_look_up_result()->set_id(0);
     message.mutable_look_up_result()->set_key(key);
@@ -140,7 +140,7 @@ void Bootstrap::LookUp(uint key) {
         message_passing::Client(threadpool_, successor_);
     if (!client.SendAsync(message)) {
       // error
-      LOG_F(ERROR, "Request failed to send.");
+      LOG_F(ERROR, "LookUpResult failed to send.");
     } else {
       LOG_F(INFO, "Bootstrap sent LookUpResult to successor $%i", successor_id_);
     }

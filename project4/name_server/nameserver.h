@@ -108,7 +108,8 @@ class Nameserver {
       const message_passing::Endpoint &source);
 
   void HandleRequest(
-      const consistent_hash_msgs::UpdateSuccessorRequest &request);
+      const consistent_hash_msgs::UpdateSuccessorRequest &request,
+      const message_passing::Endpoint &source);
 
   void HandleRequest(const consistent_hash_msgs::InsertResult &request);
 

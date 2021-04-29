@@ -24,7 +24,7 @@ void Nameserver::HandleRequest(
           "Nameserver #%i received UpdateSuccessorRequest message from node %s",
           id_, source.hostname.c_str());
     const auto req = message.update_succ_req();
-    HandleRequest(req);
+    HandleRequest(req, source);
   } else if (message.has_delete_result()) {
     LOG_F(INFO, "Nameserver #%i received DeleteResult message from node %s",
           id_, source.hostname.c_str());
@@ -86,6 +86,14 @@ bool Nameserver::Enter() {
   predecessor_.port = entrance_info.predecessor_info().port();
   predecessor_.hostname = entrance_info.predecessor_info().ip();
   predecessor_id_ = entrance_info.predecessor_info().id();
+
+  // adjust hostnames if ring is empty since bootstrap cannot know it's own IP.
+  if (predecessor_.hostname == "") {
+    predecessor_.hostname = bootstrap_.hostname;
+  }
+  if (successor_.hostname == "") {
+    successor_.hostname = bootstrap_.hostname;
+  }
   LOG_S(INFO) << "Setting predecessor to " << predecessor_.hostname << ":"
               << predecessor_.port << " and successor to "
               << successor_.hostname << ":" << successor_.port << ".";
@@ -105,8 +113,13 @@ bool Nameserver::Enter() {
   nameserver_message->mutable_update_pred_req()
       ->mutable_predecessor_info()
       ->set_port(port_);
-
-  if (!client.SendRequest(bootstrap_message, &update_pred_res)) {
+  if (successor_ == bootstrap_) {
+    if (!client_->SendRequest(bootstrap_message, &update_pred_res)) {
+      LOG_F(ERROR, "No UpdatePredecessorResponse received from the successor.");
+      return false;
+    }
+  }
+  else if (!client.SendRequest(bootstrap_message, &update_pred_res)) {
     LOG_F(ERROR, "No UpdatePredecessorResponse received from the successor.");
     return false;
   }
@@ -148,14 +161,12 @@ void Nameserver::Exit() {
   consistent_hash_msgs::ExitInformation exit_info;
   consistent_hash_msgs::UpdateSuccessorRequest update_succ_req;
   LOG_F(INFO, "Nameserver #%i exiting.", id_);
-  int pair_index = 0;
   // prepare exit information
   exit_info.set_lower_bounds(bounds_.first);
   exit_info.set_upper_bounds(bounds_.second);
   for (const auto& pair : pairs_) {
-    exit_info.set_keys(pair_index, pair.first);
-    exit_info.set_values(pair_index, pair.second);
-    pair_index++;
+    exit_info.add_keys(pair.first);
+    exit_info.add_values(pair.second);
   }
   exit_info.mutable_predecessor_info()->set_port(predecessor_.port);
   exit_info.mutable_predecessor_info()->set_id(predecessor_id_);
@@ -297,9 +308,14 @@ void Nameserver::HandleRequest(
 }
 
 void Nameserver::HandleRequest(
-    const consistent_hash_msgs::UpdateSuccessorRequest& request) {
+    const consistent_hash_msgs::UpdateSuccessorRequest &request,
+    const message_passing::Endpoint &source) {
   // update successor info
   successor_.hostname = request.successor_info().ip();
+  if (successor_.hostname == "") {
+    // an entering nameserver has sent this request.
+    successor_.hostname = source.hostname;
+  }
   successor_.port = request.successor_info().port();
   successor_id_ = request.successor_info().id();
 }
